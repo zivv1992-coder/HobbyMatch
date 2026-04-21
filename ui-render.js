@@ -16,8 +16,8 @@ function renderCard(user, isLiked, myUser) {
 
   // Post image
   const imgHtml = user.hobbyImageUrl
-    ? `<img src="${user.hobbyImageUrl}" alt="תמונת תחביב" class="w-full aspect-[4/5] object-cover"/>`
-    : `<div class="w-full aspect-[4/5] bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center text-6xl">🎯</div>`;
+    ? `<img src="${user.hobbyImageUrl}" alt="תמונת תחביב" class="w-full aspect-[4/3] object-cover"/>`
+    : `<div class="w-full aspect-[4/3] bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center text-6xl">🎯</div>`;
 
   // Like button
   const heartBtnClass = isLiked
