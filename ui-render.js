@@ -3,6 +3,103 @@
 const HEART_FILLED = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/></svg>`;
 const HEART_OUTLINE = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>`;
 
+// ─── Carousel helpers ─────────────────────────────────────────────────────────
+
+function buildCarouselHtml(user) {
+  const images = (user.hobbyImages && user.hobbyImages.length)
+    ? user.hobbyImages
+    : (user.hobbyImageUrl ? [user.hobbyImageUrl] : []);
+
+  if (images.length === 0) {
+    return `<div class="aspect-[4/3] bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center text-6xl">🎯</div>`;
+  }
+
+  const slidesHtml = images.map(url =>
+    `<img src="${url}" alt="תמונת תחביב" class="w-full h-full flex-none object-cover"/>`
+  ).join('');
+
+  const multi = images.length > 1;
+
+  const arrowsHtml = multi ? `
+    <button class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 text-lg font-bold leading-none select-none"
+            data-next onclick="event.stopPropagation();carouselNext(this)">&#8250;</button>
+    <button class="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 text-lg font-bold leading-none select-none"
+            data-prev onclick="event.stopPropagation();carouselPrev(this)">&#8249;</button>` : '';
+
+  const dotsHtml = multi ? `
+    <div class="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5 pointer-events-none z-10" data-dots>
+      ${images.map((_, i) =>
+        `<span class="block w-1.5 h-1.5 rounded-full bg-white transition-opacity" style="opacity:${i === 0 ? 1 : 0.4}"></span>`
+      ).join('')}
+    </div>` : '';
+
+  return `
+    <div class="relative aspect-[4/3] overflow-hidden group carousel-wrap" data-idx="0">
+      <div class="flex h-full transition-transform duration-300 ease-in-out" data-slides style="direction:ltr;transform:translateX(0%)">
+        ${slidesHtml}
+      </div>
+      ${arrowsHtml}
+      ${dotsHtml}
+    </div>`;
+}
+
+function carouselGoTo(wrap, idx) {
+  const slides = wrap.querySelector('[data-slides]');
+  const total  = slides.children.length;
+  idx = ((idx % total) + total) % total;
+  wrap.dataset.idx = idx;
+  slides.style.transform = `translateX(-${idx * 100}%)`;
+  wrap.querySelectorAll('[data-dots] span').forEach((dot, i) => {
+    dot.style.opacity = i === idx ? '1' : '0.4';
+  });
+}
+
+function carouselNext(btn) {
+  const wrap = btn.closest('.carousel-wrap');
+  carouselGoTo(wrap, parseInt(wrap.dataset.idx || 0) + 1);
+}
+
+function carouselPrev(btn) {
+  const wrap = btn.closest('.carousel-wrap');
+  carouselGoTo(wrap, parseInt(wrap.dataset.idx || 0) - 1);
+}
+
+// Attach touch-swipe listeners to every .carousel-wrap in the document.
+// Safe to call multiple times — won't double-bind.
+function initCarousels() {
+  document.querySelectorAll('.carousel-wrap').forEach(wrap => {
+    if (wrap.dataset.carouselBound) return;
+    wrap.dataset.carouselBound = '1';
+
+    let startX = 0;
+
+    wrap.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX;
+    }, { passive: true });
+
+    wrap.addEventListener('touchend', e => {
+      const delta = e.changedTouches[0].clientX - startX;
+      if (Math.abs(delta) > 40) {
+        wrap.dataset.swiped = '1';
+        const total = wrap.querySelector('[data-slides]').children.length;
+        if (total <= 1) return;
+        // swipe left → next; swipe right → prev
+        carouselGoTo(wrap, parseInt(wrap.dataset.idx || 0) + (delta < 0 ? 1 : -1));
+      }
+    }, { passive: true });
+  });
+}
+
+// Opens the profile modal, but ignores the click if it followed a carousel swipe.
+function handleCardImageClick(user, isLiked, myUser, event) {
+  const carousel = event.target.closest('.carousel-wrap');
+  if (carousel && carousel.dataset.swiped === '1') {
+    carousel.dataset.swiped = '0';
+    return;
+  }
+  showProfileModal(user, isLiked, myUser);
+}
+
 function renderCard(user, isLiked, myUser) {
   const dist = (myUser && myUser.latitude && user.latitude)
     ? Math.round(distanceKm(myUser.latitude, myUser.longitude, user.latitude, user.longitude))
@@ -14,11 +111,6 @@ function renderCard(user, isLiked, myUser) {
     ? `<img src="${user.profilePhotoURL}" class="w-10 h-10 rounded-full object-cover ring-2 ring-purple-100 shrink-0" alt=""/>`
     : `<div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-black text-base ring-2 ring-purple-100 shrink-0">${initials}</div>`;
 
-  // Post image
-  const imgHtml = user.hobbyImageUrl
-    ? `<img src="${user.hobbyImageUrl}" alt="תמונת תחביב" class="w-full aspect-[4/3] object-cover"/>`
-    : `<div class="w-full aspect-[4/3] bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center text-6xl">🎯</div>`;
-
   // Like button
   const heartBtnClass = isLiked
     ? 'flex items-center gap-1.5 transition-transform active:scale-90 text-red-500'
@@ -28,13 +120,20 @@ function renderCard(user, isLiked, myUser) {
     ? `<span class="inline-flex items-center gap-1 bg-pink-50 text-pink-500 text-xs font-semibold px-2.5 py-1 rounded-full border border-pink-100">❤️ פתוח/ה לקשר רומנטי</span>`
     : '';
 
+  const hobbyTags = (user.hobby || '').split(',').map(h => h.trim()).filter(Boolean).slice(0, 3)
+    .map(h => `<span class="bg-black/50 backdrop-blur-sm text-white text-xs font-semibold px-2.5 py-1 rounded-full">#${h}</span>`)
+    .join('');
+
+  const userJson   = JSON.stringify(user).replace(/"/g, '&quot;');
+  const myUserJson = JSON.stringify(myUser).replace(/"/g, '&quot;');
+
   return `
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col"
          data-email="${user.email}">
 
       <!-- Post Header -->
       <div class="flex items-center gap-3 px-4 py-3 cursor-pointer"
-           onclick="showProfileModal(${JSON.stringify(user).replace(/"/g, '&quot;')}, ${isLiked}, ${JSON.stringify(myUser).replace(/"/g, '&quot;')})">
+           onclick="showProfileModal(${userJson}, ${isLiked}, ${myUserJson})">
         ${avatarHtml}
         <div class="flex-1 min-w-0">
           <p class="font-bold text-gray-900 text-sm leading-tight">${user.fullName}, ${user.age}</p>
@@ -43,15 +142,11 @@ function renderCard(user, isLiked, myUser) {
         ${user.romantic ? `<span class="text-base shrink-0" title="פתוח/ה לקשר רומנטי">❤️</span>` : ''}
       </div>
 
-      <!-- Post Image -->
+      <!-- Post Image / Carousel -->
       <div class="relative cursor-pointer"
-           onclick="showProfileModal(${JSON.stringify(user).replace(/"/g, '&quot;')}, ${isLiked}, ${JSON.stringify(myUser).replace(/"/g, '&quot;')})">
-        ${imgHtml}
-        <div class="absolute bottom-3 right-3 flex flex-wrap gap-1 justify-end max-w-[90%]">
-          ${(user.hobby || '').split(',').map(h => h.trim()).filter(Boolean).slice(0, 3)
-            .map(h => `<span class="bg-black/50 backdrop-blur-sm text-white text-xs font-semibold px-2.5 py-1 rounded-full">#${h}</span>`)
-            .join('')}
-        </div>
+           onclick="handleCardImageClick(${userJson}, ${isLiked}, ${myUserJson}, event)">
+        ${buildCarouselHtml(user)}
+        ${hobbyTags ? `<div class="absolute bottom-3 right-3 flex flex-wrap gap-1 justify-end max-w-[90%] z-20">${hobbyTags}</div>` : ''}
       </div>
 
       <!-- Actions & Caption -->

@@ -1063,6 +1063,7 @@
       return;
     }
     grid.innerHTML = filtered.map(u => renderCard(u, likedEmails.has(u.email), me)).join('');
+    initCarousels();
   }
 
   // ── Load matches ──────────────────────────────────────────────────────────
@@ -2704,6 +2705,7 @@
     grid.innerHTML = filtered.length > 0
       ? filtered.map(u => renderCard(u, likedEmails.has(u.email), me)).join('')
       : renderEmpty(`לא נמצאו אנשים עם תחביב "${hobby}" באזורך`);
+    initCarousels();
   }
 
   // ── Boot ──────────────────────────────────────────────────────────────────
