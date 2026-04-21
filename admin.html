@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>קונקשן — לוח ניהול</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100..900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="firebase-logic.js"></script>
+  <style>
+    body { font-family: 'Heebo', sans-serif; }
+    .stat-card { transition: transform 0.15s; }
+    .stat-card:hover { transform: translateY(-3px); }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: none; }
+    }
+    .fade-up { animation: fadeUp 0.35s ease both; }
+    .table-row:hover { background: #faf5ff; }
+    .no-photo-row { background: #fffbeb !important; }
+    .no-photo-row:hover { background: #fef3c7 !important; }
+    /* Per-photo thumbnail delete button */
+    .photo-thumb { position: relative; display: inline-block; width: 44px; height: 44px; border-radius: 10px; overflow: hidden; border: 1.5px solid #e5e7eb; flex-shrink: 0; }
+    .photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .photo-del {
+      position: absolute; inset: 0; opacity: 0;
+      background: rgba(220, 38, 38, 0.82);
+      color: #fff; font-size: 16px; font-weight: 900;
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.15s; border-radius: 10px;
+    }
+    .photo-thumb:hover .photo-del { opacity: 1; }
+    @keyframes toastIn  { from { opacity:0; transform:translate(-50%,12px); } to { opacity:1; transform:translate(-50%,0); } }
+    @keyframes toastOut { from { opacity:1; transform:translate(-50%,0); }   to { opacity:0; transform:translate(-50%,12px); } }
+    #adminToast { animation: toastIn 0.25s ease; }
+    #adminToast.hiding { animation: toastOut 0.25s ease forwards; }
+  </style>
+</head>
+<body class="bg-[#f0edff] min-h-screen">
+
+<!-- ── Top Nav ──────────────────────────────────────────────────────────────── -->
+<header class="bg-white shadow-sm sticky top-0 z-40">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <span class="text-xl font-black text-purple-900">🤝 קונקשן</span>
+      <span class="bg-purple-100 text-purple-700 text-xs font-bold px-2.5 py-1 rounded-lg tracking-wide">ADMIN</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="seedBtn" onclick="seedTestUsers()"
+        title="הוסף 4 משתמשי בדיקה לFirestore"
+        class="text-xs text-emerald-700 font-bold border border-emerald-200 bg-emerald-50 px-3 py-1.5 rounded-xl hover:bg-emerald-100 transition hidden sm:block">
+        🌱 נתוני בדיקה
+      </button>
+      <a href="profiles.html"
+        class="text-sm text-purple-700 font-semibold border border-purple-200 px-3 py-1.5 rounded-xl hover:bg-purple-50 transition">
+        ← חזרה לאפליקציה
+      </a>
+      <button onclick="handleLogout()"
+        class="text-sm text-gray-500 font-semibold border border-gray-200 px-3 py-1.5 rounded-xl hover:bg-gray-50 transition">
+        התנתק
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ── Main ──────────────────────────────────────────────────────────────────── -->
+<main class="max-w-7xl mx-auto px-4 py-8">
+
+  <!-- Loading -->
+  <div id="loadingState" class="text-center py-24">
+    <div class="inline-block w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-4"></div>
+    <p class="font-bold text-purple-400">טוען נתונים...</p>
+  </div>
+
+  <!-- Dashboard (shown after load) -->
+  <div id="dashContent" class="hidden space-y-8">
+
+    <!-- ── Row 1: Stat Cards ───────────────────────────────────────────────── -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 fade-up">
+
+      <div class="stat-card col-span-2 sm:col-span-1 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl p-5 text-white shadow-lg">
+        <p class="text-xs font-semibold opacity-75 mb-2">סה״כ משתמשים</p>
+        <p id="statUsers" class="text-4xl font-black">—</p>
+        <p class="text-xs opacity-60 mt-1">👥</p>
+      </div>
+
+      <div class="stat-card bg-gradient-to-br from-pink-500 to-rose-500 rounded-2xl p-5 text-white shadow-lg">
+        <p class="text-xs font-semibold opacity-75 mb-2">חיבורים</p>
+        <p id="statMatches" class="text-4xl font-black">—</p>
+        <p class="text-xs opacity-60 mt-1">🤝</p>
+      </div>
+
+      <div class="stat-card bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl p-5 text-white shadow-lg">
+        <p class="text-xs font-semibold opacity-75 mb-2">אירועים</p>
+        <p id="statEvents" class="text-4xl font-black">—</p>
+        <p class="text-xs opacity-60 mt-1">📅</p>
+      </div>
+
+      <div class="stat-card bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl p-5 text-white shadow-lg">
+        <p class="text-xs font-semibold opacity-75 mb-2">שיעור מאצ׳</p>
+        <p id="statMatchRate" class="text-4xl font-black">—</p>
+        <p class="text-xs opacity-60 mt-1">% מהמשתמשים</p>
+      </div>
+
+      <div class="stat-card bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl p-5 text-white shadow-lg">
+        <p class="text-xs font-semibold opacity-75 mb-2">ללא תמונה</p>
+        <p id="statNoPhoto" class="text-4xl font-black">—</p>
+        <p class="text-xs opacity-60 mt-1">📷</p>
+      </div>
+
+    </div>
+
+    <!-- ── Row 2: Charts ───────────────────────────────────────────────────── -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 fade-up" style="animation-delay:0.05s">
+
+      <div class="bg-white rounded-2xl shadow-sm p-6">
+        <h2 class="font-black text-purple-900 text-base mb-5">📈 הרשמות — 7 ימים אחרונים</h2>
+        <canvas id="signupsChart"></canvas>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm p-6">
+        <h2 class="font-black text-purple-900 text-base mb-5">🏙️ התפלגות לפי עיר (Top 10)</h2>
+        <canvas id="citiesChart"></canvas>
+      </div>
+
+    </div>
+
+    <!-- ── Row 3: Top Interests + Activity Log ─────────────────────────────── -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 fade-up" style="animation-delay:0.1s">
+
+      <!-- Top Interests -->
+      <div class="bg-white rounded-2xl shadow-sm p-6">
+        <h2 class="font-black text-purple-900 text-base mb-5">🎯 תחביבים פופולריים</h2>
+        <div id="interestsList" class="space-y-2"></div>
+      </div>
+
+      <!-- Activity Log -->
+      <div class="bg-white rounded-2xl shadow-sm p-6">
+        <h2 class="font-black text-purple-900 text-base mb-5">🕐 פעילות אחרונה</h2>
+        <div id="activityLog" class="space-y-2 max-h-80 overflow-y-auto"></div>
+      </div>
+
+    </div>
+
+    <!-- ── Row 4: User Management ──────────────────────────────────────────── -->
+    <div class="bg-white rounded-2xl shadow-sm p-6 fade-up" style="animation-delay:0.15s">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <h2 class="font-black text-purple-900 text-lg">👤 ניהול משתמשים</h2>
+        <div class="flex items-center gap-2 flex-wrap">
+
+          <!-- No-photo filter -->
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" id="filterNoPhoto" onchange="applyFilters()"
+              class="w-4 h-4 rounded accent-amber-500"/>
+            <span class="text-sm font-semibold text-amber-700">ללא תמונה בלבד</span>
+          </label>
+
+          <!-- Search -->
+          <input id="userSearch" type="text"
+            placeholder="חיפוש לפי שם, מייל, עיר..."
+            oninput="applyFilters()"
+            class="border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 w-64 transition"/>
+
+          <!-- Export CSV -->
+          <button onclick="exportCSV()"
+            class="flex items-center gap-1.5 bg-gradient-to-l from-purple-700 to-blue-600 text-white text-sm font-bold px-4 py-2 rounded-xl hover:opacity-90 transition">
+            ⬇️ ייצוא CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto rounded-xl border border-gray-100">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="text-right py-3 px-4 font-bold text-gray-500 text-xs uppercase tracking-wide">משתמש</th>
+              <th class="text-right py-3 px-4 font-bold text-gray-500 text-xs uppercase tracking-wide">מייל</th>
+              <th class="text-right py-3 px-4 font-bold text-gray-500 text-xs uppercase tracking-wide">עיר</th>
+              <th class="text-right py-3 px-4 font-bold text-gray-500 text-xs uppercase tracking-wide">טלפון</th>
+              <th class="text-right py-3 px-4 font-bold text-gray-500 text-xs uppercase tracking-wide">תמונות תחביב · לחץ ✕ למחיקה</th>
+              <th class="text-right py-3 px-4 font-bold text-gray-500 text-xs uppercase tracking-wide">תאריך הצטרפות</th>
+              <th class="text-right py-3 px-4 font-bold text-gray-500 text-xs uppercase tracking-wide">מחיקת משתמש</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody"></tbody>
+        </table>
+      </div>
+      <p id="tableCount" class="text-xs text-gray-400 mt-3"></p>
+    </div>
+
+    <!-- ── Row 5: Events ───────────────────────────────────────────────────── -->
+    <div class="bg-white rounded-2xl shadow-sm p-6 fade-up" style="animation-delay:0.2s">
+      <h2 class="font-black text-purple-900 text-lg mb-5">📅 אירועים במערכת</h2>
+      <div id="eventsContainer"></div>
+    </div>
+
+    <!-- ── Row 6: Feedback ─────────────────────────────────────────────────── -->
+    <div class="bg-white rounded-2xl shadow-sm p-6 fade-up" style="animation-delay:0.25s">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="font-black text-purple-900 text-lg">💬 פידבק מהמשתמשים</h2>
+        <span id="feedbackCount" class="text-sm text-gray-400 font-semibold"></span>
+      </div>
+      <div id="feedbackContainer"></div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ── Toast ──────────────────────────────────────────────────────────────────── -->
+<div id="adminToast"
+  class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl z-50 whitespace-nowrap">
+  <span id="adminToastMsg"></span>
+</div>
+
+<script>
+  // ── Access Control ───────────────────────────────────────────────────────────
+  requireSession();
+  const adminUser = getSession();
+  if (!adminUser || adminUser.email !== ADMIN_EMAIL) {
+    window.location.href = 'index.html';
+  }
+
+  // ── Global State ─────────────────────────────────────────────────────────────
+  let allUsersData    = [];
+  let allLikesData    = [];
+  let allEventsData   = [];
+  let allFeedbackData = [];
+  let usersWithMatch  = new Set();   // emails that have ≥1 match
+
+  // ── Init ─────────────────────────────────────────────────────────────────────
+  async function initDashboard() {
+    try {
+      const [usersSnap, likesSnap, eventsSnap, feedbackSnap] = await Promise.all([
+        db.collection('users').get(),
+        db.collection('likes').get(),
+        db.collection('events').get().catch(() => ({ docs: [] })),
+        db.collection('feedback').orderBy('createdAt', 'desc').get().catch(() => ({ docs: [] }))
+      ]);
+
+      allUsersData    = usersSnap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+      allLikesData    = likesSnap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+      allEventsData   = eventsSnap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+      allFeedbackData = feedbackSnap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+
+      // ── Compute matches ───────────────────────────────────────────────────
+      const likeSet = new Set(allLikesData.map(l => l._docId));
+      let matchCount = 0;
+      allLikesData.forEach(l => {
+        const { from, to } = l;
+        if (!from || !to) return;
+        const forwardId = `${sanitizeEmail(from)}_${sanitizeEmail(to)}`;
+        const reverseId = `${sanitizeEmail(to)}_${sanitizeEmail(from)}`;
+        if (likeSet.has(reverseId)) {
+          usersWithMatch.add(from);
+          usersWithMatch.add(to);
+          if (forwardId < reverseId) matchCount++;
+        }
+      });
+
+      // ── Counters ──────────────────────────────────────────────────────────
+      const noPhotoCount = allUsersData.filter(u => !u.hobbyImageUrl).length;
+      const matchRate    = allUsersData.length > 0
+        ? Math.round((usersWithMatch.size / allUsersData.length) * 100)
+        : 0;
+
+      document.getElementById('statUsers').textContent     = allUsersData.length;
+      document.getElementById('statMatches').textContent   = matchCount;
+      document.getElementById('statEvents').textContent    = allEventsData.length;
+      document.getElementById('statMatchRate').textContent = matchRate + '%';
+      document.getElementById('statNoPhoto').textContent   = noPhotoCount;
+
+      // ── Build charts & sections ───────────────────────────────────────────
+      buildSignupsChart(allUsersData);
+      buildCitiesChart(allUsersData);
+      buildInterestsList(allUsersData);
+      buildActivityLog(allUsersData, allLikesData);
+      renderUsersTable(allUsersData);
+      renderEventsList(allEventsData);
+      renderFeedbackList(allFeedbackData);
+
+      // ── Show dashboard ────────────────────────────────────────────────────
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('dashContent').classList.remove('hidden');
+
+    } catch (err) {
+      document.getElementById('loadingState').innerHTML =
+        `<p class="text-red-400 font-bold text-lg">שגיאה בטעינת הנתונים</p>
+         <p class="text-gray-400 text-sm mt-2">${err.message}</p>
+         <p class="text-gray-400 text-xs mt-1">יש לוודא שחוקי Firestore מאפשרים קריאה</p>`;
+      console.error(err);
+    }
+  }
+
+  // ── Signups Line Chart ────────────────────────────────────────────────────────
+  function buildSignupsChart(users) {
+    const labels = [], counts = [];
+    for (let i = 6; i >= 0; i--) {
+      const start = new Date(); start.setDate(start.getDate() - i); start.setHours(0,0,0,0);
+      const end   = new Date(start); end.setDate(start.getDate() + 1);
+      labels.push(`${start.getDate()}/${start.getMonth()+1}`);
+      counts.push(users.filter(u => {
+        if (!u.createdAt) return false;
+        const ts = u.createdAt.toDate ? u.createdAt.toDate() : new Date(u.createdAt);
+        return ts >= start && ts < end;
+      }).length);
+    }
+    new Chart(document.getElementById('signupsChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'הרשמות', data: counts,
+          borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.08)',
+          fill: true, tension: 0.4,
+          pointBackgroundColor: '#7c3aed', pointBorderColor: '#fff',
+          pointBorderWidth: 2, pointRadius: 5, pointHoverRadius: 7,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: '#f3f4f6' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  // ── City Bar Chart ────────────────────────────────────────────────────────────
+  function buildCitiesChart(users) {
+    const cityCount = {};
+    users.forEach(u => { if (u.city) cityCount[u.city] = (cityCount[u.city] || 0) + 1; });
+    const sorted = Object.entries(cityCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const palette = ['#7c3aed','#2563eb','#db2777','#059669','#d97706','#9333ea','#0891b2','#dc2626','#16a34a','#ca8a04'];
+    new Chart(document.getElementById('citiesChart'), {
+      type: 'bar',
+      data: {
+        labels: sorted.map(([c]) => c),
+        datasets: [{
+          data: sorted.map(([,n]) => n),
+          backgroundColor: palette.slice(0, sorted.length),
+          borderRadius: 8, borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: '#f3f4f6' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  // ── Top Interests ─────────────────────────────────────────────────────────────
+  function buildInterestsList(users) {
+    const hobbyCount = {};
+    users.forEach(u => {
+      if (!u.hobby) return;
+      u.hobby.split(',').map(h => h.trim()).filter(Boolean).forEach(h => {
+        hobbyCount[h] = (hobbyCount[h] || 0) + 1;
+      });
+    });
+    const sorted = Object.entries(hobbyCount).sort((a,b)=>b[1]-a[1]).slice(0, 12);
+    const max = sorted[0]?.[1] || 1;
+
+    const container = document.getElementById('interestsList');
+    if (sorted.length === 0) {
+      container.innerHTML = '<p class="text-gray-400 text-sm text-center py-6">אין נתונים עדיין</p>';
+      return;
+    }
+
+    const rankColors = ['#7c3aed','#2563eb','#db2777','#059669','#d97706'];
+    container.innerHTML = sorted.map(([hobby, count], i) => {
+      const pct   = Math.round((count / max) * 100);
+      const color = rankColors[i] || '#9ca3af';
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`;
+      return `
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-sm font-bold text-gray-700">${medal} ${hobby}</span>
+            <span class="text-xs font-bold text-gray-400">${count} משתמשים</span>
+          </div>
+          <div class="w-full bg-gray-100 rounded-full h-2">
+            <div class="h-2 rounded-full transition-all" style="width:${pct}%; background:${color};"></div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Activity Log ──────────────────────────────────────────────────────────────
+  function buildActivityLog(users, likes) {
+    // Collect events: last 10 signups + last 10 likes
+    const events = [];
+
+    users.forEach(u => {
+      if (!u.createdAt) return;
+      const ts = u.createdAt.toDate ? u.createdAt.toDate() : new Date(u.createdAt);
+      events.push({ type: 'signup', ts, label: `${u.fullName || u.email} נרשם/ה` });
+    });
+
+    likes.forEach(l => {
+      if (!l.createdAt) return;
+      const ts = l.createdAt.toDate ? l.createdAt.toDate() : new Date(l.createdAt);
+      events.push({ type: 'like', ts, label: `${l.from || '—'} שלח לייק ל-${l.to || '—'}` });
+    });
+
+    events.sort((a, b) => b.ts - a.ts);
+    const recent = events.slice(0, 10);
+
+    const container = document.getElementById('activityLog');
+    if (recent.length === 0) {
+      container.innerHTML = '<p class="text-gray-400 text-sm text-center py-6">אין פעילות עדיין</p>';
+      return;
+    }
+
+    container.innerHTML = recent.map(ev => {
+      const icon  = ev.type === 'signup' ? '🆕' : '❤️';
+      const color = ev.type === 'signup' ? 'bg-purple-50 text-purple-700' : 'bg-pink-50 text-pink-700';
+      const time  = formatRelativeTime(ev.ts);
+      return `
+        <div class="flex items-start gap-2.5">
+          <span class="text-base mt-0.5 shrink-0">${icon}</span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm text-gray-700 leading-snug truncate">${ev.label}</p>
+            <p class="text-xs text-gray-400">${time}</p>
+          </div>
+          <span class="text-xs font-semibold ${color} px-2 py-0.5 rounded-lg shrink-0">
+            ${ev.type === 'signup' ? 'הרשמה' : 'לייק'}
+          </span>
+        </div>`;
+    }).join('');
+  }
+
+  function formatRelativeTime(date) {
+    const diffMs  = Date.now() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1)   return 'כעת';
+    if (diffMin < 60)  return `לפני ${diffMin} דק׳`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24)    return `לפני ${diffH} שעות`;
+    const diffD = Math.floor(diffH / 24);
+    return `לפני ${diffD} ימים`;
+  }
+
+  // ── Format Join Date ─────────────────────────────────────────────────────────
+  function formatJoinDate(createdAt) {
+    if (!createdAt) return '<span class="text-gray-300">—</span>';
+    try {
+      const d = createdAt.toDate ? createdAt.toDate() : new Date(createdAt);
+      return d.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch {
+      return '<span class="text-gray-300">—</span>';
+    }
+  }
+
+  // ── Users Table ───────────────────────────────────────────────────────────────
+  function renderUsersTable(users) {
+    const tbody   = document.getElementById('usersTableBody');
+    const countEl = document.getElementById('tableCount');
+
+    if (users.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-12 text-gray-400">
+        <div class="text-3xl mb-2">🔍</div><p>לא נמצאו משתמשים</p></td></tr>`;
+      countEl.textContent = '';
+      return;
+    }
+
+    countEl.textContent = `מציג ${users.length} משתמשים`;
+
+    tbody.innerHTML = users.map(u => {
+      // Collect all photos — support both hobbyImages array and legacy hobbyImageUrl
+      const photos = (u.hobbyImages && u.hobbyImages.length)
+        ? u.hobbyImages
+        : (u.hobbyImageUrl ? [u.hobbyImageUrl] : []);
+
+      const hasPhoto  = photos.length > 0;
+      const rowClass  = hasPhoto ? 'table-row' : 'table-row no-photo-row';
+      const safeEmail = escapeHtml(u.email || '');
+      const emailAttr = safeEmail.replace(/'/g, "\\'");
+
+      // Profile photo (personal) — always visible for admin moderation
+      const profilePhotoUrl = u.profilePhotoURL || '';
+      const svgPlaceholder  = `<svg viewBox="0 0 24 24" fill="#a78bfa" xmlns="http://www.w3.org/2000/svg" style="width:55%;height:55%;"><path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-3.314 0-10 1.657-10 5v2h20v-2c0-3.343-6.686-5-10-5z"/></svg>`;
+      const profilePhotoHtml = profilePhotoUrl
+        ? `<img src="${escapeHtml(profilePhotoUrl)}" class="w-9 h-9 rounded-full object-cover border-2 border-purple-200 shrink-0" onerror="this.style.display='none'"/>`
+        : `<div class="w-9 h-9 rounded-full bg-purple-50 flex items-center justify-center shrink-0 border-2 border-purple-100" title="אין תמונה אישית">${svgPlaceholder}</div>`;
+
+      // Hobby photo thumbnails — each has an individual ✕ delete button on hover
+      const thumbsHtml = hasPhoto
+        ? `<div class="flex flex-wrap gap-1.5 items-center">
+            ${photos.map((url, idx) => `
+              <div class="photo-thumb">
+                <img src="${escapeHtml(url)}" alt="תמונה ${idx+1}"
+                     onerror="this.closest('.photo-thumb').style.display='none'"/>
+                <button class="photo-del"
+                  onclick="deleteUserPhoto('${emailAttr}', ${idx}, this)"
+                  title="מחק תמונה ${idx+1}">✕</button>
+              </div>`).join('')}
+            <span class="text-xs text-gray-400 mr-1">${photos.length} תמונות</span>
+           </div>`
+        : `<span class="text-amber-600 text-xs font-bold bg-amber-50 px-2 py-0.5 rounded-lg">⚠ חסרה</span>`;
+
+      return `
+        <tr class="${rowClass} border-b border-gray-50 hover:bg-purple-50 cursor-pointer transition" data-email="${safeEmail}"
+          onclick="if(event.target.closest('button'))return; viewUserProfile('${emailAttr}')">
+          <td class="py-3 px-4">
+            <div class="flex items-center gap-2.5">
+              ${profilePhotoHtml}
+              <div>
+                <p class="font-bold text-gray-800 leading-tight">${escapeHtml(u.fullName || '—')}</p>
+                <p class="text-xs text-gray-400">${u.age ? u.age + ' שנים' : ''}</p>
+              </div>
+            </div>
+          </td>
+          <td class="py-3 px-4 text-gray-500 text-xs">${safeEmail || '—'}</td>
+          <td class="py-3 px-4">
+            ${u.city ? `<span class="bg-purple-50 text-purple-700 text-xs font-semibold px-2 py-0.5 rounded-lg">${escapeHtml(u.city)}</span>` : '—'}
+          </td>
+          <td class="py-3 px-4 text-gray-500 text-xs font-mono">${escapeHtml(u.phone || '—')}</td>
+          <td class="py-3 px-4 max-w-xs">${thumbsHtml}</td>
+          <td class="py-3 px-4 text-xs text-gray-500 whitespace-nowrap">${formatJoinDate(u.createdAt)}</td>
+          <td class="py-3 px-4">
+            <button onclick="deleteUser('${emailAttr}', this)"
+              class="text-xs font-bold text-red-600 border border-red-200 bg-red-50 px-2.5 py-1.5 rounded-lg hover:bg-red-100 transition whitespace-nowrap">
+              🗑 מחק משתמש
+            </button>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  function applyFilters() {
+    const query    = document.getElementById('userSearch').value.trim().toLowerCase();
+    const noPhoto  = document.getElementById('filterNoPhoto').checked;
+
+    let filtered = allUsersData;
+    if (noPhoto)  filtered = filtered.filter(u => !u.hobbyImageUrl);
+    if (query)    filtered = filtered.filter(u =>
+      (u.fullName || '').toLowerCase().includes(query) ||
+      (u.email    || '').toLowerCase().includes(query) ||
+      (u.city     || '').toLowerCase().includes(query)
+    );
+    renderUsersTable(filtered);
+  }
+
+  // ── Export CSV ────────────────────────────────────────────────────────────────
+  function exportCSV() {
+    const headers = ['שם מלא', 'מייל', 'עיר', 'טלפון', 'גיל', 'תחביב', 'יש תמונה', 'יש מאצ׳'];
+    const rows = allUsersData.map(u => [
+      u.fullName   || '',
+      u.email      || '',
+      u.city       || '',
+      u.phone      || '',
+      u.age        || '',
+      u.hobby      || '',
+      u.hobbyImageUrl ? 'כן' : 'לא',
+      usersWithMatch.has(u.email) ? 'כן' : 'לא',
+    ]);
+
+    const csvContent = '\uFEFF' +  // BOM for Excel Hebrew support
+      [headers, ...rows]
+        .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `קונקשן_משתמשים_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showAdminToast('✓ קובץ CSV יוצא בהצלחה');
+  }
+
+  // ── View User Profile ─────────────────────────────────────────────────────────
+  function viewUserProfile(email) {
+    const u = allUsersData.find(u => u.email === email);
+    if (!u) return;
+    const photos = (u.hobbyImages && u.hobbyImages.length) ? u.hobbyImages : (u.hobbyImageUrl ? [u.hobbyImageUrl] : []);
+    const profilePhoto = u.profilePhotoURL
+      ? `<img src="${escapeHtml(u.profilePhotoURL)}" class="w-20 h-20 rounded-full object-cover border-4 border-purple-200 mx-auto mb-3"/>`
+      : `<div class="w-20 h-20 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-3 text-3xl">👤</div>`;
+    const photosHtml = photos.length
+      ? photos.map(p => `<img src="${escapeHtml(p)}" class="w-full h-32 object-cover rounded-xl"/>`).join('')
+      : '<p class="text-gray-400 text-xs text-center col-span-2">אין תמונות תחביב</p>';
+
+    document.getElementById('userProfileModalBody').innerHTML = `
+      <div class="text-center mb-4">
+        ${profilePhoto}
+        <h3 class="text-xl font-black text-purple-900">${escapeHtml(u.fullName || '—')}</h3>
+        <p class="text-sm text-gray-500">${escapeHtml(u.email || '')}</p>
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-sm mb-4">
+        <div class="bg-gray-50 rounded-xl p-3"><span class="text-gray-400 text-xs block">גיל</span><span class="font-bold">${u.age || '—'}</span></div>
+        <div class="bg-gray-50 rounded-xl p-3"><span class="text-gray-400 text-xs block">עיר</span><span class="font-bold">${escapeHtml(u.city || '—')}</span></div>
+        <div class="bg-gray-50 rounded-xl p-3"><span class="text-gray-400 text-xs block">טלפון</span><span class="font-bold">${escapeHtml(u.phone || '—')}</span></div>
+        <div class="bg-gray-50 rounded-xl p-3"><span class="text-gray-400 text-xs block">תחביב</span><span class="font-bold">${escapeHtml(u.hobby || '—')}</span></div>
+      </div>
+      ${u.hobbyDescription ? `<p class="text-sm text-gray-600 bg-purple-50 rounded-xl p-3 mb-4">${escapeHtml(u.hobbyDescription)}</p>` : ''}
+      <div class="grid grid-cols-2 gap-2">${photosHtml}</div>`;
+
+    document.getElementById('userProfileModal').classList.remove('hidden');
+  }
+
+  // ── Delete User ───────────────────────────────────────────────────────────────
+  async function deleteUser(email, btn) {
+    if (!confirm(`מחיקת המשתמש ${email}?\n\nהפעולה תמחק את הפרופיל וכל הלייקים שלו.`)) return;
+    btn.disabled = true; btn.textContent = '...';
+    try {
+      const sid = sanitizeEmail(email);
+      await db.collection('users').doc(sid).delete();
+
+      const [sentSnap, receivedSnap] = await Promise.all([
+        db.collection('likes').where('from', '==', email).get(),
+        db.collection('likes').where('to',   '==', email).get()
+      ]);
+      const batch = db.batch();
+      sentSnap.docs.forEach(d => batch.delete(d.ref));
+      receivedSnap.docs.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+
+      allUsersData = allUsersData.filter(u => u.email !== email);
+      usersWithMatch.delete(email);
+      document.getElementById('statUsers').textContent = allUsersData.length;
+      btn.closest('tr')?.remove();
+      document.getElementById('tableCount').textContent = `מציג ${document.querySelectorAll('#usersTableBody tr').length} משתמשים`;
+      showAdminToast('✓ המשתמש נמחק בהצלחה');
+    } catch (err) {
+      showAdminToast('שגיאה במחיקת המשתמש', 'bg-red-600');
+      console.error(err);
+      btn.disabled = false; btn.textContent = 'מחק';
+    }
+  }
+
+  // ── Delete Single Photo (per-thumbnail ✕ button) ─────────────────────────────
+  async function deleteUserPhoto(email, photoIdx, btn) {
+    if (!confirm(`מחיקת תמונה ${photoIdx + 1} של ${email}?`)) return;
+    btn.disabled = true;
+
+    const u = allUsersData.find(u => u.email === email);
+    if (!u) return;
+
+    const photos = (u.hobbyImages && u.hobbyImages.length)
+      ? [...u.hobbyImages]
+      : (u.hobbyImageUrl ? [u.hobbyImageUrl] : []);
+
+    if (photoIdx >= photos.length) return;
+
+    const updatedPhotos = photos.filter((_, i) => i !== photoIdx);
+    const newMain       = updatedPhotos[0] || '';
+
+    try {
+      await db.collection('users').doc(sanitizeEmail(email)).update({
+        hobbyImages:   updatedPhotos,
+        hobbyImageUrl: newMain
+      });
+
+      // Update local state
+      u.hobbyImages   = updatedPhotos;
+      u.hobbyImageUrl = newMain;
+
+      // Re-render table & no-photo counter
+      applyFilters();
+      document.getElementById('statNoPhoto').textContent =
+        allUsersData.filter(u => !u.hobbyImageUrl).length;
+
+      showAdminToast('✓ התמונה נמחקה');
+    } catch (err) {
+      showAdminToast('שגיאה במחיקת התמונה', 'bg-red-600');
+      console.error(err);
+      btn.disabled = false;
+    }
+  }
+
+  // ── Seed Test Users ───────────────────────────────────────────────────────────
+  async function seedTestUsers() {
+    if (!confirm(
+      'הוספת 4 משתמשי בדיקה לFirestore?\n\n' +
+      '• דנה כהן — תל אביב — 📸 צילום\n' +
+      '• יואב לוי — חיפה — 🧗 טיפוס\n' +
+      '• מיכל ברון — ירושלים — 🍳 בישול\n' +
+      '• אמיר נחמני — באר שבע — 🎸 גיטרה (ללא תמונה)\n\n' +
+      'דנה ויואב יקבלו מאצ׳ הדדי.'
+    )) return;
+
+    const btn = document.getElementById('seedBtn');
+    btn.disabled = true;
+    btn.textContent = 'מוסיף...';
+
+    try {
+      const batch = db.batch();
+
+      const testUsers = [
+        {
+          email:            'dana.cohen.test@example.com',
+          fullName:         'דנה כהן',
+          phone:            '0501234567',
+          age:              28,
+          city:             'תל אביב',
+          hobby:            '📸 צילום, 🎨 ציור',
+          hobbyDescription: 'אוהבת לצלם נופים עירוניים ופורטרטים. תמיד מחפשת אנשים לצאת לצלם איתם!',
+          romantic:         false,
+          hobbyImageUrl:    'https://picsum.photos/seed/dana_ql/400/300',
+          hobbyImages:      ['https://picsum.photos/seed/dana_ql/400/300', 'https://picsum.photos/seed/dana_ql2/400/300'],
+          latitude:  32.0853, longitude: 34.7818,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        },
+        {
+          email:            'yoav.levi.test@example.com',
+          fullName:         'יואב לוי',
+          phone:            '0521234567',
+          age:              32,
+          city:             'חיפה',
+          hobby:            '🧗 טיפוס, 🏃 ריצה',
+          hobbyDescription: 'מטפס על הרים בסופי שבוע. מחפש חברה לריצות בוקר בכרמל.',
+          romantic:         true,
+          hobbyImageUrl:    'https://picsum.photos/seed/yoav_ql/400/300',
+          hobbyImages:      ['https://picsum.photos/seed/yoav_ql/400/300'],
+          latitude:  32.7940, longitude: 34.9896,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        },
+        {
+          email:            'michal.baron.test@example.com',
+          fullName:         'מיכל ברון',
+          phone:            '0531234567',
+          age:              25,
+          city:             'ירושלים',
+          hobby:            '🍳 בישול, 🎭 תיאטרון',
+          hobbyDescription: 'שפית חובבת שמאהבת לנסות מתכונים חדשים. גם פעילה בחוג תיאטרון.',
+          romantic:         false,
+          hobbyImageUrl:    'https://picsum.photos/seed/michal_ql/400/300',
+          hobbyImages:      ['https://picsum.photos/seed/michal_ql/400/300'],
+          latitude:  31.7683, longitude: 35.2137,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        },
+        {
+          email:            'amir.nahmani.test@example.com',
+          fullName:         'אמיר נחמני',
+          phone:            '0541234567',
+          age:              35,
+          city:             'באר שבע',
+          hobby:            '🎸 גיטרה, 🎵 מוזיקה',
+          hobbyDescription: 'מנגן גיטרה כבר 15 שנה. מחפש מוזיקאים לג׳אם ספונטני.',
+          romantic:         true,
+          hobbyImageUrl:    '',    // ← no photo, intentional for quality-check testing
+          hobbyImages:      [],
+          latitude:  31.2518, longitude: 34.7915,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }
+      ];
+
+      testUsers.forEach(user => {
+        batch.set(db.collection('users').doc(sanitizeEmail(user.email)), user);
+      });
+
+      // Mutual likes: דנה ↔ יואב → creates a visible match
+      const likeAB = `${sanitizeEmail('dana.cohen.test@example.com')}_${sanitizeEmail('yoav.levi.test@example.com')}`;
+      const likeBA = `${sanitizeEmail('yoav.levi.test@example.com')}_${sanitizeEmail('dana.cohen.test@example.com')}`;
+      batch.set(db.collection('likes').doc(likeAB), {
+        from: 'dana.cohen.test@example.com',
+        to:   'yoav.levi.test@example.com',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      batch.set(db.collection('likes').doc(likeBA), {
+        from: 'yoav.levi.test@example.com',
+        to:   'dana.cohen.test@example.com',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      await batch.commit();
+      showAdminToast('✓ 4 משתמשי בדיקה נוספו! מרענן...', 'bg-emerald-600');
+      setTimeout(() => window.location.reload(), 1800);
+
+    } catch (err) {
+      showAdminToast('שגיאה בהוספת נתוני בדיקה', 'bg-red-600');
+      console.error(err);
+      btn.disabled = false;
+      btn.textContent = '🌱 נתוני בדיקה';
+    }
+  }
+
+  // ── Format event dateTime (handles Timestamp or string) ──────────────────────
+  function formatAdminEventDate(dateTime) {
+    if (!dateTime) return '—';
+    const d = dateTime.toDate ? dateTime.toDate() : new Date(dateTime);
+    return d.toLocaleString('he-IL', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+  }
+
+  // ── Events List ───────────────────────────────────────────────────────────────
+  function renderEventsList(events) {
+    const container = document.getElementById('eventsContainer');
+    if (events.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-10 text-gray-400">
+          <div class="text-4xl mb-2">📅</div>
+          <p class="font-semibold">אין אירועים במערכת</p>
+          <p class="text-sm mt-1">אירועים שייווצרו בתוך האפליקציה יופיעו כאן</p>
+        </div>`;
+      return;
+    }
+
+    // Sort by dateTime descending (newest first for admin view)
+    const sorted = [...events].sort((a, b) => {
+      const aT = a.dateTime ? (a.dateTime.toDate ? a.dateTime.toDate() : new Date(a.dateTime)) : new Date(0);
+      const bT = b.dateTime ? (b.dateTime.toDate ? b.dateTime.toDate() : new Date(b.dateTime)) : new Date(0);
+      return bT - aT;
+    });
+
+    container.innerHTML = `
+      <div class="divide-y divide-gray-50 rounded-xl border border-gray-100 overflow-hidden">
+        ${sorted.map(ev => {
+          const attendeeCount = (ev.interested || []).length;
+          const evDate = ev.dateTime
+            ? (ev.dateTime.toDate ? ev.dateTime.toDate() : new Date(ev.dateTime))
+            : null;
+          const isPast = evDate && evDate < new Date();
+
+          return `
+          <div class="flex items-start justify-between py-4 px-4 hover:bg-purple-50/40 transition gap-3 ${isPast ? 'opacity-60' : ''}" id="event-${ev._docId}">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-1.5 flex-wrap mb-1">
+                ${((ev.associatedHobbies && ev.associatedHobbies.length)
+                    ? ev.associatedHobbies
+                    : (ev.hobby ? [ev.hobby] : [])
+                  ).map(h => `<span class="text-xs font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded-lg">${escapeHtml(h)}</span>`).join('')}
+                ${isPast ? `<span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-lg font-semibold">עבר</span>` : ''}
+              </div>
+              <p class="font-bold text-gray-800 truncate">${escapeHtml(ev.title || 'ללא כותרת')}</p>
+              <p class="text-xs text-gray-400 mt-0.5 flex flex-wrap gap-2">
+                <span>📅 ${formatAdminEventDate(ev.dateTime)}</span>
+                <span>📍 ${escapeHtml(ev.location || '—')}</span>
+                <span>👤 ${escapeHtml(ev.creatorName || ev.createdBy || '—')}</span>
+                <span>🙋 ${attendeeCount} מתעניינים</span>
+              </p>
+            </div>
+            <button onclick="deleteEvent('${ev._docId}', this)"
+              class="shrink-0 text-xs font-bold text-red-600 border border-red-200 bg-red-50 px-2.5 py-1.5 rounded-lg hover:bg-red-100 transition mt-0.5">
+              מחק
+            </button>
+          </div>`;
+        }).join('')}
+      </div>`;
+  }
+
+  // ── Delete Event ──────────────────────────────────────────────────────────────
+  async function deleteEvent(docId, btn) {
+    if (!confirm('מחיקת האירוע?')) return;
+    btn.disabled = true; btn.textContent = '...';
+    try {
+      await db.collection('events').doc(docId).delete();
+      allEventsData = allEventsData.filter(e => e._docId !== docId);
+      document.getElementById('statEvents').textContent = allEventsData.length;
+      document.getElementById(`event-${docId}`)?.remove();
+      if (allEventsData.length === 0) renderEventsList([]);
+      showAdminToast('✓ האירוע נמחק בהצלחה');
+    } catch (err) {
+      showAdminToast('שגיאה במחיקת האירוע', 'bg-red-600');
+      console.error(err);
+      btn.disabled = false; btn.textContent = 'מחק';
+    }
+  }
+
+  // ── Feedback List ─────────────────────────────────────────────────────────────
+  function renderFeedbackList(items) {
+    const container = document.getElementById('feedbackContainer');
+    const countEl   = document.getElementById('feedbackCount');
+    countEl.textContent = items.length > 0 ? `${items.length} הודעות` : '';
+
+    if (items.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-10 text-gray-400">
+          <div class="text-4xl mb-2">💬</div>
+          <p class="font-semibold">אין פידבק עדיין</p>
+          <p class="text-sm mt-1">כשמשתמשים ישלחו פידבק הוא יופיע כאן</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="space-y-3">
+        ${items.map(fb => {
+          const ts = fb.createdAt
+            ? (fb.createdAt.toDate ? fb.createdAt.toDate() : new Date(fb.createdAt))
+            : null;
+          const timeStr = ts ? ts.toLocaleString('he-IL', {
+            day:'2-digit', month:'2-digit', year:'numeric',
+            hour:'2-digit', minute:'2-digit'
+          }) : '—';
+
+          return `
+            <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100" id="feedback-${fb._docId}">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex-1 min-w-0">
+                  <p class="text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">${escapeHtml(fb.text || '')}</p>
+                  <div class="flex items-center gap-3 mt-2.5">
+                    <span class="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-lg">
+                      ${escapeHtml(fb.userName || fb.userEmail || '—')}
+                    </span>
+                    <span class="text-xs text-gray-400">${timeStr}</span>
+                  </div>
+                </div>
+                <button onclick="deleteFeedback('${fb._docId}', this)"
+                  class="shrink-0 text-xs font-bold text-red-600 border border-red-200 bg-red-50 px-2.5 py-1.5 rounded-lg hover:bg-red-100 transition mt-0.5">
+                  מחק
+                </button>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>`;
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  async function deleteFeedback(docId, btn) {
+    if (!confirm('מחיקת הפידבק?')) return;
+    btn.disabled = true; btn.textContent = '...';
+    try {
+      await db.collection('feedback').doc(docId).delete();
+      allFeedbackData = allFeedbackData.filter(f => f._docId !== docId);
+      document.getElementById(`feedback-${docId}`)?.remove();
+      document.getElementById('feedbackCount').textContent =
+        allFeedbackData.length > 0 ? `${allFeedbackData.length} הודעות` : '';
+      if (allFeedbackData.length === 0) renderFeedbackList([]);
+      showAdminToast('✓ הפידבק נמחק');
+    } catch (err) {
+      showAdminToast('שגיאה במחיקה', 'bg-red-600');
+      console.error(err);
+      btn.disabled = false; btn.textContent = 'מחק';
+    }
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────────────────
+  function showAdminToast(msg, color = 'bg-green-600') {
+    const toast = document.getElementById('adminToast');
+    document.getElementById('adminToastMsg').textContent = msg;
+    toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl z-50 whitespace-nowrap ${color}`;
+    toast.classList.remove('hiding', 'hidden');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => {
+      toast.classList.add('hiding');
+      setTimeout(() => toast.classList.add('hidden'), 250);
+    }, 3500);
+  }
+
+  // ── Logout ────────────────────────────────────────────────────────────────────
+  function handleLogout() {
+    clearSession();
+    window.location.href = 'index.html';
+  }
+
+  // ── Boot ──────────────────────────────────────────────────────────────────────
+  initDashboard();
+</script>
+
+<!-- ── User Profile Modal ─────────────────────────────────────────────────── -->
+<div id="userProfileModal"
+  class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+  onclick="if(event.target===this)document.getElementById('userProfileModal').classList.add('hidden')">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-black text-purple-900">פרטי משתמש</h2>
+      <button onclick="document.getElementById('userProfileModal').classList.add('hidden')"
+        class="text-gray-400 hover:text-gray-600 text-2xl leading-none">✕</button>
+    </div>
+    <div id="userProfileModalBody"></div>
+  </div>
+</div>
+</body>
+</html>

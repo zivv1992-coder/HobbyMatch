@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Environment & Secrets
+.env
+hobby-connection-adaca-firebase-adminsdk-fbsvc-1e711178a5.json
+
+# Test artifacts
+test-results/
+playwright-report/
+
+# Misc / not part of project
+.mcp.json
+My workflow (1).json
+New Text Document.txt
+New Text Document (2).txt
+
+# OS files
+.DS_Store
+Thumbs.db

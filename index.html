@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>קונקשן</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100..900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>emailjs.init('WJ8SooBxHjs4CX0Vo');</script>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <style>
+    body { font-family: 'Heebo', sans-serif; }
+  </style>
+</head>
+<body class="bg-[#f0edff] min-h-screen flex items-center justify-center p-5">
+
+<!-- Background blobs -->
+<div class="fixed inset-0 overflow-hidden pointer-events-none">
+  <div class="absolute w-96 h-96 bg-purple-700 rounded-full opacity-20 blur-3xl -top-24 -right-24"></div>
+  <div class="absolute w-72 h-72 bg-blue-600 rounded-full opacity-15 blur-3xl bottom-0 -left-16"></div>
+</div>
+
+<div class="relative z-10 bg-white rounded-3xl shadow-xl p-10 w-full max-w-sm text-center">
+  <div class="text-6xl mb-4">🤝</div>
+  <h1 class="text-3xl font-black text-purple-900 mb-2">קונקשן</h1>
+  <p class="text-purple-600 text-base leading-relaxed mb-8">
+    מצא שותפים לתחביבים<br/>בסביבתך בישראל
+  </p>
+
+  <a
+    href="register.html?mode=register"
+    class="block w-full bg-gradient-to-l from-purple-900 to-blue-600 text-white font-bold text-lg py-4 rounded-2xl hover:opacity-90 transition mb-3"
+  >
+    הרשמה
+  </a>
+
+  <a
+    href="register.html?mode=login"
+    class="block w-full border-2 border-purple-300 text-purple-800 font-bold text-lg py-4 rounded-2xl hover:bg-purple-50 transition"
+  >
+    התחברות
+  </a>
+</div>
+
+<script>
+  redirectIfLoggedIn();
+</script>
+</body>
+</html>

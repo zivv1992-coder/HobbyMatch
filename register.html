@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>קונקשן — הרשמה</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100..900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>emailjs.init('WJ8SooBxHjs4CX0Vo');</script>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="firebase-logic.js"></script>
+  <style>
+    body { font-family: 'Heebo', sans-serif; }
+    .step { display: none; }
+    .step.active { display: block; }
+    input, select, textarea {
+      direction: rtl;
+      text-align: right;
+    }
+    .toggle-track {
+      transition: background 0.2s;
+    }
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2.5px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+    .spinner-purple {
+      border-color: rgba(109,40,217,0.3);
+      border-top-color: #6d28d9;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="bg-[#f0edff] min-h-screen flex items-center justify-center p-5">
+
+<!-- Background blob -->
+<div class="fixed inset-0 overflow-hidden pointer-events-none">
+  <div class="absolute w-96 h-96 bg-purple-700 rounded-full opacity-20 blur-3xl -top-24 -right-24"></div>
+  <div class="absolute w-72 h-72 bg-blue-600 rounded-full opacity-15 blur-3xl bottom-0 -left-16"></div>
+</div>
+
+<div class="relative z-10 bg-white rounded-3xl shadow-xl p-8 w-full max-w-md">
+
+  <!-- Progress indicator -->
+  <div class="flex items-center justify-center gap-2 mb-8" id="progressBar">
+    <div class="step-dot w-3 h-3 rounded-full bg-purple-700" id="dot1"></div>
+    <div class="h-px w-10 bg-gray-200" id="line1"></div>
+    <div class="step-dot w-3 h-3 rounded-full bg-gray-300" id="dot2"></div>
+    <div class="h-px w-10 bg-gray-200" id="line2"></div>
+    <div class="step-dot w-3 h-3 rounded-full bg-gray-300" id="dot3"></div>
+  </div>
+
+  <!-- ── Step 1: Email ─────────────────────────────────────────── -->
+  <div class="step active" id="step1">
+    <div class="text-center mb-6">
+      <div class="text-5xl mb-3">✉️</div>
+      <h1 id="step1Title" class="text-2xl font-black text-purple-900">הרשמה לקונקשן</h1>
+      <p id="step1Sub" class="text-purple-600 mt-2">נשלח לך קוד אימות למייל</p>
+    </div>
+
+    <!-- Google Sign-In Button -->
+    <button
+      id="googleBtn"
+      onclick="handleGoogleSignIn()"
+      class="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-xl px-4 py-3 text-base font-semibold text-gray-700 bg-white hover:bg-gray-50 transition mb-4"
+      style="border-width:1.5px;"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      המשך עם Google
+    </button>
+
+    <!-- Divider -->
+    <div class="flex items-center gap-3 mb-4">
+      <div class="flex-1 h-px bg-gray-200"></div>
+      <span class="text-sm text-gray-400 font-medium">או</span>
+      <div class="flex-1 h-px bg-gray-200"></div>
+    </div>
+
+    <label class="block text-sm font-semibold text-gray-700 mb-1">כתובת מייל</label>
+    <input
+      id="emailInput"
+      type="email"
+      placeholder="your@email.com"
+      class="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-purple-400 mb-4"
+    />
+
+    <div id="step1Error" class="text-red-500 text-sm mb-3 hidden"></div>
+
+    <button
+      id="sendOtpBtn"
+      onclick="handleSendOTP()"
+      class="w-full bg-gradient-to-l from-purple-900 to-blue-600 text-white font-bold text-base py-3 rounded-xl hover:opacity-90 transition"
+    >
+      שלח קוד אימות
+    </button>
+  </div>
+
+  <!-- ── Step 2: OTP Verify ────────────────────────────────────── -->
+  <div class="step" id="step2">
+    <div class="text-center mb-6">
+      <div class="text-5xl mb-3">🔐</div>
+      <h2 class="text-2xl font-black text-purple-900">אימות מייל</h2>
+      <p class="text-purple-600 mt-2" id="otpSentTo">הקוד נשלח לכתובת המייל שלך</p>
+    </div>
+
+    <label class="block text-sm font-semibold text-gray-700 mb-1">קוד אימות (6 ספרות)</label>
+    <input
+      id="otpInput"
+      type="text"
+      inputmode="numeric"
+      maxlength="6"
+      placeholder="123456"
+      class="w-full border border-gray-300 rounded-xl px-4 py-3 text-base text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-purple-400 mb-4"
+    />
+
+    <div id="step2Error" class="text-red-500 text-sm mb-3 hidden"></div>
+
+    <button
+      onclick="handleVerifyOTP()"
+      class="w-full bg-gradient-to-l from-purple-900 to-blue-600 text-white font-bold text-base py-3 rounded-xl hover:opacity-90 transition mb-3"
+    >
+      אמת קוד
+    </button>
+
+    <button
+      onclick="handleResendOTP()"
+      class="w-full text-purple-700 text-sm font-semibold hover:underline"
+    >
+      לא קיבלתי קוד — שלח שוב
+    </button>
+  </div>
+
+  <!-- ── Step 3: Profile Form ──────────────────────────────────── -->
+  <div class="step" id="step3">
+    <div class="text-center mb-6">
+      <div class="text-5xl mb-3">🤝</div>
+      <h2 class="text-2xl font-black text-purple-900">יצירת פרופיל</h2>
+      <p class="text-purple-600 mt-2">ספר לנו קצת על עצמך</p>
+    </div>
+
+    <div class="space-y-4">
+
+      <!-- Profile Photo -->
+      <div class="flex flex-col items-center gap-3 pb-2">
+        <div class="relative">
+          <div id="profilePhotoPreview"
+            class="w-24 h-24 rounded-full bg-purple-50 border-4 border-purple-200 flex items-center justify-center overflow-hidden shadow-md">
+            <svg viewBox="0 0 24 24" fill="#a78bfa" xmlns="http://www.w3.org/2000/svg" style="width:55%;height:55%;">
+              <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-3.314 0-10 1.657-10 5v2h20v-2c0-3.343-6.686-5-10-5z"/>
+            </svg>
+          </div>
+          <label for="f_profile_photo"
+            class="absolute bottom-0 left-0 w-7 h-7 bg-purple-700 text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-purple-800 transition shadow text-sm">
+            ✏️
+          </label>
+          <input id="f_profile_photo" type="file" accept="image/*" class="hidden" onchange="previewProfilePhoto(this)"/>
+        </div>
+        <div class="text-center">
+          <p class="text-sm font-semibold text-gray-700">תמונה אישית</p>
+          <p class="text-xs text-gray-400 leading-snug mt-0.5">תוצג רק למי שיש לך איתו/ה התאמה הדדית</p>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">שם מלא *</label>
+        <input id="f_name" type="text" placeholder="ישראל ישראלי"
+          class="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-purple-400"/>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">טלפון *</label>
+        <input id="f_phone" type="tel" placeholder="050-0000000"
+          class="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-purple-400"/>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">גיל *</label>
+        <input id="f_age" type="number" min="18" max="99" placeholder="25"
+          class="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-purple-400"/>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">עיר מגורים *</label>
+        <select id="f_city"
+          class="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white">
+          <option value="">בחר עיר...</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">תחביבים * <span class="text-xs font-normal text-gray-400">(הפרד בפסיקים)</span></label>
+        <input id="f_hobby" type="text" placeholder="למשל: צילום, טיולים, בישול..."
+          class="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-purple-400"/>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">תיאור התחביב</label>
+        <textarea id="f_desc" rows="3" placeholder="ספר/י קצת על התחביב שלך..."
+          class="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">תמונת תחביב (אופציונלי)</label>
+        <label class="flex items-center justify-center gap-2 w-full border-2 border-dashed border-purple-300 rounded-xl px-4 py-4 cursor-pointer hover:bg-purple-50 transition text-purple-600 text-sm font-semibold">
+          <span id="imageLabel">📷 בחר תמונה</span>
+          <input id="f_image" type="file" accept="image/*" class="hidden" onchange="previewImage(this)"/>
+        </label>
+        <img id="imagePreview" class="hidden rounded-xl mt-2 w-full object-cover max-h-48"/>
+      </div>
+
+      <div class="flex items-center justify-between bg-purple-50 rounded-xl px-4 py-3">
+        <span class="text-sm font-semibold text-purple-900">❤️ פתוח/ה לקשר רומנטי</span>
+        <button
+          id="romanticToggle"
+          onclick="toggleRomantic()"
+          class="toggle-track relative w-12 h-6 bg-gray-300 rounded-full focus:outline-none"
+          aria-checked="false"
+          role="switch"
+        >
+          <span id="toggleThumb"
+            class="absolute top-0.5 right-0.5 w-5 h-5 bg-white rounded-full shadow transition-all duration-200">
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <div id="step3Error" class="text-red-500 text-sm mt-3 hidden"></div>
+
+    <button
+      onclick="handleCreateProfile()"
+      class="w-full mt-6 bg-gradient-to-l from-purple-900 to-blue-600 text-white font-bold text-base py-3 rounded-xl hover:opacity-90 transition"
+    >
+      צור פרופיל והתחל
+    </button>
+  </div>
+
+</div>
+
+<script>
+  // ── Init ──────────────────────────────────────────────────────────────────
+  redirectIfLoggedIn();
+
+  const _mode = new URLSearchParams(location.search).get('mode');
+  if (_mode === 'login') {
+    document.getElementById('step1Title').textContent = 'התחברות לקונקשן';
+    document.getElementById('step1Sub').textContent   = 'נשלח לך קוד אימות למייל';
+  }
+
+  let verifiedEmail    = '';
+  let isRomantic       = false;
+  let isReturningUser  = false;
+
+  // Google pre-fill: user came via Google sign-in, new user
+  if (_mode === 'google') {
+    const prefill = JSON.parse(sessionStorage.getItem('googlePrefill') || 'null');
+    if (prefill) {
+      sessionStorage.removeItem('googlePrefill');
+      verifiedEmail = prefill.email;
+      if (prefill.name) document.getElementById('f_name').value = prefill.name;
+      goToStep(3);
+    }
+  }
+
+  // Populate city dropdown
+  (function populateCities() {
+    const sel = document.getElementById('f_city');
+    CITIES.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.name;
+      opt.textContent = c.name;
+      sel.appendChild(opt);
+    });
+  })();
+
+  // ── Step navigation ───────────────────────────────────────────────────────
+  function goToStep(n) {
+    document.querySelectorAll('.step').forEach((el, i) => {
+      el.classList.toggle('active', i + 1 === n);
+    });
+    ['dot1','dot2','dot3'].forEach((id, i) => {
+      const dot = document.getElementById(id);
+      dot.classList.toggle('bg-purple-700', i + 1 <= n);
+      dot.classList.toggle('bg-gray-300',   i + 1 > n);
+    });
+  }
+
+  function showError(elId, msg) {
+    const el = document.getElementById(elId);
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+
+  function hideError(elId) {
+    document.getElementById(elId).classList.add('hidden');
+  }
+
+  function setLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    btn.disabled = loading;
+    btn.innerHTML = loading
+      ? 'שולח...<span class="spinner"></span>'
+      : 'שלח קוד אימות';
+  }
+
+  // ── Google Sign-In ────────────────────────────────────────────────────────
+  async function handleGoogleSignIn() {
+    const btn = document.getElementById('googleBtn');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner spinner-purple"></span> מתחבר...`;
+    hideError('step1Error');
+
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      const result   = await firebase.auth().signInWithPopup(provider);
+      const gUser    = result.user;
+      const email    = gUser.email;
+      const name     = gUser.displayName || '';
+      const photo    = gUser.photoURL    || '';
+
+      // Check if user already exists
+      const existing = await getUserByEmail(email);
+      if (existing) {
+        saveSession(existing);
+        window.location.href = 'profiles.html';
+      } else {
+        // New user — skip OTP, pre-fill only name from Google (no photo)
+        verifiedEmail = email;
+        if (name) {
+          document.getElementById('f_name').value = name;
+        }
+        // Hide progress bar step 2 (not needed for Google flow)
+        document.getElementById('line1').classList.add('bg-purple-700');
+        document.getElementById('line2').classList.add('bg-purple-700');
+        goToStep(3);
+      }
+    } catch (err) {
+      if (err.code !== 'auth/popup-closed-by-user') {
+        showError('step1Error', 'שגיאה בהתחברות עם Google. נסה שוב.');
+        console.error(err);
+      }
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg> המשך עם Google`;
+    }
+  }
+
+  // ── Step 1: Send OTP ──────────────────────────────────────────────────────
+  async function handleSendOTP() {
+    hideError('step1Error');
+    const email = document.getElementById('emailInput').value.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showError('step1Error', 'אנא הזן כתובת מייל תקינה');
+      return;
+    }
+    setLoading('sendOtpBtn', true);
+    try {
+      // Check if user already exists in Firestore
+      const existing = await getUserByEmail(email);
+      isReturningUser = !!existing;
+
+      await sendOTP(email);
+      verifiedEmail = email;
+      document.getElementById('otpSentTo').textContent = `הקוד נשלח ל-${email}`;
+      goToStep(2);
+    } catch (err) {
+      showError('step1Error', 'שגיאה בשליחת הקוד. נסה שוב מאוחר יותר.');
+      console.error(err);
+    } finally {
+      const btn = document.getElementById('sendOtpBtn');
+      btn.disabled = false;
+      btn.textContent = 'שלח קוד אימות';
+    }
+  }
+
+  // ── Step 2: Verify OTP ────────────────────────────────────────────────────
+  async function handleVerifyOTP() {
+    hideError('step2Error');
+    const input = document.getElementById('otpInput').value.trim();
+    if (!input || input.length !== 6) {
+      showError('step2Error', 'אנא הזן קוד בן 6 ספרות');
+      return;
+    }
+    if (!verifyOTP(input)) {
+      showError('step2Error', 'קוד שגוי או פג תוקף, נסה שוב');
+      document.getElementById('otpInput').value = '';
+      return;
+    }
+
+    if (isReturningUser) {
+      // Existing user — load profile from Firestore and go straight to feed
+      try {
+        const userData = await getUserByEmail(verifiedEmail);
+        saveSession(userData);
+        window.location.href = 'profiles.html';
+      } catch (err) {
+        showError('step2Error', 'שגיאה בטעינת הפרופיל. נסה שוב.');
+        console.error(err);
+      }
+    } else {
+      // New user — proceed to profile creation form
+      goToStep(3);
+    }
+  }
+
+  async function handleResendOTP() {
+    hideError('step2Error');
+    try {
+      await sendOTP(verifiedEmail);
+      document.getElementById('otpInput').value = '';
+      showError('step2Error', '');
+      const btn = document.querySelector('#step2 button:last-of-type');
+      btn.textContent = 'קוד חדש נשלח ✓';
+      setTimeout(() => { btn.textContent = 'לא קיבלתי קוד — שלח שוב'; }, 3000);
+    } catch (err) {
+      showError('step2Error', 'שגיאה בשליחת הקוד מחדש');
+    }
+  }
+
+  // ── Step 3: Create Profile ────────────────────────────────────────────────
+  function previewProfilePhoto(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const preview = document.getElementById('profilePhotoPreview');
+      preview.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover"/>`;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function previewImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const preview = document.getElementById('imagePreview');
+      preview.src = e.target.result;
+      preview.classList.remove('hidden');
+      document.getElementById('imageLabel').textContent = '✅ ' + file.name;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function toggleRomantic() {
+    isRomantic = !isRomantic;
+    const track = document.getElementById('romanticToggle');
+    const thumb = document.getElementById('toggleThumb');
+    track.setAttribute('aria-checked', String(isRomantic));
+    if (isRomantic) {
+      track.classList.replace('bg-gray-300', 'bg-purple-600');
+      thumb.classList.replace('right-0.5', 'left-0.5');
+    } else {
+      track.classList.replace('bg-purple-600', 'bg-gray-300');
+      thumb.classList.replace('left-0.5', 'right-0.5');
+    }
+  }
+
+  async function handleCreateProfile() {
+    hideError('step3Error');
+    const name  = document.getElementById('f_name').value.trim();
+    const phone = document.getElementById('f_phone').value.trim();
+    const age   = parseInt(document.getElementById('f_age').value, 10);
+    const city  = document.getElementById('f_city').value;
+    const hobby = document.getElementById('f_hobby').value.trim();
+    const desc  = document.getElementById('f_desc').value.trim();
+    const imageFile        = document.getElementById('f_image').files[0] || null;
+    const profilePhotoFile = document.getElementById('f_profile_photo').files[0] || null;
+
+    if (!name || !phone || !age || !city || !hobby) {
+      showError('step3Error', 'אנא מלא את כל שדות החובה (*)');
+      return;
+    }
+    if (age < 18 || age > 99) {
+      showError('step3Error', 'גיל חייב להיות בין 18 ל-99');
+      return;
+    }
+
+    let cleanPhone;
+    try {
+      cleanPhone = sanitizePhone(phone);
+    } catch (e) {
+      showError('step3Error', e.message);
+      return;
+    }
+
+    const submitBtn = document.querySelector('#step3 button[onclick="handleCreateProfile()"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'שומר פרופיל...<span class="spinner"></span>';
+
+    try {
+      let hobbyImageUrl = '';
+      let profilePhotoUrl = '';
+      if (imageFile) {
+        hobbyImageUrl = await uploadHobbyImage(imageFile, verifiedEmail);
+      }
+      if (profilePhotoFile) {
+        profilePhotoUrl = await uploadProfilePhoto(profilePhotoFile, verifiedEmail);
+      }
+
+      const cityData = CITIES.find(c => c.name === city);
+      const user = {
+        fullName:         name,
+        email:            verifiedEmail,
+        phone:            cleanPhone,
+        age:              age,
+        city:             city,
+        hobby:            hobby,
+        hobbyDescription: desc,
+        romantic:         isRomantic,
+        hobbyImageUrl:    hobbyImageUrl,
+        profilePhotoURL:  profilePhotoUrl,
+        latitude:         cityData ? cityData.lat : null,
+        longitude:        cityData ? cityData.lng : null,
+        createdAt:        new Date().toISOString()
+      };
+
+      await saveProfileToFirestore(user);
+      saveSession(user);
+      window.location.href = 'profiles.html?new=1';
+    } catch (err) {
+      showError('step3Error', 'שגיאה בשמירת הפרופיל. נסה שוב.');
+      console.error(err);
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = 'צור פרופיל והתחל';
+    }
+  }
+</script>
+</body>
+</html>

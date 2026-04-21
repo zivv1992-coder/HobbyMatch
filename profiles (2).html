@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HobbyMatch – פרופילים וחיפוש</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100..900&display=swap" rel="stylesheet">
+  <style>
+    /* ... (כאן מגיע כל ה-CSS מהקובץ הקודם ששלחתי לך) ... */
+    :root{--p:#7c3aed;--pd:#4c1d95;--pp:#ede9fe;--g:linear-gradient(135deg,#4c1d95,#2563eb);--sh:0 8px 32px rgba(124,58,237,.13);--f:'Heebo',sans-serif;}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--f);background:#f0edff;min-height:100vh;direction:rtl;}
+    /* ... שאר ה-CSS ... */
+  </style>
+</head>
+<body>
+<script type="module">
+  // ... (ייבוא Firebase כפי שמופיע בקובץ הקודם) ...
+  
+  const LIKE_WEBHOOK = "https://ziv92.app.n8n.cloud/webhook/hobbymatch-like";
+
+  let currentUser = JSON.parse(localStorage.getItem('hobbyMatchUser')||'null');
+  
+  // פונקציית עריכת פרופיל חדשה
+  window.openEditProfile = function() {
+      const name = prompt("שם מלא:", currentUser?.name || "");
+      const phone = prompt("מספר טלפון (לצורך Match):", currentUser?.phone || "");
+      const city = prompt("עיר מגורים:", localStorage.getItem('hobbyMatchCity') || "");
+      const hobby = prompt("מה התחביבים שלך? (הפרד בפסיק):", "");
+
+      if(name && phone && city) {
+          const updated = {...currentUser, name, phone, city, hobby};
+          localStorage.setItem('hobbyMatchUser', JSON.stringify(updated));
+          localStorage.setItem('hobbyMatchCity', city);
+          currentUser = updated;
+          alert("הפרופיל עודכן!");
+          location.reload();
+      }
+  };
+
+  // בדיקה אם המשתמש הגיע מדף הבית למטרת עריכה
+  const urlParams = new URLSearchParams(window.location.search);
+  if(urlParams.get('edit') === 'true') {
+      setTimeout(openEditProfile, 500);
+  }
+
+  // הפונקציה המרכזית ששולחת ל-n8n את כל המידע מוכן
+  window.sendInterest = function(id, name, btn) {
+    if (btn.classList.contains('sent')) return;
+    
+    const recipient = allProfiles.find(p => p.id === id);
+    if(!currentUser?.phone) {
+        alert("אנא עדכן את הפרופיל שלך (כולל טלפון) כדי לשלוח בקשה.");
+        openEditProfile();
+        return;
+    }
+
+    btn.classList.add('sent');
+    btn.textContent = '✅ נשלח';
+
+    const payload = {
+        type: 'interest_match',
+        sender: {
+            name: currentUser.name,
+            email: currentUser.email || '',
+            phone: currentUser.phone,
+            city: localStorage.getItem('hobbyMatchCity')
+        },
+        receiver: {
+            name: recipient?.name || name,
+            email: recipient?.email || '',
+            phone: recipient?.phone || '',
+            city: recipient?.city || ''
+        }
+    };
+
+    fetch(LIKE_WEBHOOK, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify(payload)
+    });
+
+    document.getElementById('intModal').classList.add('show');
+  };
+
+  // ... (שאר הפונקציות של renderAll ו-distKm נשארות כפי שהיו) ...
+</script>
+</body>
+</html>
