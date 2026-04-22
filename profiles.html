@@ -269,47 +269,74 @@
   <div id="paneDiscover">
 
     <!-- Discover Filters -->
-    <div class="bg-white rounded-2xl shadow-sm px-4 py-3 mb-5 space-y-3">
+    <div class="bg-white rounded-2xl shadow-md mb-5 overflow-hidden" style="border:1px solid #ede9fe;">
 
-      <!-- Row 1: Radius -->
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="text-sm font-bold text-purple-900 shrink-0">📍 מרחק:</span>
-        <div class="flex gap-1.5 flex-wrap" id="radiusBtns">
-          <button onclick="setRadius(10)"  class="radius-btn" data-r="10">10 ק"מ</button>
-          <button onclick="setRadius(25)"  class="radius-btn" data-r="25">25 ק"מ</button>
-          <button onclick="setRadius(50)"  class="radius-btn active" data-r="50">50 ק"מ</button>
-          <button onclick="setRadius(100)" class="radius-btn" data-r="100">100 ק"מ</button>
-          <button onclick="setRadius(null)" class="radius-btn" data-r="all">כל הארץ</button>
+      <!-- Header -->
+      <div class="flex items-center justify-between px-4 py-2.5 bg-gradient-to-l from-purple-50 to-blue-50 border-b border-purple-100">
+        <span class="text-xs font-black text-purple-700 tracking-wide uppercase">סינון</span>
+        <span id="radiusCount" class="text-xs font-bold text-purple-400"></span>
+      </div>
+
+      <div class="px-4 py-3 space-y-3">
+
+        <!-- Radius row -->
+        <div class="flex flex-wrap items-center gap-1.5">
+          <span class="text-xs font-bold text-gray-400 shrink-0 ml-1">📍</span>
+          <div class="flex gap-1.5 flex-wrap" id="radiusBtns">
+            <button onclick="setRadius(10)"  class="radius-btn" data-r="10">10 ק"מ</button>
+            <button onclick="setRadius(25)"  class="radius-btn" data-r="25">25 ק"מ</button>
+            <button onclick="setRadius(50)"  class="radius-btn active" data-r="50">50 ק"מ</button>
+            <button onclick="setRadius(100)" class="radius-btn" data-r="100">100 ק"מ</button>
+            <button onclick="setRadius(null)" class="radius-btn" data-r="all">כל הארץ</button>
+          </div>
         </div>
-        <span id="radiusCount" class="text-xs text-gray-400 mr-auto"></span>
-      </div>
 
-      <!-- Row 2: Age range -->
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="text-sm font-bold text-purple-900 shrink-0">🎂 גיל:</span>
-        <input id="filterAgeMin" type="number" min="18" max="99" placeholder="מ-"
-          oninput="applyDiscoverFilters()"
-          class="w-16 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center focus:outline-none focus:border-purple-400 transition"/>
-        <span class="text-gray-400 text-sm">—</span>
-        <input id="filterAgeMax" type="number" min="18" max="99" placeholder="עד"
-          oninput="applyDiscoverFilters()"
-          class="w-16 border border-gray-200 rounded-lg px-2 py-1 text-sm text-center focus:outline-none focus:border-purple-400 transition"/>
-        <button onclick="document.getElementById('filterAgeMin').value='';document.getElementById('filterAgeMax').value='';applyDiscoverFilters()"
-          class="text-xs text-gray-400 hover:text-gray-600 underline">נקה</button>
-      </div>
+        <!-- Divider -->
+        <div class="border-t border-gray-100"></div>
 
-      <!-- Row 3: Romantic + Hobby search -->
-      <div class="flex flex-wrap items-center gap-3">
-        <label class="flex items-center gap-1.5 cursor-pointer select-none shrink-0">
-          <input type="checkbox" id="filterRomantic" onchange="applyDiscoverFilters()"
-            class="w-4 h-4 rounded accent-pink-500"/>
-          <span class="text-sm font-semibold text-pink-600">❤️ פתוח/ה לרומנטיקה בלבד</span>
-        </label>
-        <input id="filterHobby" type="text" placeholder="🎯 חפש לפי תחביב..."
-          oninput="applyDiscoverFilters()"
-          class="border border-gray-200 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:border-purple-400 w-44 transition"/>
-      </div>
+        <!-- Age + Hobby row -->
+        <div class="flex flex-wrap items-center gap-3">
 
+          <!-- Age range -->
+          <div class="flex items-center gap-1.5 bg-gray-50 rounded-xl px-3 py-1.5 border border-gray-100">
+            <span class="text-xs font-bold text-gray-400 shrink-0">🎂 גיל</span>
+            <input id="filterAgeMin" type="number" min="18" max="99" placeholder="מ"
+              oninput="applyDiscoverFilters()"
+              class="w-12 bg-transparent text-sm text-center font-semibold text-gray-700 focus:outline-none placeholder-gray-300"/>
+            <span class="text-gray-300 font-bold">–</span>
+            <input id="filterAgeMax" type="number" min="18" max="99" placeholder="עד"
+              oninput="applyDiscoverFilters()"
+              class="w-12 bg-transparent text-sm text-center font-semibold text-gray-700 focus:outline-none placeholder-gray-300"/>
+            <button onclick="document.getElementById('filterAgeMin').value='';document.getElementById('filterAgeMax').value='';applyDiscoverFilters()"
+              title="נקה גיל"
+              class="text-gray-300 hover:text-gray-500 text-base leading-none transition">✕</button>
+          </div>
+
+          <!-- Hobby search -->
+          <div class="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-1.5 border border-gray-100 flex-1 min-w-[140px]">
+            <span class="text-xs text-gray-400 shrink-0">🎯</span>
+            <input id="filterHobby" type="text" placeholder="חפש לפי תחביב..."
+              oninput="applyDiscoverFilters()"
+              class="bg-transparent text-sm text-gray-700 focus:outline-none w-full placeholder-gray-300" dir="rtl"/>
+          </div>
+
+        </div>
+
+        <!-- Romantic toggle row -->
+        <div class="flex items-center">
+          <label id="filterRomanticLabel"
+            class="flex items-center gap-2.5 cursor-pointer select-none bg-gray-50 hover:bg-pink-50 border border-gray-100 hover:border-pink-200 rounded-xl px-3 py-2 transition-all"
+            onclick="toggleRomanticFilter()">
+            <div id="filterRomanticToggle"
+              class="relative w-10 h-5 rounded-full transition-colors duration-200 bg-gray-300 shrink-0">
+              <span id="filterRomanticThumb"
+                class="absolute top-0.5 right-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200"></span>
+            </div>
+            <span id="filterRomanticText" class="text-sm font-semibold text-gray-500">❤️ פתוח/ה לרומנטיקה בלבד</span>
+          </label>
+        </div>
+
+      </div>
     </div>
 
     <div id="loadingDiscover" class="text-center py-16 text-purple-400">
@@ -1184,6 +1211,29 @@
     }
   }
 
+  let _romanticFilterOn = false;
+
+  function toggleRomanticFilter() {
+    _romanticFilterOn = !_romanticFilterOn;
+    const toggle = document.getElementById('filterRomanticToggle');
+    const thumb  = document.getElementById('filterRomanticThumb');
+    const text   = document.getElementById('filterRomanticText');
+    if (_romanticFilterOn) {
+      toggle.style.background = '#ec4899';
+      thumb.style.right = 'auto';
+      thumb.style.left  = '2px';
+      text.className = 'text-sm font-semibold text-pink-600';
+    } else {
+      toggle.style.background = '';
+      toggle.classList.add('bg-gray-300');
+      toggle.style.background = '#d1d5db';
+      thumb.style.left  = 'auto';
+      thumb.style.right = '2px';
+      text.className = 'text-sm font-semibold text-gray-500';
+    }
+    renderFeedGrid();
+  }
+
   function applyDiscoverFilters() { renderFeedGrid(); }
 
   function renderFeedGrid() {
@@ -1192,7 +1242,7 @@
 
     const ageMin   = parseInt(document.getElementById('filterAgeMin')?.value) || null;
     const ageMax   = parseInt(document.getElementById('filterAgeMax')?.value) || null;
-    const romantic = document.getElementById('filterRomantic')?.checked || false;
+    const romantic = _romanticFilterOn;
     const hobbyQ   = (document.getElementById('filterHobby')?.value || '').trim().toLowerCase();
 
     let filtered = allUsers;
