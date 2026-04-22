@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1/dist/driver.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/driver.js@1/dist/driver.js.iife.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -19,6 +21,7 @@
   <script src="auth.js"></script>
   <script src="firebase-logic.js"></script>
   <script src="ui-render.js"></script>
+  <script src="tourSteps.js"></script>
   <style>
     body { font-family: 'Heebo', sans-serif; }
     .tab-btn.active {
@@ -161,6 +164,12 @@
 
     <!-- Left side (flex-end in RTL): About button + bell + user name -->
     <div class="flex items-center gap-2">
+      <button onclick="startTour()"
+        id="tourHelpBtn"
+        title="Take a tour"
+        class="text-xs font-bold text-gray-400 hover:text-purple-700 border border-gray-200 hover:border-purple-300 w-8 h-8 rounded-lg transition flex items-center justify-center">
+        ?
+      </button>
       <button onclick="openAboutModal()"
         class="text-xs font-semibold text-gray-400 hover:text-purple-700 border border-gray-200 hover:border-purple-300 px-2.5 py-1 rounded-lg transition"
         style="letter-spacing:0.02em;">
@@ -2882,5 +2891,31 @@
     </div>
   </div>
 </div>
+
+<script>
+  // ─── Product Tour ────────────────────────────────────────────────────────────
+  function startTour() {
+    const driverFn = window.driver.js.driver;
+    const driverObj = driverFn({
+      showProgress: true,
+      steps: TOUR_STEPS,
+      nextBtnText: 'Next →',
+      prevBtnText: '← Back',
+      doneBtnText: 'Done ✓',
+      popoverClass: 'hobby-tour-popover',
+      onDestroyed: function() {
+        localStorage.setItem('hobbyMatchTourDone', '1');
+      }
+    });
+    driverObj.drive();
+  }
+
+  // Auto-start only on first visit
+  window.addEventListener('load', function() {
+    if (!localStorage.getItem('hobbyMatchTourDone')) {
+      setTimeout(startTour, 1500);
+    }
+  });
+</script>
 </body>
 </html>
