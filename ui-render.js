@@ -1,4 +1,4 @@
-// ─── Profile Card ─────────────────────────────────────────────────────────────
+﻿// ─── Profile Card ─────────────────────────────────────────────────────────────
 
 const HEART_FILLED = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/></svg>`;
 const HEART_OUTLINE = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>`;
@@ -231,7 +231,7 @@ function showProfileModal(user, isLiked, myUser) {
         <!-- Description -->
         ${user.hobbyDescription ? `
         <div>
-          <p class="text-xs font-bold text-gray-400 uppercase mb-1">על עצמי</p>
+          <p class="text-xs font-bold text-gray-400 uppercase mb-1">תיאור התחביב</p>
           <p class="text-gray-600 text-sm leading-relaxed">${user.hobbyDescription}</p>
         </div>` : ''}
 
@@ -239,17 +239,89 @@ function showProfileModal(user, isLiked, myUser) {
         ${romanticBadge ? `<div>${romanticBadge}</div>` : ''}
 
         <!-- Like button -->
-        <button
+        ${myUser ? `<button
           id="modalLikeBtn"
           class="w-full py-3 rounded-xl font-bold text-sm transition ${likedClass}"
           onclick="handleModalLike('${user.email}', '${user.fullName}', this)"
           data-liked="${isLiked}"
-        >${likedText}</button>
+        >${likedText}</button>` : ''}
+
+        <!-- Report button -->
+        ${myUser && myUser.email !== user.email ? `
+        <button onclick="showReportModal('${user.email}', '${user.fullName.replace(/'/g,"\\'")}', '${(myUser.email||'').replace(/'/g,"\\'")}', '${(myUser.fullName||'').replace(/'/g,"\\'")}' )"
+          class="w-full py-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-100 transition">
+          🚩 דווח על משתמש
+        </button>` : ''}
       </div>
     </div>`;
 
   modal.addEventListener('click', () => modal.remove());
   document.body.appendChild(modal);
+}
+
+// ─── Report Modal ─────────────────────────────────────────────────────────────
+
+function showReportModal(reportedEmail, reportedName, reporterEmail, reporterName) {
+  const existing = document.getElementById('reportModal');
+  if (existing) existing.remove();
+
+  const reasons = [
+    'תוכן לא הולם',
+    'הטרדה או בריונות',
+    'פרופיל מזויף',
+    'ספאם',
+    'אחר',
+  ];
+
+  const modal = document.createElement('div');
+  modal.id = 'reportModal';
+  modal.className = 'fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4';
+  modal.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-5" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-black text-gray-800 text-base">🚩 דיווח על ${reportedName}</h3>
+        <button onclick="document.getElementById('reportModal').remove()" class="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+      </div>
+      <p class="text-xs text-gray-500 mb-3">בחר סיבת הדיווח:</p>
+      <div class="flex flex-col gap-2 mb-4" id="reportReasons">
+        ${reasons.map((r, i) => `
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="reportReason" value="${r}" class="accent-red-500" ${i === 0 ? 'checked' : ''}/>
+            <span class="text-sm text-gray-700">${r}</span>
+          </label>`).join('')}
+      </div>
+      <p id="reportError" class="hidden text-xs text-red-500 mb-2"></p>
+      <button id="reportSubmitBtn"
+        onclick="submitReportFromModal('${reportedEmail}', '${reporterEmail}', '${reporterName}', this)"
+        class="w-full py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold text-sm rounded-xl transition">
+        שלח דיווח
+      </button>
+    </div>`;
+  modal.addEventListener('click', () => modal.remove());
+  document.body.appendChild(modal);
+}
+
+async function submitReportFromModal(reportedEmail, reporterEmail, reporterName, btn) {
+  const selected = document.querySelector('input[name="reportReason"]:checked');
+  const errEl    = document.getElementById('reportError');
+  if (!selected) {
+    errEl.textContent = 'אנא בחר סיבה';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'שולח...';
+  try {
+    await submitReport(reportedEmail, reporterEmail, reporterName, selected.value);
+    document.getElementById('reportModal').remove();
+    document.getElementById('profileModal')?.remove();
+    if (typeof showToast === 'function') showToast('הדיווח נשלח. תודה! 🙏', 'bg-orange-500');
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'שלח דיווח';
+    errEl.textContent = 'שגיאה בשליחה. נסה שוב.';
+    errEl.classList.remove('hidden');
+  }
 }
 
 // ─── Match Card (My Matches tab) ──────────────────────────────────────────────
@@ -261,7 +333,7 @@ function formatWhatsApp(phone) {
   return '972' + digits;
 }
 
-function renderMatchCard(user) {
+function renderMatchCard(user, myUser) {
   // Show personal profile photo; fall back to hobby image; then placeholder
   const photoSrc = user.profilePhotoURL || user.hobbyImageUrl || '';
   const imgHtml = photoSrc
@@ -280,12 +352,17 @@ function renderMatchCard(user) {
 
   const safeEmail = (user.email || '').replace(/'/g, "\\'");
   const safeName  = (user.fullName || '').replace(/'/g, "\\'");
+  const userJson   = JSON.stringify(user).replace(/"/g, '&quot;');
+  const myUserJson = JSON.stringify(myUser || null).replace(/"/g, '&quot;');
   return `
     <div class="bg-white rounded-2xl shadow-md p-4 flex items-center gap-4">
-      ${imgHtml}
-      <div class="flex-1 min-w-0">
-        <p class="font-black text-purple-900">${user.fullName}</p>
-        <p class="text-sm text-gray-500">📍 ${user.city} · 🎯 ${user.hobby}</p>
+      <div class="flex items-center gap-4 flex-1 min-w-0 cursor-pointer"
+           onclick="showProfileModal(${userJson}, false, ${myUserJson})">
+        ${imgHtml}
+        <div class="min-w-0">
+          <p class="font-black text-purple-900">${user.fullName}</p>
+          <p class="text-sm text-gray-500">📍 ${user.city} · 🎯 ${user.hobby}</p>
+        </div>
       </div>
       <div class="flex items-center gap-2 shrink-0">
         <button onclick="openChat('${safeEmail}', '${safeName}')"
@@ -349,3 +426,5 @@ function renderEmpty(msg) {
     <p class="text-lg font-semibold">${msg}</p>
   </div>`;
 }
+
+

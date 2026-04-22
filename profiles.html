@@ -1091,7 +1091,7 @@
         listEl.innerHTML = renderEmpty('אין עדיין התאמות. המשך ללייק!');
         return;
       }
-      listEl.innerHTML = matches.map(u => renderMatchCard(u)).join('');
+      listEl.innerHTML = matches.map(u => renderMatchCard(u, me)).join('');
       initMatchChatListeners(matches);
     } catch (err) {
       loadEl.innerHTML = '<p class="text-red-400 font-semibold">שגיאה בטעינת ההתאמות.</p>';
@@ -2297,7 +2297,8 @@
   // ════════════════════════════════════════════════════════════════════════
 
   let _fcmMessaging     = null;
-  let _seenMatchEmails  = new Set(JSON.parse(localStorage.getItem('kn_seen_matches') || '[]'));
+  const _seenKey        = `kn_seen_matches_${me.email}`;
+  let _seenMatchEmails  = new Set(JSON.parse(localStorage.getItem(_seenKey) || '[]'));
   let _currentMatches   = [];
   let _notifPanelOpen   = false;
   let _matchUnsub       = null;
@@ -2409,8 +2410,12 @@
       }
       _currentMatches = matches;
       initMatchChatListeners(matches);
+      if (_notifPanelOpen) {
+        matches.forEach(p => _seenMatchEmails.add(p.email));
+        localStorage.setItem(_seenKey, JSON.stringify([..._seenMatchEmails]));
+        _renderNotifPanel();
+      }
       _updateBellBadge();
-      if (_notifPanelOpen) _renderNotifPanel();
     } catch (e) { console.warn('refreshMatches error:', e); }
   }
 
@@ -2451,7 +2456,7 @@
     _renderNotifPanel();
     // סמן הכל כנראה
     _currentMatches.forEach(p => _seenMatchEmails.add(p.email));
-    localStorage.setItem('kn_seen_matches', JSON.stringify([..._seenMatchEmails]));
+    localStorage.setItem(_seenKey, JSON.stringify([..._seenMatchEmails]));
     _updateBellBadge();
   }
 

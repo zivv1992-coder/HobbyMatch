@@ -146,6 +146,19 @@ async function uploadHobbyImageIndexed(file, email, index) {
   return snapshot.ref.getDownloadURL();
 }
 
+// ─── Reports ──────────────────────────────────────────────────────────────────
+
+async function submitReport(reportedEmail, reporterEmail, reporterName, reason) {
+  await db.collection('reports').add({
+    reportedEmail,
+    reporterEmail,
+    reporterName,
+    reason,
+    status: 'pending',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
 // ─── Distance ─────────────────────────────────────────────────────────────────
 
 function distanceKm(lat1, lng1, lat2, lng2) {

@@ -212,6 +212,15 @@
       <div id="feedbackContainer"></div>
     </div>
 
+    <!-- ── Row 7: Reports ─────────────────────────────────────────────────── -->
+    <div class="bg-white rounded-2xl shadow-sm p-6 fade-up" style="animation-delay:0.3s">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="font-black text-red-700 text-lg">🚩 דיווחים על משתמשים</h2>
+        <span id="reportsCount" class="text-sm text-gray-400 font-semibold"></span>
+      </div>
+      <div id="reportsContainer"></div>
+    </div>
+
   </div>
 </main>
 
@@ -234,22 +243,25 @@
   let allLikesData    = [];
   let allEventsData   = [];
   let allFeedbackData = [];
+  let allReportsData  = [];
   let usersWithMatch  = new Set();   // emails that have ≥1 match
 
   // ── Init ─────────────────────────────────────────────────────────────────────
   async function initDashboard() {
     try {
-      const [usersSnap, likesSnap, eventsSnap, feedbackSnap] = await Promise.all([
+      const [usersSnap, likesSnap, eventsSnap, feedbackSnap, reportsSnap] = await Promise.all([
         db.collection('users').get(),
         db.collection('likes').get(),
         db.collection('events').get().catch(() => ({ docs: [] })),
-        db.collection('feedback').orderBy('createdAt', 'desc').get().catch(() => ({ docs: [] }))
+        db.collection('feedback').orderBy('createdAt', 'desc').get().catch(() => ({ docs: [] })),
+        db.collection('reports').orderBy('createdAt', 'desc').get().catch(() => ({ docs: [] }))
       ]);
 
       allUsersData    = usersSnap.docs.map(d => ({ _docId: d.id, ...d.data() }));
       allLikesData    = likesSnap.docs.map(d => ({ _docId: d.id, ...d.data() }));
       allEventsData   = eventsSnap.docs.map(d => ({ _docId: d.id, ...d.data() }));
       allFeedbackData = feedbackSnap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+      allReportsData  = reportsSnap.docs.map(d => ({ _docId: d.id, ...d.data() }));
 
       // ── Compute matches ───────────────────────────────────────────────────
       const likeSet = new Set(allLikesData.map(l => l._docId));
@@ -286,6 +298,7 @@
       renderUsersTable(allUsersData);
       renderEventsList(allEventsData);
       renderFeedbackList(allFeedbackData);
+      renderReportsList(allReportsData);
 
       // ── Show dashboard ────────────────────────────────────────────────────
       document.getElementById('loadingState').classList.add('hidden');
@@ -945,6 +958,87 @@
       showAdminToast('שגיאה במחיקה', 'bg-red-600');
       console.error(err);
       btn.disabled = false; btn.textContent = 'מחק';
+    }
+  }
+
+  // ── Reports List ──────────────────────────────────────────────────────────
+  function renderReportsList(items) {
+    const container = document.getElementById('reportsContainer');
+    const countEl   = document.getElementById('reportsCount');
+    const pending   = items.filter(r => r.status === 'pending');
+    countEl.textContent = pending.length > 0 ? `${pending.length} ממתינים לטיפול` : (items.length > 0 ? 'הכל טופל' : '');
+    if (pending.length > 0) countEl.className = 'text-sm text-red-500 font-bold';
+
+    if (items.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-10 text-gray-400">
+          <div class="text-4xl mb-2">🚩</div>
+          <p class="font-semibold">אין דיווחים</p>
+          <p class="text-sm mt-1">דיווחים מהמשתמשים יופיעו כאן</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="space-y-3">
+        ${items.map(rp => {
+          const ts = rp.createdAt ? (rp.createdAt.toDate ? rp.createdAt.toDate() : new Date(rp.createdAt)) : null;
+          const timeStr = ts ? ts.toLocaleString('he-IL', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+          const isPending = rp.status === 'pending';
+          return `
+            <div class="rounded-2xl p-4 border ${isPending ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'}" id="report-${rp._docId}">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex-1 min-w-0">
+                  <div class="flex flex-wrap items-center gap-2 mb-2">
+                    ${isPending ? `<span class="text-xs font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-lg">⚠ ממתין</span>` : `<span class="text-xs font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-lg">✓ טופל</span>`}
+                    <span class="text-xs font-bold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-lg">${escapeHtml(rp.reason || '—')}</span>
+                  </div>
+                  <p class="text-sm text-gray-700"><span class="font-bold">מדווח:</span> ${escapeHtml(rp.reportedEmail || '—')}</p>
+                  <p class="text-sm text-gray-500 mt-0.5"><span class="font-bold">מדווח ע"י:</span> ${escapeHtml(rp.reporterName || rp.reporterEmail || '—')}</p>
+                  <p class="text-xs text-gray-400 mt-1">${timeStr}</p>
+                </div>
+                <div class="flex flex-col gap-1.5 shrink-0">
+                  ${isPending ? `<button onclick="markReportHandled('${rp._docId}', this)"
+                    class="text-xs font-bold text-green-700 border border-green-200 bg-green-50 px-2.5 py-1.5 rounded-lg hover:bg-green-100 transition whitespace-nowrap">
+                    ✓ סמן כטופל
+                  </button>` : ''}
+                  <button onclick="deleteReport('${rp._docId}', this)"
+                    class="text-xs font-bold text-red-600 border border-red-200 bg-red-50 px-2.5 py-1.5 rounded-lg hover:bg-red-100 transition whitespace-nowrap">
+                    🗑 מחק
+                  </button>
+                </div>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>`;
+  }
+
+  async function markReportHandled(docId, btn) {
+    btn.disabled = true; btn.textContent = '...';
+    try {
+      await db.collection('reports').doc(docId).update({ status: 'handled' });
+      const rp = allReportsData.find(r => r._docId === docId);
+      if (rp) rp.status = 'handled';
+      renderReportsList(allReportsData);
+      showAdminToast('✓ הדיווח סומן כטופל');
+    } catch (err) {
+      showAdminToast('שגיאה', 'bg-red-600');
+      btn.disabled = false; btn.textContent = '✓ סמן כטופל';
+    }
+  }
+
+  async function deleteReport(docId, btn) {
+    if (!confirm('מחיקת הדיווח?')) return;
+    btn.disabled = true; btn.textContent = '...';
+    try {
+      await db.collection('reports').doc(docId).delete();
+      allReportsData = allReportsData.filter(r => r._docId !== docId);
+      document.getElementById(`report-${docId}`)?.remove();
+      renderReportsList(allReportsData);
+      showAdminToast('✓ הדיווח נמחק');
+    } catch (err) {
+      showAdminToast('שגיאה במחיקה', 'bg-red-600');
+      btn.disabled = false; btn.textContent = '🗑 מחק';
     }
   }
 
