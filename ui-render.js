@@ -246,12 +246,6 @@ function showProfileModal(user, isLiked, myUser) {
           data-liked="${isLiked}"
         >${likedText}</button>` : ''}
 
-        <!-- Report button -->
-        ${myUser && myUser.email !== user.email ? `
-        <button onclick="showReportModal('${user.email}', '${user.fullName.replace(/'/g,"\\'")}', '${(myUser.email||'').replace(/'/g,"\\'")}', '${(myUser.fullName||'').replace(/'/g,"\\'")}' )"
-          class="w-full py-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-100 transition">
-          🚩 דווח על משתמש
-        </button>` : ''}
       </div>
     </div>`;
 
