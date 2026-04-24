@@ -64,7 +64,8 @@ function clearSession() {
 
 function requireSession() {
   if (!getSession()) {
-    window.location.href = 'index.html';
+    const returnTo = encodeURIComponent(window.location.href);
+    window.location.href = 'index.html?returnTo=' + returnTo;
   }
 }
 

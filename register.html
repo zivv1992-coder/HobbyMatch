@@ -341,7 +341,8 @@
       const existing = await getUserByEmail(email);
       if (existing) {
         saveSession(existing);
-        window.location.href = 'profiles.html';
+        const _rt = new URLSearchParams(window.location.search).get('returnTo');
+        window.location.href = _rt ? decodeURIComponent(_rt) : 'profiles.html';
       } else {
         // New user — skip OTP, pre-fill only name from Google (no photo)
         verifiedEmail = email;
@@ -416,7 +417,8 @@
       try {
         const userData = await getUserByEmail(verifiedEmail);
         saveSession(userData);
-        window.location.href = 'profiles.html';
+        const _rt = new URLSearchParams(window.location.search).get('returnTo');
+        window.location.href = _rt ? decodeURIComponent(_rt) : 'profiles.html';
       } catch (err) {
         showError('step2Error', 'שגיאה בטעינת הפרופיל. נסה שוב.');
         console.error(err);
@@ -541,7 +543,8 @@
 
       await saveProfileToFirestore(user);
       saveSession(user);
-      window.location.href = 'profiles.html?new=1';
+      const _rt = new URLSearchParams(window.location.search).get('returnTo');
+      window.location.href = _rt ? decodeURIComponent(_rt) : 'profiles.html?new=1';
     } catch (err) {
       showError('step3Error', 'שגיאה בשמירת הפרופיל. נסה שוב.');
       console.error(err);

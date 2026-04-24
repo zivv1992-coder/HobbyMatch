@@ -18,3 +18,9 @@ New Text Document (2).txt
 # OS files
 .DS_Store
 Thumbs.db
+
+.vercel
+
+# Claude Code memory & graph output
+.claude/
+graphify-out/

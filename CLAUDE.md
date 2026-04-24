@@ -15,7 +15,7 @@
 hobby-match/
 ├── index.html          ← Landing page
 ├── register.html       ← Registration + OTP flow
-├── profiles.html       ← Discovery feed with radius filter
+├── profiles.html       ← Main app: discover feed, matches, events, chat (3200+ lines — all logic inline)
 ├── config.js           ← Firebase config, EmailJS config, cities array
 ├── auth.js             ← OTP logic + session management
 ├── firebase-logic.js   ← CRUD: profiles, likes, image uploads
@@ -66,6 +66,34 @@ Document ID format: `senderEmail_receiverEmail` (use sanitized emails)
 {
   from: string,
   to: string,
+  createdAt: timestamp
+}
+```
+
+### `events/{eventId}`
+```
+{
+  title: string,
+  description: string,
+  dateTime: string,
+  location: string,
+  hobbies: string[],
+  organizerName: string,
+  organizerPhone: string,
+  organizerType: 'self' | 'other',
+  actionLinks: string[],
+  attendees: string[],      ← array of sanitized emails
+  createdBy: string,
+  createdAt: timestamp
+}
+```
+
+### `chats/{chatId}/messages/{messageId}`
+Chat ID format: sorted emails joined with `_` (canonical, both directions same ID)
+```
+{
+  sender: string,
+  text: string,
   createdAt: timestamp
 }
 ```
@@ -222,10 +250,16 @@ Load EmailJS via CDN in `<head>` before any custom JS:
 **Static Web App (Server-Agnostic)** — The project is designed as a Static Web App where all dynamic logic is handled client-side via the Firebase SDK. The codebase must remain compatible with any static hosting provider (GitHub Pages, Vercel, Netlify) or traditional cPanel hosting. Avoid any environment-specific hardcoding to ensure the site can be deployed seamlessly to any standard web server.
 
 ---
-- [ ] Stage 1: Firebase Auth + OTP via EmailJS
-- [ ] Stage 2: Profile creation + image upload + city distance
-- [ ] Stage 3: Discovery feed + real-time radius filter
-- [ ] Stage 4: Reciprocal matching + My Matches tab + email notifications
+- [x] Stage 1: Firebase Auth + OTP via EmailJS
+- [x] Stage 2: Profile creation + image upload + city distance
+- [x] Stage 3: Discovery feed + radius/age/hobby/romantic filters + lazy loading
+- [x] Stage 4: Reciprocal matching + My Matches tab + email notifications
+- [x] Stage 5: Events system — create, join/leave, smart paste parser, post-event modal, repeat, Google Calendar link
+- [x] Stage 6: In-app Chat — real-time messages between matched users
+- [x] Stage 7: Push Notifications (FCM) — bell badge, notification panel, new-match listener
+- [x] Stage 8: Discovery Section — hobby & event suggestions based on user profile
+- [x] Stage 9: Edit Profile Drawer — gallery, profile photo, romantic toggle
+- [x] Stage 10: Product Tour (driver.js), Report system, Feedback modal, Hamburger menu
 
 ---
 
@@ -240,3 +274,13 @@ Load EmailJS via CDN in `<head>` before any custom JS:
 cd /path/to/hobby-match
 claude
 ```
+
+## graphify
+
+This project has a graphify knowledge graph at graphify-out/.
+
+Rules:
+- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
+- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
+- For cross-module "how does X relate to Y" questions, prefer `graphify query "<question>"`, `graphify path "<A>" "<B>"`, or `graphify explain "<concept>"` over grep — these traverse the graph's EXTRACTED + INFERRED edges instead of scanning files
+- After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)

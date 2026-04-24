@@ -328,6 +328,10 @@ function formatWhatsApp(phone) {
 }
 
 function renderMatchCard(user, myUser) {
+  const dist = (myUser && myUser.latitude && user.latitude)
+    ? Math.round(distanceKm(myUser.latitude, myUser.longitude, user.latitude, user.longitude))
+    : null;
+
   // Show personal profile photo; fall back to hobby image; then placeholder
   const photoSrc = user.profilePhotoURL || user.hobbyImageUrl || '';
   const imgHtml = photoSrc
@@ -355,7 +359,7 @@ function renderMatchCard(user, myUser) {
         ${imgHtml}
         <div class="min-w-0">
           <p class="font-black text-purple-900">${user.fullName}</p>
-          <p class="text-sm text-gray-500">📍 ${user.city} · 🎯 ${user.hobby}</p>
+          <p class="text-sm text-gray-500">📍 ${user.city}${dist !== null ? ` · ${dist} ק"מ` : ''} · 🎯 ${user.hobby}</p>
         </div>
       </div>
       <div class="flex items-center gap-2 shrink-0">
