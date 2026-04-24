@@ -26,10 +26,12 @@ let eventsLoaded  = false;
 let eventFilter   = 'all';
 
 // ── Edit Profile drawer ───────────────────────────────────────────────────────
-let ed_isRomantic       = false;
-let ed_savedImages      = [];   // existing URLs from Firestore
-let ed_newFiles         = [];   // File objects waiting to be uploaded
-let ed_profilePhotoFile = null; // new profile photo file
+let ed_isRomantic            = false;
+let ed_savedImages           = [];   // existing URLs from Firestore
+let ed_newFiles              = [];   // File objects waiting to be uploaded
+let ed_profilePhotoFile      = null; // new profile photo file
+let ed_selectedSocialStyle   = new Set();
+let ed_selectedGeneralVibe   = new Set();
 
 // ── Attendee circle gradient colours (used by events + detail modal) ─────────
 const CIRCLE_COLORS = [

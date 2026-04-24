@@ -51,6 +51,8 @@ async function saveProfileToFirestore(userObj) {
     profilePhotoURL:  userObj.profilePhotoURL || '',
     latitude:         userObj.latitude,
     longitude:        userObj.longitude,
+    socialStyle:      userObj.socialStyle  || '',
+    generalVibe:      userObj.generalVibe  || [],
     createdAt:        firebase.firestore.FieldValue.serverTimestamp()
   });
 }
@@ -131,7 +133,9 @@ async function updateProfileInFirestore(userObj) {
     hobbyImages:      images,
     hobbyImageUrl:    images[0] || '',   // keep for backward compat
     latitude:         userObj.latitude,
-    longitude:        userObj.longitude
+    longitude:        userObj.longitude,
+    socialStyle:      userObj.socialStyle  || '',
+    generalVibe:      userObj.generalVibe  || []
   };
   if (userObj.profilePhotoURL !== undefined) {
     updateObj.profilePhotoURL = userObj.profilePhotoURL;

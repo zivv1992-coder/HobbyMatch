@@ -228,6 +228,27 @@
         <img id="imagePreview" class="hidden rounded-xl mt-2 w-full object-cover max-h-48"/>
       </div>
 
+      <!-- Social Style -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">
+          סגנון פגישה
+          <span class="text-xs font-normal text-gray-400"> — איך אתה/את אוהב/ת להיפגש?</span>
+        </label>
+        <div id="socialStyleTagsContainer" class="flex flex-wrap gap-2 mb-2"></div>
+        <input id="f_social_style_custom" type="text"
+          placeholder='הוסף בעצמך, למשל: "מארח ארוחות שישי"'
+          class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300"/>
+      </div>
+
+      <!-- General Vibe -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">
+          ויב כללי
+          <span class="text-xs font-normal text-gray-400"> — מה מאפיין אותך?</span>
+        </label>
+        <div id="generalVibeTagsContainer" class="flex flex-wrap gap-2"></div>
+      </div>
+
       <div class="flex items-center justify-between bg-purple-50 rounded-xl px-4 py-3">
         <span class="text-sm font-semibold text-purple-900">❤️ פתוח/ה לקשר רומנטי</span>
         <button
@@ -269,6 +290,29 @@
   let verifiedEmail    = '';
   let isRomantic       = false;
   let isReturningUser  = false;
+  let selectedSocialStyleTags = new Set();
+  let selectedGeneralVibeTags = new Set();
+
+  function _renderTagChips(containerId, tags, selectedSet) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    tags.forEach(tag => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = tag;
+      const active = selectedSet.has(tag);
+      btn.className = active
+        ? 'px-3 py-1.5 rounded-full text-xs font-bold border-2 border-purple-600 bg-purple-600 text-white transition'
+        : 'px-3 py-1.5 rounded-full text-xs font-semibold border-2 border-gray-200 bg-white text-gray-600 hover:border-purple-400 hover:text-purple-700 transition';
+      btn.onclick = () => {
+        if (selectedSet.has(tag)) selectedSet.delete(tag); else selectedSet.add(tag);
+        _renderTagChips(containerId, tags, selectedSet);
+      };
+      container.appendChild(btn);
+    });
+  }
+  _renderTagChips('socialStyleTagsContainer', SOCIAL_STYLE_TAGS, selectedSocialStyleTags);
+  _renderTagChips('generalVibeTagsContainer', GENERAL_VIBE_TAGS, selectedGeneralVibeTags);
 
   // Google pre-fill: user came via Google sign-in, new user
   if (_mode === 'google') {
@@ -492,6 +536,11 @@
     const desc  = document.getElementById('f_desc').value.trim();
     const imageFile        = document.getElementById('f_image').files[0] || null;
     const profilePhotoFile = document.getElementById('f_profile_photo').files[0] || null;
+    const customSocialStyle = document.getElementById('f_social_style_custom').value.trim();
+    const socialStyleArr = [...selectedSocialStyleTags];
+    if (customSocialStyle) socialStyleArr.push(customSocialStyle);
+    const socialStyle = socialStyleArr.join(', ');
+    const generalVibe = [...selectedGeneralVibeTags];
 
     if (!name || !phone || !age || !city || !hobby) {
       showError('step3Error', 'אנא מלא את כל שדות החובה (*)');
@@ -534,6 +583,8 @@
         hobby:            hobby,
         hobbyDescription: desc,
         romantic:         isRomantic,
+        socialStyle:      socialStyle,
+        generalVibe:      generalVibe,
         hobbyImageUrl:    hobbyImageUrl,
         profilePhotoURL:  profilePhotoUrl,
         latitude:         cityData ? cityData.lat : null,

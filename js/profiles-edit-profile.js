@@ -43,6 +43,14 @@ function openEditDrawer() {
   // Romantic toggle
   ed_isRomantic = !!user.romantic;
   ed_applyToggle();
+  // Social Style + General Vibe
+  const savedCustom = (user.socialStyle || '').split(',').map(s => s.trim()).filter(Boolean);
+  ed_selectedSocialStyle = new Set(savedCustom.filter(s => SOCIAL_STYLE_TAGS.includes(s)));
+  const customPart = savedCustom.filter(s => !SOCIAL_STYLE_TAGS.includes(s)).join(', ');
+  document.getElementById('ed_social_style_custom').value = customPart;
+  ed_selectedGeneralVibe = new Set((user.generalVibe || []).filter(s => GENERAL_VIBE_TAGS.includes(s)));
+  ed_renderTagChips('ed_socialStyleTags',  SOCIAL_STYLE_TAGS, ed_selectedSocialStyle);
+  ed_renderTagChips('ed_generalVibeTags',  GENERAL_VIBE_TAGS, ed_selectedGeneralVibe);
   // Show
   document.getElementById('ed_error').classList.add('hidden');
   document.getElementById('ed_image').value = '';
@@ -126,6 +134,25 @@ function ed_previewProfilePhoto(input) {
   reader.readAsDataURL(file);
 }
 
+function ed_renderTagChips(containerId, tags, selectedSet) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  tags.forEach(tag => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = tag;
+    const active = selectedSet.has(tag);
+    btn.className = active
+      ? 'px-3 py-1.5 rounded-full text-xs font-bold border-2 border-purple-600 bg-purple-600 text-white transition'
+      : 'px-3 py-1.5 rounded-full text-xs font-semibold border-2 border-gray-200 bg-white text-gray-600 hover:border-purple-400 hover:text-purple-700 transition';
+    btn.onclick = () => {
+      if (selectedSet.has(tag)) selectedSet.delete(tag); else selectedSet.add(tag);
+      ed_renderTagChips(containerId, tags, selectedSet);
+    };
+    container.appendChild(btn);
+  });
+}
+
 function ed_toggleRomantic() {
   ed_isRomantic = !ed_isRomantic;
   ed_applyToggle();
@@ -198,6 +225,10 @@ async function handleSaveProfile() {
     }
 
     const cityData = CITIES.find(c => c.name === city);
+    const customSocialStyle = document.getElementById('ed_social_style_custom').value.trim();
+    const socialStyleArr = [...ed_selectedSocialStyle];
+    if (customSocialStyle) socialStyleArr.push(customSocialStyle);
+
     const updated = {
       ...current,
       fullName:         name,
@@ -207,6 +238,8 @@ async function handleSaveProfile() {
       hobby:            hobby,
       hobbyDescription: desc,
       romantic:         ed_isRomantic,
+      socialStyle:      socialStyleArr.join(', '),
+      generalVibe:      [...ed_selectedGeneralVibe],
       hobbyImages:      hobbyImages,
       hobbyImageUrl:    hobbyImages[0] || '',
       profilePhotoURL:  profilePhotoUrl,
