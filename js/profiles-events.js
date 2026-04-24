@@ -130,15 +130,16 @@ function openEventDetailModal(eventId) {
               const text = encodeURIComponent('בואו לראות פעילות בקונקשן: ' + (ev.title || '') + ' — ' + shareUrl);
               return 'https://wa.me/?text=' + text;
             })()}"
-             target="_blank" rel="noopener noreferrer" title="שתף באמצעות WhatsApp"
-             style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;
-                    border-radius:50%;background:#e8fdf0;color:#25D366;text-decoration:none;
-                    border:1px solid #c3efd6;transition:background 0.15s;"
+             target="_blank" rel="noopener noreferrer" title="שתף עם חברים באמצעות WhatsApp"
+             style="display:inline-flex;align-items:center;gap:6px;font-size:0.78rem;font-weight:700;
+                    padding:6px 14px;border-radius:999px;background:#e8fdf0;color:#128C7E;
+                    border:1px solid #c3efd6;text-decoration:none;white-space:nowrap;transition:background 0.15s;"
              onmouseover="this.style.background='#c3efd6'" onmouseout="this.style.background='#e8fdf0'">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
               <path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.523 5.83L.057 23.57a.5.5 0 0 0 .611.611l5.74-1.466A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.944 9.944 0 0 1-5.073-1.386l-.363-.215-3.761.961.977-3.762-.232-.375A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
             </svg>
+            שתף עם חברים
           </a>
           <button onclick="closeEventDetailModal()"
             style="background:none;border:none;font-size:1.3rem;color:#9ca3af;cursor:pointer;line-height:1;padding:3px 0 0;"
@@ -152,8 +153,23 @@ function openEventDetailModal(eventId) {
         ${timeStr ? `<div style="display:flex;align-items:center;gap:10px;font-size:0.9rem;color:#374151;"><span>⏰</span><span style="font-weight:500;">${timeStr}</span></div>` : ''}
         ${ev.location
           ? (me
-            ? `<div style="display:flex;align-items:center;gap:10px;font-size:0.9rem;color:#374151;"><span>📍</span><span style="font-weight:500;">${ev.location}</span></div>`
-            : `<div style="display:flex;align-items:center;gap:10px;font-size:0.85rem;color:#9ca3af;"><span>📍</span><span>🔒 כנס לצפייה במיקום המדויק</span></div>`)
+            ? `<div style="display:flex;align-items:center;gap:10px;font-size:0.9rem;color:#374151;">
+                 <span>📍</span>
+                 <span style="font-weight:500;flex:1;">${ev.location}</span>
+                 <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}"
+                    target="_blank" rel="noopener noreferrer"
+                    style="display:inline-flex;align-items:center;gap:5px;font-size:0.75rem;font-weight:700;
+                           padding:5px 12px;border-radius:999px;background:#eff6ff;color:#1d4ed8;
+                           border:1px solid #bfdbfe;text-decoration:none;white-space:nowrap;flex-shrink:0;"
+                    onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'">
+                   🗺️ נווט לאירוע
+                 </a>
+               </div>`
+            : `<div style="display:flex;align-items:center;gap:10px;font-size:0.85rem;color:#6b7280;">
+                 <span>📍</span>
+                 <span style="font-weight:500;">${ev.location}</span>
+                 <span style="font-size:0.72rem;color:#9ca3af;background:#f3f4f6;padding:2px 8px;border-radius:999px;white-space:nowrap;">מיקום כללי</span>
+               </div>`)
           : ''}
       </div>
 
@@ -161,7 +177,7 @@ function openEventDetailModal(eventId) {
         ? `${descSectionHtml}
            <div style="padding:16px 24px 22px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;" dir="rtl">
              <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:14px;padding:14px 16px;font-size:0.85rem;color:#7c3aed;font-weight:600;text-align:center;">
-               🔒 פרטי הקשר והמיקום המדויק מוצגים רק לאחר כניסה
+               🔒 פרטי הקשר, ניווט מדויק וכפתור הצטרפות זמינים לאחר כניסה
              </div>
              <a href="index.html?returnTo=${encodeURIComponent(new URL('profiles.html?event=' + ev.id, window.location.href).href)}"
                 style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
