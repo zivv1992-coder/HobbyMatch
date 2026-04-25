@@ -185,12 +185,13 @@ function openEventDetailModal(eventId) {
       ${linksHtml}
       ${eventAtmosphereBlock}
       <div style="font-size:0.93rem;color:#374151;line-height:1.85;">${linkifyText(ev.description || '')}</div>
-      ${interested.length > 0 ? `
-      <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f3f4f6;">
-        <p style="font-size:0.7rem;font-weight:700;color:#9ca3af;margin:0 0 10px;text-transform:uppercase;letter-spacing:0.05em;">משתתפים</p>
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${circlesHtml}</div>
-      </div>` : ''}
     </div>`;
+
+  const attendeesBlockHtml = interested.length > 0 ? `
+    <div style="padding:12px 24px 16px;border-top:1px solid #f3f4f6;flex-shrink:0;" dir="rtl">
+      <p style="font-size:0.7rem;font-weight:700;color:#9ca3af;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em;">משתתפים</p>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${circlesHtml}</div>
+    </div>` : '';
 
   const existing = document.getElementById('eventDetailOverlay');
   if (existing) existing.remove();
@@ -272,9 +273,10 @@ function openEventDetailModal(eventId) {
 
       ${!me
         ? `${descSectionHtml}
+           ${attendeesBlockHtml}
            <div style="padding:16px 24px 22px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;" dir="rtl">
              <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:14px;padding:14px 16px;font-size:0.85rem;color:#7c3aed;font-weight:600;text-align:center;">
-               🔒 פרטי הקשר, ניווט מדויק וכפתור הצטרפות זמינים לאחר כניסה
+               🔒 פרטי הקשר וכפתור הצטרפות זמינים לאחר כניסה
              </div>
              <a href="index.html?returnTo=${encodeURIComponent(new URL('profiles.html?event=' + ev.id, window.location.href).href)}"
                 style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
@@ -288,6 +290,7 @@ function openEventDetailModal(eventId) {
 
         : iAmIn
         ? `${descSectionHtml}
+           ${attendeesBlockHtml}
            <div style="padding:12px 24px;border-top:1px solid #f3f4f6;flex-shrink:0;" dir="rtl">
              <div style="display:inline-flex;align-items:center;gap:6px;background:#f0fdf4;border:1px solid #bbf7d0;
                          border-radius:999px;padding:5px 14px;font-size:0.8rem;font-weight:700;color:#16a34a;">
@@ -296,13 +299,11 @@ function openEventDetailModal(eventId) {
            </div>
            ${contactFooterHtml}`
 
-        : `<div style="padding:16px 24px 4px;" dir="rtl">
-             ${circlesHtml
-               ? `<p style="font-size:0.7rem;font-weight:700;color:#9ca3af;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em;">משתתפים</p>
-                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${circlesHtml}</div>`
-               : `<div style="font-size:0.78rem;color:#9ca3af;">אף אחד עדיין — היה הראשון!</div>`}
-           </div>
-           <div style="padding:16px 24px 22px;flex-shrink:0;" dir="rtl">
+        : `${descSectionHtml}
+           ${attendeesBlockHtml
+             ? attendeesBlockHtml
+             : `<div style="padding:8px 24px 12px;flex-shrink:0;" dir="rtl"><span style="font-size:0.78rem;color:#9ca3af;">אף אחד עדיין — היה הראשון!</span></div>`}
+           <div style="padding:12px 24px 20px;flex-shrink:0;" dir="rtl">
              <button id="evInterestCta" onclick="handleModalInterest('${ev.id}', this)"
                style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
                       background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;
@@ -315,9 +316,9 @@ function openEventDetailModal(eventId) {
                <span style="font-size:1.35rem;">🙋</span> אני מתעניין באירוע
              </button>
            </div>
-           <div id="evDetailsReveal" style="display:none;flex-direction:column;flex:1;min-height:0;opacity:0;transform:translateY(-6px);transition:opacity 0.38s ease,transform 0.38s ease;">
-             <div style="border-top:1.5px solid #ede9fe;display:flex;flex-direction:column;flex:1;min-height:0;">
-               ${descSectionHtml}${contactFooterHtml}
+           <div id="evDetailsReveal" style="display:none;flex-direction:column;flex-shrink:0;opacity:0;transform:translateY(-6px);transition:opacity 0.38s ease,transform 0.38s ease;">
+             <div style="border-top:1.5px solid #ede9fe;">
+               ${contactFooterHtml}
              </div>
            </div>`
       }
