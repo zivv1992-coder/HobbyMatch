@@ -52,7 +52,9 @@ document.getElementById('feedbackText').addEventListener('input', function () {
 
 // ── Product tour: auto-start on first visit ───────────────────────────────────
 window.addEventListener('load', function () {
-  if (!localStorage.getItem('hobbyMatchTourDone_' + (me ? me.email : ''))) {
+  const _tourKey = 'hobbyMatchTourDone_' + (me ? me.email : 'guest');
+  if (!localStorage.getItem(_tourKey)) {
+    localStorage.setItem(_tourKey, '1'); // mark before starting — prevents re-show on crash/close
     setTimeout(startTour, 1500);
   }
 });

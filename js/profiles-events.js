@@ -23,42 +23,127 @@ function evRenderActivityChips() {
 
     const catBtn = document.createElement('button');
     catBtn.type = 'button';
+    catBtn.dataset.catLabel = cat.label;
     const badge = selectedCount > 0
-      ? ` <span style="background:#7c3aed;color:#fff;border-radius:999px;padding:1px 6px;font-size:0.65rem;vertical-align:middle;">${selectedCount}</span>`
+      ? ` <span style="background:#7c3aed;color:#fff;border-radius:999px;padding:1px 7px;font-size:0.65rem;vertical-align:middle;margin-right:2px;">${selectedCount}</span>`
       : '';
-    catBtn.innerHTML = `${cat.label}${badge} <span style="font-size:0.65rem;opacity:0.55;">${isExpanded ? '▴' : '▾'}</span>`;
+    catBtn.innerHTML = `${cat.label}${badge}`;
     catBtn.className = selectedCount > 0
       ? 'px-3 py-1.5 rounded-full text-xs font-bold border-2 border-purple-500 bg-purple-50 text-purple-800 transition cursor-pointer'
       : isExpanded
-        ? 'px-3 py-1.5 rounded-full text-xs font-semibold border-2 border-gray-400 bg-gray-50 text-gray-700 transition cursor-pointer'
+        ? 'px-3 py-1.5 rounded-full text-xs font-bold border-2 border-purple-400 bg-purple-50 text-purple-700 shadow-sm transition cursor-pointer'
         : TAG_CHIP_INACTIVE_CLASS + ' cursor-pointer';
-    catBtn.onclick = () => {
-      if (ev_expandedCategories.has(cat.label)) ev_expandedCategories.delete(cat.label);
-      else ev_expandedCategories.add(cat.label);
-      evRenderActivityChips();
+
+    catBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (ev_expandedCategories.has(cat.label)) {
+        ev_expandedCategories.delete(cat.label);
+        _closeActivityPopover();
+        evRenderActivityChips();
+      } else {
+        ev_expandedCategories.clear();
+        ev_expandedCategories.add(cat.label);
+        evRenderActivityChips();
+        const newBtn = document.querySelector(`[data-cat-label="${cat.label}"]`);
+        if (newBtn) _openActivityPopover(cat, newBtn);
+      }
     };
     container.appendChild(catBtn);
-
-    if (isExpanded) {
-      const subRow = document.createElement('div');
-      subRow.style.cssText = 'width:100%;display:flex;flex-wrap:wrap;gap:6px;padding:6px 10px 6px 0;border-right:3px solid #ddd6fe;margin-right:4px;margin-top:2px;margin-bottom:4px;';
-      cat.tags.forEach((tag, idx) => {
-        const tagBtn = document.createElement('button');
-        tagBtn.type = 'button';
-        tagBtn.textContent = tag;
-        const active = ev_selectedActivities.has(tag);
-        tagBtn.className = active ? getTagChipActiveClassByIndex(idx) : TAG_CHIP_INACTIVE_CLASS;
-        tagBtn.onclick = () => {
-          if (ev_selectedActivities.has(tag)) ev_selectedActivities.delete(tag);
-          else ev_selectedActivities.add(tag);
-          evRenderActivityChips();
-          evRefreshAtmosphereChips();
-        };
-        subRow.appendChild(tagBtn);
-      });
-      container.appendChild(subRow);
-    }
   });
+}
+
+function _openActivityPopover(cat, anchorBtn) {
+  _closeActivityPopover();
+
+  const popover = document.createElement('div');
+  popover.id = 'evActivityPopover';
+  popover.style.cssText = `
+    position:fixed;z-index:9999;
+    background:#fff;
+    border:1.5px solid #c4b5fd;
+    border-radius:18px;
+    padding:14px 14px 12px;
+    box-shadow:0 12px 40px rgba(109,40,217,0.22),0 2px 8px rgba(0,0,0,0.08);
+    display:flex;flex-wrap:wrap;gap:8px;
+    max-width:300px;min-width:200px;
+    direction:rtl;
+    animation:popoverIn 0.18s cubic-bezier(.34,1.56,.64,1) both;
+  `;
+
+  if (!document.getElementById('_popoverKeyframes')) {
+    const s = document.createElement('style');
+    s.id = '_popoverKeyframes';
+    s.textContent = `@keyframes popoverIn{from{opacity:0;transform:scale(0.88) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}`;
+    document.head.appendChild(s);
+  }
+
+  // header label
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'width:100%;font-size:0.7rem;font-weight:700;color:#7c3aed;margin-bottom:4px;padding-bottom:6px;border-bottom:1px solid #ede9fe;';
+  hdr.textContent = cat.label;
+  popover.appendChild(hdr);
+
+  cat.tags.forEach((tag, idx) => {
+    const tagBtn = document.createElement('button');
+    tagBtn.type = 'button';
+    tagBtn.textContent = tag;
+    const active = ev_selectedActivities.has(tag);
+    tagBtn.className = active ? getTagChipActiveClassByIndex(idx) : TAG_CHIP_INACTIVE_CLASS;
+    tagBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (ev_selectedActivities.has(tag)) ev_selectedActivities.delete(tag);
+      else ev_selectedActivities.add(tag);
+      evRenderActivityChips();
+      evRefreshAtmosphereChips();
+      const newAnchor = document.querySelector(`[data-cat-label="${cat.label}"]`);
+      if (newAnchor) _openActivityPopover(cat, newAnchor);
+    };
+    popover.appendChild(tagBtn);
+  });
+
+  // tiny stem arrow
+  const stem = document.createElement('div');
+  stem.style.cssText = `
+    position:absolute;bottom:-8px;right:20px;
+    width:14px;height:8px;overflow:hidden;
+  `;
+  stem.innerHTML = `<div style="width:14px;height:14px;background:#fff;border:1.5px solid #c4b5fd;transform:rotate(45deg);margin-top:-8px;border-radius:3px;box-shadow:2px 2px 6px rgba(109,40,217,0.12);"></div>`;
+  popover.appendChild(stem);
+
+  document.body.appendChild(popover);
+
+  // position above the anchor button
+  const rect = anchorBtn.getBoundingClientRect();
+  const pw   = Math.min(300, window.innerWidth - 16);
+  popover.style.width = pw + 'px';
+  const ph = popover.offsetHeight;
+  let top  = rect.top - ph - 12;
+  let left = rect.right - pw;
+
+  // if too high, flip below
+  if (top < 8) { top = rect.bottom + 12; stem.style.bottom = 'auto'; stem.style.top = '-8px'; stem.style.transform = 'rotate(180deg)'; }
+  if (left < 8) left = 8;
+  if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+
+  popover.style.top  = top  + 'px';
+  popover.style.left = left + 'px';
+
+  setTimeout(() => document.addEventListener('click', _closeActivityPopoverHandler), 0);
+}
+
+function _closeActivityPopoverHandler(e) {
+  const p = document.getElementById('evActivityPopover');
+  if (p && !p.contains(e.target)) {
+    ev_expandedCategories.clear();
+    _closeActivityPopover();
+    evRenderActivityChips();
+  }
+}
+
+function _closeActivityPopover() {
+  const p = document.getElementById('evActivityPopover');
+  if (p) p.remove();
+  document.removeEventListener('click', _closeActivityPopoverHandler);
 }
 
 function evRefreshAtmosphereChips() {
@@ -184,7 +269,11 @@ function openEventDetailModal(eventId) {
     <div class="ev-modal-scroll" style="flex:1;overflow-y:auto;padding:20px 24px;scrollbar-width:thin;scrollbar-color:#ddd6fe transparent;" dir="rtl">
       ${linksHtml}
       ${eventAtmosphereBlock}
-      <div style="font-size:0.93rem;color:#374151;line-height:1.85;">${linkifyText(ev.description || '')}</div>
+      ${ev.description ? `
+      <div>
+        <p style="font-size:0.7rem;font-weight:700;color:#9ca3af;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em;">תיאור האירוע</p>
+        <div style="font-size:0.93rem;color:#374151;line-height:1.85;">${linkifyText(ev.description)}</div>
+      </div>` : ''}
     </div>`;
 
   const attendeesBlockHtml = interested.length > 0 ? `
