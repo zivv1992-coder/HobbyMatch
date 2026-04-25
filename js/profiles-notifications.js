@@ -224,6 +224,20 @@ function _renderNotifPanel() {
   body.innerHTML = html;
 }
 
+// ── Delete Test Data (run once from console: deleteTestData()) ────────────────
+window.deleteTestData = async function() {
+  const testEmails = ['test1@example.com','test2@example.com','test3@example.com','test4@example.com'];
+  for (const email of testEmails) {
+    await db.collection('users').doc(sanitizeEmail(email)).delete();
+  }
+  const likesSnap = await db.collection('likes').where('from','in',testEmails).get();
+  const likesSnap2 = await db.collection('likes').where('to','in',testEmails).get();
+  const deletions = [...likesSnap.docs, ...likesSnap2.docs].map(d => d.ref.delete());
+  await Promise.all(deletions);
+  console.log('✅ משתמשי בדיקה נמחקו');
+  showToast('✅ משתמשי בדיקה נמחקו', 'bg-red-600');
+};
+
 // ── Test Data (run in browser console: createTestData()) ─────────────────────
 window.createTestData = async function() {
   const testProfiles = [
