@@ -163,7 +163,7 @@
 
         <!-- Dropdown: right-0 aligns to right edge in RTL -->
         <div id="hamburgerMenu"
-          class="hidden absolute right-0 top-full mt-2 w-44 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 py-1">
+          class="hidden absolute right-0 top-full mt-2 w-44 bg-white rounded-2xl shadow-2xl border-2 border-purple-200 overflow-hidden z-50 py-1">
           <button onclick="openEditDrawer(); closeHamburger()"
             class="w-full text-right px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-purple-50 hover:text-purple-800 transition flex items-center gap-2">
             ✏️ עריכת פרופיל
@@ -188,10 +188,6 @@
         </div>
       </div>
       <span class="text-xl font-black text-purple-900">קונקשן</span>
-    </div>
-
-    <!-- Left side (flex-end in RTL): About button + bell + user name -->
-    <div class="flex items-center gap-2">
       <button onclick="startTour()"
         id="tourHelpBtn"
         title="Take a tour"
@@ -203,6 +199,10 @@
         style="letter-spacing:0.02em;">
         About
       </button>
+    </div>
+
+    <!-- Left side (flex-end in RTL): bell + user name -->
+    <div class="flex items-center gap-2">
       <!-- Bell notification button -->
       <button id="bellBtn" onclick="toggleNotifPanel()" aria-label="התראות"
         class="relative flex items-center justify-center w-9 h-9 border border-gray-200 rounded-xl hover:bg-purple-50 hover:border-purple-300 transition text-base">

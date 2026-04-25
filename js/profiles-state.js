@@ -25,6 +25,9 @@ let allEventsData = [];
 let eventsLoaded  = false;
 let eventFilter   = 'all';
 
+// ── Create Event — expanded category state ────────────────────────────────────
+let ev_expandedCategories    = new Set();
+
 // ── Edit Profile drawer ───────────────────────────────────────────────────────
 let ed_isRomantic            = false;
 let ed_savedImages           = [];   // existing URLs from Firestore

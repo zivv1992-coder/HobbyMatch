@@ -40,16 +40,20 @@ const EVENT_HOBBIES = [
   'אחר 🎯'
 ];
 
-// ─── Activity Tags (predefined chips for event creation) ─────────────────────
-const ACTIVITY_TAGS = [
-  'הליכה וטיולים', 'ריצה', 'רכיבה על אופניים', 'שחייה', 'ספורט כללי',
-  'כדורסל', 'כדורגל', 'טניס', 'כדורעף', 'טיפוס',
-  'יוגה', 'מדיטציה', 'פיטנס', 'אומנות לחימה',
-  'מוזיקה', 'ריקוד', 'קולנוע', 'אמנות', 'צילום',
-  'קריאה', 'בישול', 'אוכל ומסעדות', 'קפה',
-  'טכנולוגיה', 'גיימינג', 'משחקי לוח',
-  'התנדבות', 'אחר'
+// ─── Activity Categories (two-level tree for event creation chips) ────────────
+const ACTIVITY_CATEGORIES = [
+  { label: '⚽ ספורט קבוצתי', tags: ['כדורסל', 'כדורגל', 'כדורעף', 'טניס', 'ספורט כללי'] },
+  { label: '🏃 ספורט אישי',   tags: ['ריצה', 'שחייה', 'פיטנס', 'אומנות לחימה', 'טיפוס', 'רכיבה על אופניים'] },
+  { label: '🧘 בריאות ורוח',  tags: ['יוגה', 'מדיטציה', 'הליכה וטיולים'] },
+  { label: '🎨 אמנות ויצירה', tags: ['מוזיקה', 'ריקוד', 'אמנות', 'צילום', 'קולנוע'] },
+  { label: '🍽️ אוכל ובילוי',  tags: ['בישול', 'אוכל ומסעדות', 'קפה'] },
+  { label: '📚 תרבות וידע',   tags: ['קריאה', 'טכנולוגיה', 'התנדבות'] },
+  { label: '🎮 משחקים',       tags: ['גיימינג', 'משחקי לוח'] },
+  { label: '➕ אחר',           tags: ['אחר'] }
 ];
+
+// ─── Activity Tags flat list (kept for ATMOSPHERE_MAP compatibility) ──────────
+const ACTIVITY_TAGS = ACTIVITY_CATEGORIES.flatMap(c => c.tags);
 
 // ─── Atmosphere chips per activity tag ───────────────────────────────────────
 const ATMOSPHERE_MAP = {
@@ -98,6 +102,61 @@ const GENERAL_VIBE_TAGS = [
   'יש לי חתול', 'ספורטאי/ת', 'גורמה', 'חובב/ת אמנות', 'טכנולוג/ית',
   'מדיטציה ומיינדפולנס', 'ברים ומסעדות', 'נסיעות לחו"ל'
 ];
+
+// ─── Shared multi-select chip styles (index in list = distinct color) ───────
+const TAG_CHIP_INACTIVE_CLASS =
+  'px-3 py-1.5 rounded-full text-xs font-semibold border-2 border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition';
+
+/** Selected chips: soft palette — purple, blue, green, yellow (cycles by index) */
+const TAG_CHIP_ACTIVE_CLASSES = [
+  'px-3 py-1.5 rounded-full text-xs font-bold border-2 border-purple-300 bg-white text-purple-700 shadow-sm transition',
+  'px-3 py-1.5 rounded-full text-xs font-bold border-2 border-blue-300 bg-white text-blue-700 shadow-sm transition',
+  'px-3 py-1.5 rounded-full text-xs font-bold border-2 border-emerald-300 bg-white text-emerald-700 shadow-sm transition',
+  'px-3 py-1.5 rounded-full text-xs font-bold border-2 border-amber-300 bg-white text-amber-800 shadow-sm transition',
+];
+
+function getTagChipActiveClassByIndex(i) {
+  return TAG_CHIP_ACTIVE_CLASSES[i % TAG_CHIP_ACTIVE_CLASSES.length];
+}
+
+function escapeTagDisplayText(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** Read-only badges for cards/modals — same palette as interactive chips */
+function formatColoredTagBadgesHtml(labels) {
+  if (!labels || !labels.length) return '';
+  const list = Array.isArray(labels)
+    ? labels.filter(Boolean)
+    : String(labels).split(',').map(t => t.trim()).filter(Boolean);
+  return list
+    .map((label, i) => {
+      const active = getTagChipActiveClassByIndex(i);
+      const compact = active.replace('px-3 py-1.5', 'px-2.5 py-1');
+      return `<span class="inline-flex items-center ${compact}">${escapeTagDisplayText(label)}</span>`;
+    })
+    .join('<span class="inline-block w-1.5" aria-hidden="true"></span>');
+}
+
+/** Union of atmosphere chip labels for all selected ACTIVITY_TAGS keys */
+function mergeAtmosphereOptionsForActivities(selectedActivities) {
+  const out = [];
+  const seen = new Set();
+  (selectedActivities || []).forEach(act => {
+    const opts = ATMOSPHERE_MAP[act];
+    if (!opts) return;
+    opts.forEach(o => {
+      if (!seen.has(o)) {
+        seen.add(o);
+        out.push(o);
+      }
+    });
+  });
+  return out;
+}
 
 // ─── Israeli Cities ─────────────────────────────────────────────────────────
 const CITIES = [

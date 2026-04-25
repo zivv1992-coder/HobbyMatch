@@ -76,7 +76,11 @@ function _startMatchListener() {
           const fromEmail = change.doc.data().from;
           if (likedEmails.has(fromEmail) && !_seenMatchEmails.has(fromEmail)) {
             const profile = allUsers.find(u => u.email === fromEmail) || await _fetchUser(fromEmail);
-            if (profile) { showMatchPopup(me, profile); }
+            if (profile) {
+              showMatchPopup(me, profile);
+              _seenMatchEmails.add(fromEmail);
+              localStorage.setItem(_seenKey, JSON.stringify([..._seenMatchEmails]));
+            }
           }
         }
       }

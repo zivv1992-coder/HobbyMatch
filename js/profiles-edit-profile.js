@@ -141,10 +141,9 @@ function ed_renderTagChips(containerId, tags, selectedSet) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.textContent = tag;
+    const idx = tags.indexOf(tag);
     const active = selectedSet.has(tag);
-    btn.className = active
-      ? 'px-3 py-1.5 rounded-full text-xs font-bold border-2 border-purple-600 bg-purple-600 text-white transition'
-      : 'px-3 py-1.5 rounded-full text-xs font-semibold border-2 border-gray-200 bg-white text-gray-600 hover:border-purple-400 hover:text-purple-700 transition';
+    btn.className = active ? getTagChipActiveClassByIndex(idx) : TAG_CHIP_INACTIVE_CLASS;
     btn.onclick = () => {
       if (selectedSet.has(tag)) selectedSet.delete(tag); else selectedSet.add(tag);
       ed_renderTagChips(containerId, tags, selectedSet);

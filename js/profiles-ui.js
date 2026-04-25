@@ -149,12 +149,12 @@ function startTour() {
   const driverObj = driverFn({
     showProgress: true,
     steps: TOUR_STEPS,
-    nextBtnText: 'Next →',
-    prevBtnText: '← Back',
-    doneBtnText: 'Done ✓',
+    nextBtnText: '\u2066\u2190 הבא\u2069',
+    prevBtnText: '\u2066קודם \u2192\u2069',
+    doneBtnText: 'סיום',
     popoverClass: 'hobby-tour-popover',
     onDestroyed: function() {
-      localStorage.setItem('hobbyMatchTourDone', '1');
+      localStorage.setItem('hobbyMatchTourDone_' + (me ? me.email : ''), '1');
     }
   });
   driverObj.drive();

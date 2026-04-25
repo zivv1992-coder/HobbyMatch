@@ -52,7 +52,7 @@ document.getElementById('feedbackText').addEventListener('input', function () {
 
 // ── Product tour: auto-start on first visit ───────────────────────────────────
 window.addEventListener('load', function () {
-  if (!localStorage.getItem('hobbyMatchTourDone')) {
+  if (!localStorage.getItem('hobbyMatchTourDone_' + (me ? me.email : ''))) {
     setTimeout(startTour, 1500);
   }
 });

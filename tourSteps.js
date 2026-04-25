@@ -5,8 +5,8 @@ const TOUR_STEPS = [
   {
     element: 'header',
     popover: {
-      title: '👋 Welcome to HobbyMatch!',
-      description: "Let's show you how to find your next hobby partner. This will only take a minute.",
+      title: '👋 ברוכים הבאים לקונקשן!',
+      description: 'בקונקשן אפשר להתחבר עם אנשים חדשים לפי תחביבים, באזור שבו אתם גרים. אפשר ליצור אירועים בנושאים שונים, להזמין אנשים להצטרף, ולמצוא חברים שחולקים איתכם את אותם תחומי עניין. הרעיון הוא להכיר אנשים בלייב, לצאת מהמסך ולהיפגש בחיים האמיתיים.',
       side: 'bottom',
       align: 'start'
     }
@@ -14,8 +14,8 @@ const TOUR_STEPS = [
   {
     element: '#tabDiscover',
     popover: {
-      title: '🗺️ Who\'s Around',
-      description: 'See people nearby who share your interests. Use the distance filters to narrow it down by km.',
+      title: 'מי באזור',
+      description: 'כאן מוצגים אנשים שנמצאים בקרבת מקום מכם, עם תחומי עניין דומים לשלכם. אפשר לסנן לפי מרחק, כדי לראות מי הכי קרוב אליכם ולמקד את החיפוש.',
       side: 'bottom',
       align: 'center'
     }
@@ -23,8 +23,8 @@ const TOUR_STEPS = [
   {
     element: '#tabEvents',
     popover: {
-      title: '🎯 Events',
-      description: 'Join group activities and workshops happening in your area.',
+      title: 'אירועים',
+      description: 'כאן אפשר להצטרף לפעילויות ופגישות קבוצתיות שמתקיימות אצלכם באזור, או ליצור אירוע חדש בנושא שאתם בוחרים, ולשתף אחרים ולהזמין אותם להצטרף.',
       side: 'bottom',
       align: 'center'
     }
@@ -32,8 +32,8 @@ const TOUR_STEPS = [
   {
     element: '#feedGrid',
     popover: {
-      title: '📸 Hobby Cards',
-      description: 'This is your space. Add multiple photos to your hobbies to show your passion!',
+      title: 'הפרופיל שלכם',
+      description: 'באזור הזה מופיע הפרופיל שאחרים רואים. הוסיפו תמונות שמייצגות את התחביבים, כדי שיידעו בקצרה במה אתם אוהבים לעסוק, ויוכלו ליצור איתכם קשר לפי עניינים משותפים.',
       side: 'top',
       align: 'start'
     }

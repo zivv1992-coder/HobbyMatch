@@ -16,20 +16,48 @@ function evRenderActivityChips() {
   const container = document.getElementById('ev_activity_tags');
   if (!container) return;
   container.innerHTML = '';
-  ACTIVITY_TAGS.forEach(tag => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = tag;
-    const idx = ACTIVITY_TAGS.indexOf(tag);
-    const active = ev_selectedActivities.has(tag);
-    btn.className = active ? getTagChipActiveClassByIndex(idx) : TAG_CHIP_INACTIVE_CLASS;
-    btn.onclick = () => {
-      if (ev_selectedActivities.has(tag)) ev_selectedActivities.delete(tag);
-      else ev_selectedActivities.add(tag);
+
+  ACTIVITY_CATEGORIES.forEach(cat => {
+    const selectedCount = cat.tags.filter(t => ev_selectedActivities.has(t)).length;
+    const isExpanded    = ev_expandedCategories.has(cat.label);
+
+    const catBtn = document.createElement('button');
+    catBtn.type = 'button';
+    const badge = selectedCount > 0
+      ? ` <span style="background:#7c3aed;color:#fff;border-radius:999px;padding:1px 6px;font-size:0.65rem;vertical-align:middle;">${selectedCount}</span>`
+      : '';
+    catBtn.innerHTML = `${cat.label}${badge} <span style="font-size:0.65rem;opacity:0.55;">${isExpanded ? '▴' : '▾'}</span>`;
+    catBtn.className = selectedCount > 0
+      ? 'px-3 py-1.5 rounded-full text-xs font-bold border-2 border-purple-500 bg-purple-50 text-purple-800 transition cursor-pointer'
+      : isExpanded
+        ? 'px-3 py-1.5 rounded-full text-xs font-semibold border-2 border-gray-400 bg-gray-50 text-gray-700 transition cursor-pointer'
+        : TAG_CHIP_INACTIVE_CLASS + ' cursor-pointer';
+    catBtn.onclick = () => {
+      if (ev_expandedCategories.has(cat.label)) ev_expandedCategories.delete(cat.label);
+      else ev_expandedCategories.add(cat.label);
       evRenderActivityChips();
-      evRefreshAtmosphereChips();
     };
-    container.appendChild(btn);
+    container.appendChild(catBtn);
+
+    if (isExpanded) {
+      const subRow = document.createElement('div');
+      subRow.style.cssText = 'width:100%;display:flex;flex-wrap:wrap;gap:6px;padding:6px 10px 6px 0;border-right:3px solid #ddd6fe;margin-right:4px;margin-top:2px;margin-bottom:4px;';
+      cat.tags.forEach((tag, idx) => {
+        const tagBtn = document.createElement('button');
+        tagBtn.type = 'button';
+        tagBtn.textContent = tag;
+        const active = ev_selectedActivities.has(tag);
+        tagBtn.className = active ? getTagChipActiveClassByIndex(idx) : TAG_CHIP_INACTIVE_CLASS;
+        tagBtn.onclick = () => {
+          if (ev_selectedActivities.has(tag)) ev_selectedActivities.delete(tag);
+          else ev_selectedActivities.add(tag);
+          evRenderActivityChips();
+          evRefreshAtmosphereChips();
+        };
+        subRow.appendChild(tagBtn);
+      });
+      container.appendChild(subRow);
+    }
   });
 }
 
@@ -396,11 +424,13 @@ function renderEventsGrid() {
   const gridEl = document.getElementById('eventsGrid');
   const now    = new Date();
 
-  // Only show events whose hobby matches the user's profile
-  let events = allEventsData.filter(ev => eventMatchesUser(ev));
+  let events = allEventsData.filter(ev => ev.createdBy === me?.email || eventMatchesUser(ev));
 
   if (eventFilter === 'mine') {
-    events = events.filter(ev => (ev.interested || []).some(i => i.email === me.email));
+    events = events.filter(ev =>
+      ev.createdBy === me?.email ||
+      (ev.interested || []).some(i => (i.email || i) === me?.email)
+    );
   }
 
   events.sort((a, b) => {
@@ -648,6 +678,7 @@ function openCreateEventModal() {
   window._pendingHobbyTag = null;
   ev_selectedActivities.clear();
   ev_selectedAtmosphere.clear();
+  ev_expandedCategories.clear();
   document.getElementById('ev_error').classList.add('hidden');
   const submitBtn = document.getElementById('ev_submitBtn');
   submitBtn.disabled    = false;
@@ -744,18 +775,20 @@ async function handleCreateEvent() {
       createdBy: me.email, creatorName: me.fullName || me.email, creatorPhone: me.phone || '',
       organizerName: organizerName || me.fullName || me.email,
       organizerPhone: organizerPhone || me.phone || '',
-      actionLinks, detectedHobbyTag, interested: [me.email],
+      actionLinks, detectedHobbyTag,
+      interested: [{ email: me.email, name: me.fullName || '', display: formatAttendeeDisplay(me.fullName || me.email) }],
       atmosphereTags, eventActivityTags,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
+    const creatorEntry = { email: me.email, name: me.fullName || '', display: formatAttendeeDisplay(me.fullName || me.email) };
     allEventsData.push({
       id: docRef.id, title, description: desc, dateTime, location, associatedHobbies,
       hobby: associatedHobbies[0], createdBy: me.email,
       creatorName: me.fullName || me.email, creatorPhone: me.phone || '',
       organizerName: organizerName || me.fullName || me.email,
       organizerPhone: organizerPhone || me.phone || '',
-      actionLinks, detectedHobbyTag, interested: [me.email],
+      actionLinks, detectedHobbyTag, interested: [creatorEntry],
       atmosphereTags, eventActivityTags
     });
     window._pendingEventLinks = [];

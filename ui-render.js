@@ -157,6 +157,13 @@ function renderCard(user, isLiked, myUser) {
           data-liked="${isLiked}"
         >${isLiked ? HEART_FILLED : HEART_OUTLINE}<span class="like-label text-sm font-semibold">${isLiked ? 'ביטול לייק' : 'לייק'}</span></button>
         ${user.hobbyDescription ? `<p class="text-gray-600 text-sm leading-relaxed line-clamp-2">${user.hobbyDescription}</p>` : ''}
+        ${(() => {
+          const styleParts = (user.socialStyle || '').split(',').map(s => s.trim()).filter(Boolean);
+          const vibeParts = Array.isArray(user.generalVibe) ? user.generalVibe.filter(Boolean) : [];
+          const all = [...styleParts, ...vibeParts];
+          if (!all.length) return '';
+          return `<div class="flex flex-wrap gap-1.5 line-clamp-2">${formatColoredTagBadgesHtml(all)}</div>`;
+        })()}
         ${romanticBadge}
       </div>
     </div>`;
@@ -234,6 +241,18 @@ function showProfileModal(user, isLiked, myUser) {
           <p class="text-xs font-bold text-gray-400 uppercase mb-1">תיאור התחביב</p>
           <p class="text-gray-600 text-sm leading-relaxed">${user.hobbyDescription}</p>
         </div>` : ''}
+
+        ${(() => {
+          const styleParts = (user.socialStyle || '').split(',').map(s => s.trim()).filter(Boolean);
+          const vibeParts = Array.isArray(user.generalVibe) ? user.generalVibe.filter(Boolean) : [];
+          const all = [...styleParts, ...vibeParts];
+          if (!all.length) return '';
+          return `
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase mb-1.5">סגנון פגישה ותגים</p>
+          <div class="flex flex-wrap gap-1.5">${formatColoredTagBadgesHtml(all)}</div>
+        </div>`;
+        })()}
 
         <!-- Badges -->
         ${romanticBadge ? `<div>${romanticBadge}</div>` : ''}
