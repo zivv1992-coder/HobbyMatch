@@ -157,13 +157,6 @@ function renderCard(user, isLiked, myUser) {
           data-liked="${isLiked}"
         >${isLiked ? HEART_FILLED : HEART_OUTLINE}<span class="like-label text-sm font-semibold">${isLiked ? 'ביטול לייק' : 'לייק'}</span></button>
         ${user.hobbyDescription ? `<p class="text-gray-600 text-sm leading-relaxed line-clamp-2">${user.hobbyDescription}</p>` : ''}
-        ${(() => {
-          const styleParts = (user.socialStyle || '').split(',').map(s => s.trim()).filter(Boolean);
-          const vibeParts = Array.isArray(user.generalVibe) ? user.generalVibe.filter(Boolean) : [];
-          const all = [...styleParts, ...vibeParts];
-          if (!all.length) return '';
-          return `<div class="flex flex-wrap gap-1.5 line-clamp-2">${formatColoredTagBadgesHtml(all)}</div>`;
-        })()}
         ${romanticBadge}
       </div>
     </div>`;
@@ -193,7 +186,7 @@ function showProfileModal(user, isLiked, myUser) {
 
   const imagesHtml = images.length
     ? images.map(url =>
-        `<img src="${url}" class="w-full rounded-2xl object-cover max-h-36" alt="תמונת תחביב"/>`
+        `<img src="${url}" class="w-full rounded-2xl object-cover max-h-52" alt="תמונת תחביב"/>`
       ).join('')
     : `<div class="w-full h-28 rounded-2xl bg-gradient-to-br from-purple-200 to-blue-200 flex items-center justify-center text-5xl">🎯</div>`;
 
@@ -238,21 +231,10 @@ function showProfileModal(user, isLiked, myUser) {
         <!-- Description -->
         ${user.hobbyDescription ? `
         <div>
-          <p class="text-xs font-bold text-gray-400 uppercase mb-1">תיאור התחביב</p>
+          <p class="text-xs font-bold text-gray-400 uppercase mb-1">תיאור תחביב/ים</p>
           <p class="text-gray-600 text-sm leading-relaxed">${user.hobbyDescription}</p>
         </div>` : ''}
 
-        ${(() => {
-          const styleParts = (user.socialStyle || '').split(',').map(s => s.trim()).filter(Boolean);
-          const vibeParts = Array.isArray(user.generalVibe) ? user.generalVibe.filter(Boolean) : [];
-          const all = [...styleParts, ...vibeParts];
-          if (!all.length) return '';
-          return `
-        <div>
-          <p class="text-xs font-bold text-gray-400 uppercase mb-1.5">סגנון פגישה ותגים</p>
-          <div class="flex flex-wrap gap-1.5">${formatColoredTagBadgesHtml(all)}</div>
-        </div>`;
-        })()}
 
         <!-- Badges -->
         ${romanticBadge ? `<div>${romanticBadge}</div>` : ''}
