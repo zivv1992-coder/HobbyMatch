@@ -105,8 +105,6 @@ function renderFeedGrid() {
   if (romantic) filtered = filtered.filter(u => u.romantic);
   if (hobbyQ)   filtered = filtered.filter(u => (u.hobby || '').toLowerCase().includes(hobbyQ));
 
-  const countEl = document.getElementById('radiusCount');
-  countEl.textContent = filtered.length > 0 ? `${filtered.length} משתמשים` : '';
 
   if (filtered.length === 0) {
     grid.innerHTML = renderEmpty('לא נמצאו משתמשים עם הפילטרים שבחרת.');
