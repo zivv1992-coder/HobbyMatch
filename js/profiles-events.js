@@ -9,6 +9,67 @@
 // To add new hobby keywords for auto-detection: edit extractHobbyFromText() below.
 // ══════════════════════════════════════════════════════════════════════════════
 
+let ev_selectedActivities = new Set();
+let ev_selectedAtmosphere = new Set();
+
+function evRenderActivityChips() {
+  const container = document.getElementById('ev_activity_tags');
+  if (!container) return;
+  container.innerHTML = '';
+  ACTIVITY_TAGS.forEach(tag => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = tag;
+    const idx = ACTIVITY_TAGS.indexOf(tag);
+    const active = ev_selectedActivities.has(tag);
+    btn.className = active ? getTagChipActiveClassByIndex(idx) : TAG_CHIP_INACTIVE_CLASS;
+    btn.onclick = () => {
+      if (ev_selectedActivities.has(tag)) ev_selectedActivities.delete(tag);
+      else ev_selectedActivities.add(tag);
+      evRenderActivityChips();
+      evRefreshAtmosphereChips();
+    };
+    container.appendChild(btn);
+  });
+}
+
+function evRefreshAtmosphereChips() {
+  const container = document.getElementById('ev_atmosphere_tags');
+  const hint = document.getElementById('ev_atmosphere_hint');
+  if (!container) return;
+
+  const available = mergeAtmosphereOptionsForActivities([...ev_selectedActivities]);
+  [...ev_selectedAtmosphere].forEach(t => {
+    if (!available.includes(t)) ev_selectedAtmosphere.delete(t);
+  });
+
+  if (ev_selectedActivities.size === 0) {
+    container.innerHTML = '';
+    if (hint) {
+      hint.textContent = 'בחרו לפחות סוג פעילות אחד כדי לראות כאן אפשרויות אווירה.';
+      hint.classList.remove('hidden');
+    }
+    return;
+  }
+  if (hint) hint.classList.add('hidden');
+
+  container.innerHTML = '';
+  available.forEach(tag => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = tag;
+    const idx = available.indexOf(tag);
+    const active = ev_selectedAtmosphere.has(tag);
+    btn.className = active ? getTagChipActiveClassByIndex(idx) : TAG_CHIP_INACTIVE_CLASS;
+    btn.onclick = () => {
+      if (ev_selectedAtmosphere.has(tag)) ev_selectedAtmosphere.delete(tag);
+      else ev_selectedAtmosphere.add(tag);
+      evRefreshAtmosphereChips();
+    };
+    container.appendChild(btn);
+  });
+}
+
 // ── Event Detail Modal ────────────────────────────────────────────────────────
 function openEventDetailModal(eventId) {
   const ev = allEventsData.find(e => e.id === eventId);
@@ -84,9 +145,17 @@ function openEventDetailModal(eventId) {
         : (orgName ? `<p style="text-align:center;font-size:0.78rem;color:#9ca3af;">לא הוזנו פרטי קשר ליוזם</p>` : '')}
     </div>`;
 
+  const eventAtmosphereBlock = (ev.atmosphereTags && ev.atmosphereTags.length)
+    ? `<div style="margin-bottom:16px;">
+        <p style="font-size:0.7rem;font-weight:700;color:#9ca3af;margin:0 0 8px;letter-spacing:0.04em;">אווירת מפגש</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">${formatColoredTagBadgesHtml(ev.atmosphereTags)}</div>
+      </div>`
+    : '';
+
   const descSectionHtml = `
     <div class="ev-modal-scroll" style="flex:1;overflow-y:auto;padding:20px 24px;scrollbar-width:thin;scrollbar-color:#ddd6fe transparent;" dir="rtl">
       ${linksHtml}
+      ${eventAtmosphereBlock}
       <div style="font-size:0.93rem;color:#374151;line-height:1.85;">${linkifyText(ev.description || '')}</div>
       ${interested.length > 0 ? `
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f3f4f6;">
@@ -434,6 +503,10 @@ function renderEventCard(ev) {
     ? `<span class="text-xs bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full font-semibold">הסתיים</span>`
     : '';
 
+  const atmosphereRow = (ev.atmosphereTags && ev.atmosphereTags.length)
+    ? `<div class="flex flex-wrap gap-1.5 items-center">${formatColoredTagBadgesHtml(ev.atmosphereTags)}</div>`
+    : '';
+
   const actionLinksHtml = (ev.actionLinks && ev.actionLinks.length > 0) ? `
     <div class="flex flex-wrap gap-2">
       ${ev.actionLinks.map(link => {
@@ -479,6 +552,8 @@ function renderEventCard(ev) {
           ${ev.location ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">איפה</span><span class="text-xs font-bold text-gray-800 leading-tight line-clamp-2">${ev.location}</span></div>` : ''}
           ${(ev.organizerName || ev.creatorName) ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">מארגן</span><span class="text-xs font-bold text-gray-800 leading-tight line-clamp-2">${ev.organizerName || ev.creatorName || ''}</span></div>` : ''}
         </div>
+
+        ${atmosphereRow ? `<div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">אווירת מפגש</p>${atmosphereRow}</div>` : ''}
 
         ${ev.description ? `<p class="text-sm text-gray-500 leading-relaxed line-clamp-2">${ev.description}</p>` : ''}
         ${actionLinksHtml}
@@ -571,6 +646,8 @@ function openCreateEventModal() {
   document.getElementById('ev_detected_hobby_wrap').classList.add('hidden');
   document.getElementById('ev_detected_hobby_display').innerHTML = '';
   window._pendingHobbyTag = null;
+  ev_selectedActivities.clear();
+  ev_selectedAtmosphere.clear();
   document.getElementById('ev_error').classList.add('hidden');
   const submitBtn = document.getElementById('ev_submitBtn');
   submitBtn.disabled    = false;
@@ -618,6 +695,8 @@ function selectOrganizerType(type) {
   }
   document.getElementById('ev_form_body').classList.remove('hidden');
   document.getElementById('ev_footer').classList.remove('hidden');
+  evRenderActivityChips();
+  evRefreshAtmosphereChips();
 }
 
 async function handleCreateEvent() {
@@ -656,13 +735,17 @@ async function handleCreateEvent() {
     const dateTime         = firebase.firestore.Timestamp.fromDate(new Date(dtVal));
     const actionLinks      = window._pendingEventLinks || [];
     const detectedHobbyTag = window._pendingHobbyTag   || null;
+    const atmosphereTags = [...ev_selectedAtmosphere];
+    const eventActivityTags = [...ev_selectedActivities];
+
     const docRef           = await db.collection('events').add({
       title, description: desc, dateTime, location, associatedHobbies,
       hobby: associatedHobbies[0],
       createdBy: me.email, creatorName: me.fullName || me.email, creatorPhone: me.phone || '',
       organizerName: organizerName || me.fullName || me.email,
       organizerPhone: organizerPhone || me.phone || '',
-      actionLinks, detectedHobbyTag, interested: [],
+      actionLinks, detectedHobbyTag, interested: [me.email],
+      atmosphereTags, eventActivityTags,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
@@ -672,7 +755,8 @@ async function handleCreateEvent() {
       creatorName: me.fullName || me.email, creatorPhone: me.phone || '',
       organizerName: organizerName || me.fullName || me.email,
       organizerPhone: organizerPhone || me.phone || '',
-      actionLinks, detectedHobbyTag, interested: []
+      actionLinks, detectedHobbyTag, interested: [me.email],
+      atmosphereTags, eventActivityTags
     });
     window._pendingEventLinks = [];
 
@@ -724,6 +808,10 @@ function openRepeatEvent(eventId) {
     const hobbies = ev.associatedHobbies && ev.associatedHobbies.length
       ? ev.associatedHobbies : (ev.hobby ? [ev.hobby] : []);
     if (hobbies.length > 0) document.getElementById('ev_hobbies').value = hobbies.join(', ');
+    ev_selectedActivities = new Set((ev.eventActivityTags || []).filter(a => ACTIVITY_TAGS.includes(a)));
+    ev_selectedAtmosphere = new Set(ev.atmosphereTags || []);
+    evRenderActivityChips();
+    evRefreshAtmosphereChips();
   }, 60);
 }
 
