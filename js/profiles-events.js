@@ -296,9 +296,6 @@ function openEventDetailModal(eventId) {
   }
 
   const orgName  = ev.organizerName  || ev.creatorName  || '';
-  const orgPhone = ev.organizerPhone || ev.creatorPhone || '';
-  const waNum    = formatWhatsApp(orgPhone);
-  const waValid  = waNum.length >= 11;
 
   const linksHtml = (ev.actionLinks && ev.actionLinks.length)
     ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
@@ -339,24 +336,6 @@ function openEventDetailModal(eventId) {
       <span style="font-size:0.73rem;color:#9ca3af;">${interested.length} הצטרפו</span>`
     : '';
 
-  const contactFooterHtml = `
-    <div style="padding:16px 24px 20px;border-top:1.5px solid #ede9fe;flex-shrink:0;" dir="rtl">
-      ${orgName ? `<p style="font-size:0.8rem;color:#6b7280;text-align:center;margin:0 0 12px;">
-        יוזם האירוע: <strong style="color:#5b21b6;">${orgName}</strong></p>` : ''}
-      ${waValid
-        ? `<a href="https://wa.me/${waNum}" target="_blank" rel="noopener noreferrer"
-            style="display:flex;align-items:center;justify-content:center;gap:8px;
-                   background:#25D366;color:#fff;font-weight:700;font-size:0.95rem;
-                   padding:13px;border-radius:14px;text-decoration:none;"
-            onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.523 5.83L.057 23.57a.5.5 0 0 0 .611.611l5.74-1.466A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.944 9.944 0 0 1-5.073-1.386l-.363-.215-3.761.961.977-3.762-.232-.375A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
-            </svg>
-            צור קשר עם היוזם
-          </a>`
-        : (orgName ? `<p style="text-align:center;font-size:0.78rem;color:#9ca3af;">לא הוזנו פרטי קשר ליוזם</p>` : '')}
-    </div>`;
 
   const eventAtmosphereBlock = (ev.atmosphereTags && ev.atmosphereTags.length)
     ? `<div style="margin-bottom:16px;">
@@ -493,7 +472,7 @@ function openEventDetailModal(eventId) {
                ✓ כבר הצטרפת לאירוע
              </div>
            </div>
-           ${contactFooterHtml}`
+`
 
         : `${descSectionHtml}
            ${attendeesBlockHtml
@@ -513,9 +492,6 @@ function openEventDetailModal(eventId) {
              </button>
            </div>
            <div id="evDetailsReveal" style="display:none;flex-direction:column;flex-shrink:0;opacity:0;transform:translateY(-6px);transition:opacity 0.38s ease,transform 0.38s ease;">
-             <div style="border-top:1.5px solid #ede9fe;">
-               ${contactFooterHtml}
-             </div>
            </div>`
       }
     </div>`;
