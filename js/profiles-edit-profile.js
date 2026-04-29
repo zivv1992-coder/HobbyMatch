@@ -43,14 +43,6 @@ function openEditDrawer() {
   // Romantic toggle
   ed_isRomantic = !!user.romantic;
   ed_applyToggle();
-  // Social Style + General Vibe
-  const savedCustom = (user.socialStyle || '').split(',').map(s => s.trim()).filter(Boolean);
-  ed_selectedSocialStyle = new Set(savedCustom.filter(s => SOCIAL_STYLE_TAGS.includes(s)));
-  const customPart = savedCustom.filter(s => !SOCIAL_STYLE_TAGS.includes(s)).join(', ');
-  document.getElementById('ed_social_style_custom').value = customPart;
-  ed_selectedGeneralVibe = new Set((user.generalVibe || []).filter(s => GENERAL_VIBE_TAGS.includes(s)));
-  ed_renderTagChips('ed_socialStyleTags',  SOCIAL_STYLE_TAGS, ed_selectedSocialStyle);
-  ed_renderTagChips('ed_generalVibeTags',  GENERAL_VIBE_TAGS, ed_selectedGeneralVibe);
   // Show
   document.getElementById('ed_error').classList.add('hidden');
   document.getElementById('ed_image').value = '';
@@ -224,10 +216,6 @@ async function handleSaveProfile() {
     }
 
     const cityData = CITIES.find(c => c.name === city);
-    const customSocialStyle = document.getElementById('ed_social_style_custom').value.trim();
-    const socialStyleArr = [...ed_selectedSocialStyle];
-    if (customSocialStyle) socialStyleArr.push(customSocialStyle);
-
     const updated = {
       ...current,
       fullName:         name,
@@ -237,8 +225,6 @@ async function handleSaveProfile() {
       hobby:            hobby,
       hobbyDescription: desc,
       romantic:         ed_isRomantic,
-      socialStyle:      socialStyleArr.join(', '),
-      generalVibe:      [...ed_selectedGeneralVibe],
       hobbyImages:      hobbyImages,
       hobbyImageUrl:    hobbyImages[0] || '',
       profilePhotoURL:  profilePhotoUrl,

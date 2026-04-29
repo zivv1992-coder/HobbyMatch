@@ -52,6 +52,22 @@ function evRenderActivityChips() {
     container.appendChild(catBtn);
   });
 
+  // Show chips for custom (non-category) activities
+  const allCategoryTags = ACTIVITY_CATEGORIES.flatMap(c => c.tags);
+  [...ev_selectedActivities].filter(t => !allCategoryTags.includes(t)).forEach((tag, idx) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = getTagChipActiveClassByIndex(idx) + ' cursor-pointer';
+    chip.innerHTML = `${tag} <span style="margin-right:4px;opacity:0.7;">✕</span>`;
+    chip.onclick = (e) => {
+      e.stopPropagation();
+      ev_selectedActivities.delete(tag);
+      evRenderActivityChips();
+      evRefreshAtmosphereChips();
+    };
+    container.appendChild(chip);
+  });
+
   const otherBtn = document.createElement('button');
   otherBtn.type = 'button';
   otherBtn.className = TAG_CHIP_INACTIVE_CLASS + ' cursor-pointer';
@@ -112,17 +128,6 @@ function _openActivityPopover(cat, anchorBtn) {
     };
     popover.appendChild(tagBtn);
   });
-
-  const otherTagBtn = document.createElement('button');
-  otherTagBtn.type = 'button';
-  otherTagBtn.textContent = '➕ אחר';
-  otherTagBtn.className = TAG_CHIP_INACTIVE_CLASS;
-  otherTagBtn.onclick = (e) => {
-    e.stopPropagation();
-    _closeActivityPopover();
-    setTimeout(() => _openCustomActivityInput(), 50);
-  };
-  popover.appendChild(otherTagBtn);
 
   // tiny stem arrow
   const stem = document.createElement('div');
@@ -195,29 +200,29 @@ function _openCustomActivityInput() {
   inputDiv.id = 'evCustomActivityInput';
   inputDiv.style.cssText = `
     position:fixed;z-index:9999;top:50%;left:50%;transform:translate(-50%,-50%);
-    background:#fff;border:1.5px solid #c4b5fd;border-radius:18px;
-    padding:18px;box-shadow:0 12px 40px rgba(109,40,217,0.22);
-    width:90%;max-width:320px;direction:rtl;
+    background:#fff;border:1.5px solid #c4b5fd;border-radius:14px;
+    padding:14px;box-shadow:0 8px 32px rgba(109,40,217,0.22);
+    width:76%;max-width:256px;direction:rtl;
     animation:popoverIn 0.18s cubic-bezier(.34,1.56,.64,1) both;
   `;
 
   inputDiv.innerHTML = `
-    <p style="font-size:0.85rem;font-weight:600;color:#374151;margin:0 0 10px;">הזן סוג פעילות מותאם:</p>
+    <p style="font-size:0.78rem;font-weight:600;color:#374151;margin:0 0 8px;">סוג פעילות מותאם:</p>
     <input id="customActivityField" type="text" placeholder="למשל: סיור טבע, משחק לוח..."
-      style="width:100%;border:1.5px solid #e5e7eb;border-radius:12px;padding:10px 12px;
-             font-size:0.95rem;font-family:'Heebo',sans-serif;direction:rtl;text-align:right;
+      style="width:100%;border:1.5px solid #e5e7eb;border-radius:10px;padding:8px 10px;
+             font-size:0.85rem;font-family:'Heebo',sans-serif;direction:rtl;text-align:right;
              outline:none;box-sizing:border-box;transition:border-color 0.15s;"
       onkeydown="if(event.key==='Enter') document.getElementById('customActivityBtn').click()"/>
-    <div style="display:flex;gap:8px;margin-top:12px;">
+    <div style="display:flex;gap:6px;margin-top:10px;">
       <button id="customActivityBtn" onclick="_addCustomActivity()"
-        style="flex:1;background:#7c3aed;color:#fff;border:none;border-radius:12px;
-               padding:10px;font-weight:700;cursor:pointer;transition:background 0.15s;"
+        style="flex:1;background:#7c3aed;color:#fff;border:none;border-radius:10px;
+               padding:8px;font-size:0.85rem;font-weight:700;cursor:pointer;transition:background 0.15s;"
         onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='#7c3aed'">
         הוסף
       </button>
       <button onclick="_closeCustomActivityInput()"
-        style="flex:1;background:#f3f4f6;color:#6b7280;border:none;border-radius:12px;
-               padding:10px;font-weight:700;cursor:pointer;transition:background 0.15s;"
+        style="flex:1;background:#f3f4f6;color:#6b7280;border:none;border-radius:10px;
+               padding:8px;font-size:0.85rem;font-weight:700;cursor:pointer;transition:background 0.15s;"
         onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
         ביטול
       </button>
