@@ -572,7 +572,7 @@ function closeEventDetailModal() {
 }
 
 async function handleDeleteEvent(eventId) {
-  if (!confirm('למחוק את האירוע לצמיתות?')) return;
+  if (!confirm('למחוק את האירוע?')) return;
   try {
     await db.collection('events').doc(eventId).delete();
     allEventsData = allEventsData.filter(e => e.id !== eventId);
