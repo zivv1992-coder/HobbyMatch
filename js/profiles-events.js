@@ -671,143 +671,167 @@ function renderEventCard(ev) {
     timeStr = evDate.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
   }
 
-  const visible = interested.slice(0, 5);
-  const extra   = interested.length > 5 ? interested.length - 5 : 0;
+  const visible = interested.slice(0, 4);
+  const extra   = interested.length > 4 ? interested.length - 4 : 0;
   const circlesHtml = visible.length > 0
-    ? `<div style="display:flex;">
-        ${[...visible].reverse().map((p, idx) => {
-          const color       = CIRCLE_COLORS[idx % CIRCLE_COLORS.length];
-          const displayText = p.display || formatAttendeeDisplay(p.name || '');
-          const parts       = displayText.split(' ');
-          return `<div class="w-11 h-11 rounded-full bg-gradient-to-br ${color}
-                       flex flex-col items-center justify-center text-white font-bold
-                       border-2 border-white shrink-0 overflow-hidden"
-                    style="line-height:1.15;margin-right:-10px;" title="${displayText}">
-                    <span style="font-size:10px;max-width:38px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${parts[0]||''}</span>
-                    ${parts[1] ? `<span style="font-size:9px;">${parts[1]}</span>` : ''}
-                  </div>`;
-        }).join('')}
-      </div>
-      ${extra > 0 ? `<span class="text-xs text-gray-400 font-semibold" style="margin-right:4px;">+${extra}</span>` : ''}
-      <span class="text-xs text-gray-500" style="margin-right:6px;">${interested.length} הצטרפו</span>`
-    : `<span class="text-xs text-gray-400">היה הראשון להצטרף!</span>`;
-
-  const btnClass = iAmIn
-    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200'
-    : 'bg-gradient-to-l from-purple-700 to-blue-600 text-white hover:opacity-90';
-  const btnText  = iAmIn ? '✓ הצטרפת · לחץ לביטול' : 'הצטרף 🙋';
+    ? `<div style="display:flex;align-items:center;gap:6px;">
+        <div style="display:flex;">
+          ${[...visible].reverse().map((p, idx) => {
+            const color = CIRCLE_COLORS[idx % CIRCLE_COLORS.length];
+            const dp    = p.display || formatAttendeeDisplay(p.name || '');
+            return `<div class="w-7 h-7 rounded-full bg-gradient-to-br ${color} flex items-center justify-center text-white font-bold border-2 border-white shrink-0 overflow-hidden"
+                      style="margin-right:-8px;font-size:9px;" title="${dp}">${(dp.split(' ')[0]||'').slice(0,4)}</div>`;
+          }).join('')}
+        </div>
+        <span style="font-size:12px;color:#6b7280;margin-right:4px;">${interested.length} הצטרפו${extra > 0 ? ` (+${extra})` : ''}</span>
+      </div>`
+    : `<span style="font-size:12px;color:#9ca3af;">היה הראשון להצטרף!</span>`;
 
   let waSection = '';
   if (iAmIn && !isPast) {
     const phone  = ev.creatorPhone || '';
     const waNum  = formatWhatsApp(phone);
     const waLink = waNum.length >= 11
-      ? `<a href="https://wa.me/${waNum}" target="_blank" rel="noopener noreferrer" dir="rtl"
-            class="flex items-center justify-center gap-2 w-full bg-[#25D366] text-white font-bold text-sm py-2.5 rounded-2xl hover:bg-[#1ebe5d] transition">
-           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.523 5.83L.057 23.57a.5.5 0 0 0 .611.611l5.74-1.466A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.944 9.944 0 0 1-5.073-1.386l-.363-.215-3.761.961.977-3.762-.232-.375A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-           שלח הודעה ליוצר${ev.creatorName ? ' — ' + ev.creatorName : ''} בוואטסאפ
+      ? `<a href="https://wa.me/${waNum}" target="_blank" rel="noopener noreferrer"
+            style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;
+                   background:#25D366;color:#fff;font-weight:700;font-size:13px;
+                   padding:9px 16px;border-radius:999px;border:none;text-decoration:none;">
+           💬 פתח ווצאפ${ev.creatorName ? ' עם ' + ev.creatorName : ''}
          </a>`
-      : `<p class="text-center text-xs text-gray-400 py-1">🙋 הצטרפת! ניתן לפנות ליוצר דרך הפרופיל שלו.</p>`;
-    waSection = `<div>${waLink}</div>`;
+      : `<p style="text-align:center;font-size:12px;color:#9ca3af;">🙋 הצטרפת! ניתן לפנות ליוצר דרך הפרופיל שלו.</p>`;
+    waSection = `<div style="margin-top:2px;">${waLink}</div>`;
   }
 
-  // ── Hobby tags & Atmosphere/Vibe badges ──────────────────────────────────────
-  // hobbyTags: derived from associatedHobbies array (set when creating event)
-  // matchBadge: shown when event hobby overlaps user's own hobby (eventMatchesUser)
-  // atmosphereTags: if ev.atmosphereTags exists (from ATMOSPHERE_MAP in config.js)
-  const hobbyTags = ((ev.associatedHobbies && ev.associatedHobbies.length)
-    ? ev.associatedHobbies : [ev.hobby || '🎯 כללי']
-  ).map(h => `<span class="text-xs font-bold bg-violet-100 text-violet-700 px-2.5 py-1 rounded-full">${h}</span>`).join('');
+  const hobbyList = (ev.associatedHobbies && ev.associatedHobbies.length)
+    ? ev.associatedHobbies : [ev.hobby || '🎯 כללי'];
+
+  const hobbyTagsMedia = hobbyList
+    .map(h => `<span style="display:inline-block;font-size:11px;font-weight:700;
+                      background:rgba(255,255,255,0.55);color:#4c1d95;
+                      padding:3px 10px;border-radius:999px;border:1px solid rgba(255,255,255,0.7);">
+                 ${h}</span>`).join('');
 
   const matchBadge = isMatch
-    ? `<span class="text-xs font-bold bg-amber-50 text-amber-600 border border-amber-200 px-2.5 py-1 rounded-full match-badge">✨ מתאים לך</span>`
+    ? `<span style="display:inline-block;font-size:10px;font-weight:800;
+                    background:#fefce8;color:#92400e;border:1px solid #fde68a;
+                    padding:3px 8px;border-radius:999px;" class="match-badge">✨ מתאים</span>`
     : '';
   const pastBadge = isPast
-    ? `<span class="text-xs bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full font-semibold">הסתיים</span>`
+    ? `<span style="display:inline-block;font-size:10px;font-weight:700;
+                    background:rgba(0,0,0,0.18);color:#fff;
+                    padding:3px 8px;border-radius:999px;">הסתיים</span>`
     : '';
 
   const atmosphereRow = (ev.atmosphereTags && ev.atmosphereTags.length)
-    ? `<div class="flex flex-wrap gap-1.5 items-center">${formatColoredTagBadgesHtml(ev.atmosphereTags)}</div>`
+    ? `<div style="display:flex;flex-wrap:wrap;gap:6px;">${formatColoredTagBadgesHtml(ev.atmosphereTags)}</div>`
     : '';
 
   const actionLinksHtml = (ev.actionLinks && ev.actionLinks.length > 0) ? `
-    <div class="flex flex-wrap gap-2">
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
       ${ev.actionLinks.map(link => {
-        const styles = link.type === 'whatsapp_group' || link.type === 'whatsapp'
-          ? 'bg-[#e8fdf0] text-[#128C7E] border-[#c3efd6] hover:bg-[#d5f5e3]'
-          : link.type === 'maps' ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
-          : link.type === 'waze' ? 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100'
-          : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100';
-        const icon = link.type === 'whatsapp_group' || link.type === 'whatsapp' ? '💬'
+        const s = link.type === 'whatsapp_group' || link.type === 'whatsapp'
+          ? 'background:#e8fdf0;color:#128C7E;border-color:#c3efd6;'
+          : link.type === 'maps' ? 'background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe;'
+          : link.type === 'waze' ? 'background:#f0f9ff;color:#0369a1;border-color:#bae6fd;'
+          : 'background:#f9fafb;color:#374151;border-color:#e5e7eb;';
+        const icon = link.type.includes('whatsapp') ? '💬'
           : link.type === 'maps' ? '📍' : link.type === 'waze' ? '🚗' : '🔗';
         return `<a href="${link.url}" target="_blank" rel="noopener noreferrer"
-          class="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition ${styles}">
-          ${icon} ${link.label}
-        </a>`;
+          style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;
+                 padding:5px 12px;border-radius:999px;border:1.5px solid;${s}text-decoration:none;">
+          ${icon} ${link.label}</a>`;
       }).join('')}
     </div>` : '';
 
+  const mediaGradient = ev.imageUrl
+    ? `background:linear-gradient(to bottom,rgba(0,0,0,0.1),rgba(80,40,140,0.55)),url('${ev.imageUrl}') center/cover no-repeat;`
+    : `background:linear-gradient(135deg,#D8CEF0 0%,#F0DDCF 60%,#E0D0EC 100%);`;
+
   return `
-    <div class="bg-white rounded-[28px] overflow-hidden ${isPast ? 'opacity-70' : ''}"
-         style="box-shadow:0 10px 40px rgba(139,92,246,0.08);cursor:pointer;"
+    <div style="border-radius:28px;border:1.5px solid #c4b5fd;overflow:hidden;
+                box-shadow:0 0 0 6px rgba(158,143,220,0.12),0 8px 24px rgba(126,109,197,0.14);
+                display:grid;grid-template-columns:130px 1fr;cursor:pointer;
+                ${isPast ? 'opacity:0.72;' : ''}"
          onclick="if(!event.target.closest('a,button')) openEventDetailModal('${ev.id}')">
 
-      ${ev.imageUrl ? `
-      <div class="relative w-full h-44 overflow-hidden">
-        <img src="${ev.imageUrl}" class="w-full h-full object-cover" alt="${ev.title || ''}"/>
-        <div class="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent"></div>
-        <div class="absolute bottom-3 right-4 flex flex-wrap gap-1.5 items-center">${hobbyTags}${matchBadge}${pastBadge}</div>
-      </div>` : ''}
-
-      <div class="p-5 flex flex-col gap-4">
-        ${!ev.imageUrl ? `<div class="flex flex-wrap gap-1.5 items-center">${hobbyTags}${matchBadge}${pastBadge}</div>` : ''}
-
-        <div>
-          <h3 class="font-black text-purple-900 text-lg leading-snug">${ev.title || ''}</h3>
-          ${ev.detectedHobbyTag ? `
-          <span style="display:inline-flex;align-items:center;font-size:0.72rem;font-weight:600;color:#6d28d9;border:1px solid #7c3aed;border-radius:999px;padding:2px 10px;background:transparent;margin-top:4px;">
-            ${formatHobbyTag(ev.detectedHobbyTag)}
-          </span>` : ''}
+      <!-- Media column -->
+      <div style="${mediaGradient}border-inline-end:1.5px solid #c4b5fd;
+                  display:flex;flex-direction:column;justify-content:flex-end;align-items:center;
+                  padding:14px 10px;gap:5px;min-height:190px;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;">
+          ${hobbyTagsMedia}
+          ${matchBadge}${pastBadge}
         </div>
+      </div>
 
-        <div class="grid grid-cols-3 gap-2">
-          ${dateStr ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">מתי</span><span class="text-xs font-bold text-gray-800 leading-tight">${dateStr}</span>${timeStr ? `<span class="text-xs font-semibold text-violet-600">${timeStr}</span>` : ''}</div>` : ''}
-          ${ev.location ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">איפה</span><span class="text-xs font-bold text-gray-800 leading-tight line-clamp-2">${ev.location}</span></div>` : ''}
-          ${(ev.organizerName || ev.creatorName) ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">מארגן</span><span class="text-xs font-bold text-gray-800 leading-tight line-clamp-2">${ev.organizerName || ev.creatorName || ''}</span></div>` : ''}
-        </div>
+      <!-- Content column -->
+      <div style="padding:16px 18px;display:flex;flex-direction:column;gap:9px;background:#fff;">
 
-        ${atmosphereRow ? `<div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">אווירת מפגש</p>${atmosphereRow}</div>` : ''}
+        ${dateStr ? `<span style="align-self:flex-start;display:inline-flex;align-items:center;gap:5px;
+                       padding:4px 12px;border-radius:999px;background:#ede9fe;
+                       border:1.5px solid #7c3aed;color:#4c1d95;font-size:11.5px;font-weight:800;">
+          📅 ${dateStr}${timeStr ? ' · ' + timeStr : ''}
+        </span>` : ''}
 
-        ${ev.description ? `<p class="text-sm text-gray-500 leading-relaxed line-clamp-2">${ev.description}</p>` : ''}
+        <h3 style="font-size:17px;font-weight:800;color:#2d1b69;line-height:1.25;margin:0;">
+          ${ev.title || ''}
+        </h3>
+
+        ${ev.location ? `<div style="display:flex;align-items:center;gap:5px;font-size:13px;color:#5b21b6;font-weight:500;">
+          📍 <span>${ev.location}</span>
+        </div>` : ''}
+
+        ${(ev.organizerName || ev.creatorName) ? `<div style="font-size:12px;color:#7c3aed;font-weight:600;">
+          👤 ${ev.organizerName || ev.creatorName}
+        </div>` : ''}
+
+        <div style="display:flex;align-items:center;">${circlesHtml}</div>
+
+        ${atmosphereRow ? `<div style="display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;">אווירה</span>
+          ${atmosphereRow}
+        </div>` : ''}
+
+        ${ev.description ? `<p style="font-size:13px;color:#6b7280;line-height:1.5;margin:0;
+                              display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+          ${ev.description}
+        </p>` : ''}
+
         ${actionLinksHtml}
 
-        <div class="flex items-center justify-between pt-3 border-t border-gray-50 flex-wrap gap-3">
-          <div class="flex items-center gap-2 flex-wrap">${circlesHtml}</div>
-          <div class="flex items-center gap-2">
-            ${!isPast ? `
-              <a href="${calendarLink}" target="_blank" rel="noopener noreferrer" title="הוסף ליומן Google"
-                class="text-xs font-bold px-3 py-2 rounded-xl transition bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100">
-                📅 יומן
-              </a>
-              <button class="text-sm font-bold px-4 py-2 rounded-xl transition whitespace-nowrap ${btnClass}"
-                onclick="handleInterest('${ev.id}', this)" data-interested="${iAmIn}">
-                ${btnText}
-              </button>` : `
-              <button onclick="openRepeatEvent('${ev.id}')"
-                class="text-sm font-bold px-3 py-2 rounded-xl transition bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100">
-                🔁 ארגן שוב
-              </button>`}
-          </div>
+        <!-- CTA row -->
+        <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:2px;">
+          ${!isPast ? `
+            <button style="flex:1;padding:9px 14px;border-radius:999px;font-weight:700;font-size:13px;cursor:pointer;
+                           ${iAmIn ? 'background:#ecfdf5;color:#065f46;border:1.5px solid #a7f3d0;'
+                                   : 'background:#7c3aed;color:#fff;border:1.5px solid #7c3aed;'}"
+              onclick="handleInterest('${ev.id}', this)" data-interested="${iAmIn}">
+              ${iAmIn ? '✓ הצטרפת · ביטול' : '🙋 הצטרף'}
+            </button>
+            <a href="${calendarLink}" target="_blank" rel="noopener noreferrer"
+               style="padding:9px 13px;border-radius:999px;font-weight:700;font-size:13px;
+                      background:#fff;color:#1d4ed8;border:1.5px solid #bfdbfe;text-decoration:none;
+                      display:inline-flex;align-items:center;" title="הוסף ליומן Google">
+              📅
+            </a>` : `
+            <button onclick="openRepeatEvent('${ev.id}')"
+              style="padding:9px 16px;border-radius:999px;font-weight:700;font-size:13px;cursor:pointer;
+                     background:#f5f3ff;color:#6d28d9;border:1.5px solid #c4b5fd;">
+              🔁 ארגן שוב
+            </button>`}
         </div>
+
+        ${waSection}
 
         ${isPast && iAmIn ? `
         <button onclick="openPostEventModal('${ev.id}', this)"
           data-ev-title="${(ev.title||'').replace(/"/g,'&quot;')}"
-          class="w-full text-sm font-semibold text-gray-400 border border-dashed border-gray-200 py-2.5 rounded-2xl hover:bg-gray-50 hover:text-purple-600 hover:border-purple-200 transition">
-          🙌 שתף את החוויה שלך מהאירוע הזה
+          style="width:100%;font-size:12px;font-weight:600;color:#9ca3af;
+                 border:1.5px dashed #d1d5db;padding:9px;border-radius:16px;
+                 background:transparent;cursor:pointer;">
+          🙌 שתף את החוויה שלך
         </button>` : ''}
 
-        ${waSection}
       </div>
     </div>`;
 }
