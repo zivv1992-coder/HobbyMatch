@@ -156,24 +156,6 @@ function _openActivityPopover(cat, anchorBtn) {
   popover.style.top  = top  + 'px';
   popover.style.left = left + 'px';
 
-  let lastScrollTop = window.scrollY;
-  function handleScroll() {
-    const currentScrollTop = window.scrollY;
-    const scrollDiff = currentScrollTop - lastScrollTop;
-    const currentTop = parseFloat(popover.style.top);
-    popover.style.top = (currentTop - scrollDiff) + 'px';
-    lastScrollTop = currentScrollTop;
-  }
-
-  document.addEventListener('scroll', handleScroll, { passive: true });
-
-  const originalClose = _closeActivityPopover.bind(window);
-  _closeActivityPopover = function() {
-    document.removeEventListener('scroll', handleScroll);
-    originalClose();
-    _closeActivityPopover = originalClose;
-  };
-
   setTimeout(() => document.addEventListener('click', _closeActivityPopoverHandler), 0);
 }
 

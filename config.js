@@ -49,7 +49,6 @@ const ACTIVITY_CATEGORIES = [
   { label: '🍽️ אוכל ובילוי',  tags: ['בישול', 'אוכל ומסעדות', 'קפה'] },
   { label: '📚 תרבות וידע',   tags: ['קריאה', 'טכנולוגיה', 'התנדבות'] },
   { label: '🎮 משחקים',       tags: ['גיימינג', 'משחקי לוח'] },
-  { label: '➕ אחר',           tags: ['אחר'] }
 ];
 
 // ─── Activity Tags flat list (kept for ATMOSPHERE_MAP compatibility) ──────────
