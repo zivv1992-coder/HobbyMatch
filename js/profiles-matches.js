@@ -195,6 +195,24 @@ async function handleLike(theirEmail, theirName, btn) {
   }
 }
 
+// ── Unmatch ───────────────────────────────────────────────────────────────────
+async function handleUnmatch(theirEmail, btn) {
+  if (!confirm('לבטל את המאצ\'? הצ\'אט ישמר אבל לא תופיעו יותר בהתאמות.')) return;
+  btn.disabled = true;
+  btn.textContent = 'מבטל...';
+  try {
+    await removeLike(me.email, theirEmail);
+    await removeLike(theirEmail, me.email);
+    document.getElementById('profileModal')?.remove();
+    showToast('המאצ\' בוטל', 'bg-gray-600');
+    loadMatches();
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = '💔 ביטול מאצ\'';
+    showToast('שגיאה, נסה שוב', 'bg-red-500');
+  }
+}
+
 // ── Like from profile modal ───────────────────────────────────────────────────
 async function handleModalLike(theirEmail, theirName, btn) {
   await handleLike(theirEmail, theirName, btn);

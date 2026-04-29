@@ -428,6 +428,13 @@ function openEventDetailModal(eventId) {
             </svg>
             שתף עם חברים
           </a>
+          ${me && ev.createdBy === me.email ? `
+          <button onclick="handleDeleteEvent('${ev.id}')"
+            style="background:none;border:1px solid #fca5a5;border-radius:8px;font-size:0.75rem;font-weight:700;
+                   color:#ef4444;cursor:pointer;padding:4px 10px;white-space:nowrap;"
+            onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
+            🗑️ מחק
+          </button>` : ''}
           <button onclick="closeEventDetailModal()"
             style="background:none;border:none;font-size:1.3rem;color:#9ca3af;cursor:pointer;line-height:1;padding:3px 0 0;"
             onmouseover="this.style.color='#7c3aed'" onmouseout="this.style.color='#9ca3af'">✕</button>
@@ -562,6 +569,20 @@ async function handleModalInterest(eventId, btn) {
 function closeEventDetailModal() {
   const el = document.getElementById('eventDetailOverlay');
   if (el) el.remove();
+}
+
+async function handleDeleteEvent(eventId) {
+  if (!confirm('למחוק את האירוע לצמיתות?')) return;
+  try {
+    await db.collection('events').doc(eventId).delete();
+    allEventsData = allEventsData.filter(e => e.id !== eventId);
+    closeEventDetailModal();
+    renderEventsGrid();
+    showToast('האירוע נמחק', 'bg-gray-600');
+  } catch (e) {
+    showToast('שגיאה במחיקה', 'bg-red-500');
+    console.error(e);
+  }
 }
 
 // ── Load events ───────────────────────────────────────────────────────────────
