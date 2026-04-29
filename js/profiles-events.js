@@ -685,19 +685,6 @@ function renderEventCard(ev) {
     : `<span style="font-size:12px;color:#9ca3af;">היה הראשון להצטרף!</span>`;
 
   let waSection = '';
-  if (iAmIn && !isPast) {
-    const phone  = ev.creatorPhone || '';
-    const waNum  = formatWhatsApp(phone);
-    const waLink = waNum.length >= 11
-      ? `<a href="https://wa.me/${waNum}" target="_blank" rel="noopener noreferrer"
-            style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;
-                   background:#25D366;color:#fff;font-weight:700;font-size:13px;
-                   padding:9px 16px;border-radius:999px;border:none;text-decoration:none;">
-           💬 פתח ווצאפ${ev.creatorName ? ' עם ' + ev.creatorName : ''}
-         </a>`
-      : `<p style="text-align:center;font-size:12px;color:#9ca3af;">🙋 הצטרפת! ניתן לפנות ליוצר דרך הפרופיל שלו.</p>`;
-    waSection = `<div style="margin-top:2px;">${waLink}</div>`;
-  }
 
   const hobbyList = (ev.associatedHobbies && ev.associatedHobbies.length)
     ? ev.associatedHobbies : [ev.hobby || '🎯 כללי'];
