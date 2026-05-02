@@ -1,7 +1,7 @@
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function sanitizeEmail(email) {
-  return email.replace(/@/g, '_at_').replace(/\./g, '_dot_');
+  return email.replace(/[^\x20-\x7E]/g, '').trim().replace(/@/g, '_at_').replace(/\./g, '_dot_');
 }
 
 // Returns clean 10-digit string or throws a Hebrew error
