@@ -21,7 +21,7 @@ const ADMIN_EMAIL = 'zivv1992@gmail.com';
 
 // ─── Dev Mode ───────────────────────────────────────────────────────────────
 // Set to false before deploying to production
-const IS_DEV_MODE = true;
+const IS_DEV_MODE = false;
 
 // ─── EmailJS Config ─────────────────────────────────────────────────────────
 const EMAILJS_CONFIG = {
