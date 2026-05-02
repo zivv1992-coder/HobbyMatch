@@ -76,12 +76,12 @@ function openChat(otherEmail, otherName) {
           ? msg.sentAt.toDate().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
           : '';
         return `
-          <div class="flex ${isMine ? 'justify-start' : 'justify-end'} mb-2">
-            <div class="max-w-[75%] px-3 py-2 rounded-2xl text-sm ${isMine
-              ? 'bg-purple-600 text-white rounded-tr-sm'
-              : 'bg-gray-100 text-gray-800 rounded-tl-sm'}">
-              <p>${msg.text}</p>
-              <p class="text-[10px] mt-0.5 ${isMine ? 'text-purple-200' : 'text-gray-400'} text-left">${time}</p>
+          <div class="flex ${isMine ? 'justify-start' : 'justify-end'} mb-3">
+            <div class="max-w-[78%] px-4 py-2.5 text-sm ${isMine
+              ? 'bg-gradient-to-br from-purple-600 to-blue-600 text-white rounded-2xl rounded-tr-sm shadow-md'
+              : 'bg-white text-gray-800 rounded-2xl rounded-tl-sm border border-gray-100 shadow-sm'}">
+              <p class="leading-relaxed">${msg.text}</p>
+              <p class="text-[10px] mt-1 ${isMine ? 'text-white/60' : 'text-gray-400'} text-left">${time}</p>
             </div>
           </div>`;
       }).join('');

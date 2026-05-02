@@ -113,8 +113,8 @@ function renderCard(user, isLiked, myUser, isMatch) {
 
   // Like button
   const heartBtnClass = isLiked
-    ? 'flex items-center gap-1.5 transition-transform active:scale-90 text-red-500'
-    : 'flex items-center gap-1.5 transition-transform active:scale-90 text-gray-400 hover:text-red-400';
+    ? 'flex items-center gap-1.5 transition-all duration-150 active:scale-125 text-red-500 heart-liked'
+    : 'flex items-center gap-1.5 transition-all duration-150 active:scale-125 text-gray-400 hover:text-red-400';
 
   const romanticBadge = user.romantic
     ? `<span class="inline-flex items-center gap-1 bg-pink-50 text-pink-500 text-xs font-semibold px-2.5 py-1 rounded-full border border-pink-100">❤️ פתוח/ה לקשר רומנטי</span>`
@@ -128,7 +128,7 @@ function renderCard(user, isLiked, myUser, isMatch) {
   const myUserJson = JSON.stringify(myUser).replace(/"/g, '&quot;');
 
   return `
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col"
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
          data-email="${user.email}">
 
       <!-- Post Header -->

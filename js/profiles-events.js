@@ -762,7 +762,7 @@ function renderEventCard(ev) {
     </div>` : '';
 
   return `
-    <div class="bg-white rounded-[28px] overflow-hidden ${isPast ? 'opacity-70' : ''}"
+    <div class="bg-white rounded-[28px] overflow-hidden ${isPast ? 'opacity-70' : ''} transition-all duration-200 hover:shadow-2xl hover:-translate-y-1"
          style="box-shadow:0 10px 40px rgba(139,92,246,0.08);cursor:pointer;"
          onclick="if(!event.target.closest('a,button')) openEventDetailModal('${ev.id}')">
 
@@ -771,13 +771,20 @@ function renderEventCard(ev) {
         <img src="${ev.imageUrl}" class="w-full h-full object-cover" alt="${ev.title || ''}"/>
         <div class="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent"></div>
         <div class="absolute bottom-3 right-4 flex flex-wrap gap-1.5 items-center">${hobbyTags}${matchBadge}${pastBadge}</div>
-      </div>` : ''}
+      </div>` : `
+      <div class="relative w-full h-28 overflow-hidden" style="background:linear-gradient(135deg,#4c1d95 0%,#2563eb 100%);">
+        <div class="absolute inset-0 opacity-20" style="background-image:radial-gradient(circle at 20% 50%,#fff 1px,transparent 1px),radial-gradient(circle at 80% 20%,#fff 1px,transparent 1px);background-size:30px 30px;"></div>
+        <div class="absolute inset-0 flex flex-col justify-end p-4">
+          <h3 class="font-black text-white text-lg leading-snug line-clamp-2 drop-shadow">${ev.title || ''}</h3>
+        </div>
+        <div class="absolute top-3 left-3 flex flex-wrap gap-1.5 items-center">${matchBadge}${pastBadge}</div>
+      </div>`}
 
       <div class="p-5 flex flex-col gap-4">
-        ${!ev.imageUrl ? `<div class="flex flex-wrap gap-1.5 items-center">${hobbyTags}${matchBadge}${pastBadge}</div>` : ''}
+        ${!ev.imageUrl ? `<div class="flex flex-wrap gap-1.5 items-center">${hobbyTags}</div>` : `<div class="flex flex-wrap gap-1.5 items-center">${hobbyTags}${matchBadge}${pastBadge}</div>`}
 
         <div>
-          <h3 class="font-black text-purple-900 text-lg leading-snug">${ev.title || ''}</h3>
+          ${ev.imageUrl ? `<h3 class="font-black text-purple-900 text-lg leading-snug">${ev.title || ''}</h3>` : ''}
           ${ev.detectedHobbyTag ? `
           <span style="display:inline-flex;align-items:center;font-size:0.72rem;font-weight:600;color:#6d28d9;border:1px solid #7c3aed;border-radius:999px;padding:2px 10px;background:transparent;margin-top:4px;">
             ${formatHobbyTag(ev.detectedHobbyTag)}
