@@ -55,9 +55,7 @@ async function _setupFCM() {
   try {
     _fcmMessaging = firebase.messaging();
     const token = await _fcmMessaging.getToken({ vapidKey: FCM_VAPID_KEY });
-    if (token) {
-      await db.collection('users').doc(sanitizeEmail(me.email)).update({ fcmToken: token });
-    }
+    if (token) console.log('FCM token ready');
     _fcmMessaging.onMessage((payload) => {
       showToast(payload.notification?.title || 'שותף חדש! 🎉', 'bg-purple-600');
       _refreshMatches();
