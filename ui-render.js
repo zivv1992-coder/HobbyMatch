@@ -15,7 +15,7 @@ function buildCarouselHtml(user) {
   }
 
   const slidesHtml = images.map(url =>
-    `<img src="${url}" alt="תמונת תחביב" class="w-full h-full flex-none object-cover"/>`
+    `<img src="${url}" alt="תמונת תחביב" class="w-full h-full flex-none object-contain bg-gray-50"/>`
   ).join('');
 
   const multi = images.length > 1;
@@ -179,16 +179,7 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
     `<span class="inline-block bg-purple-100 text-purple-700 text-sm font-bold px-3 py-1 rounded-full">${h}</span>`
   ).join('');
 
-  // Images — support future array, currently single
-  const images = user.hobbyImages && user.hobbyImages.length
-    ? user.hobbyImages
-    : (user.hobbyImageUrl ? [user.hobbyImageUrl] : []);
-
-  const imagesHtml = images.length
-    ? images.map(url =>
-        `<img src="${url}" class="w-full rounded-2xl object-cover max-h-52" alt="תמונת תחביב"/>`
-      ).join('')
-    : `<div class="w-full h-28 rounded-2xl bg-gradient-to-br from-purple-200 to-blue-200 flex items-center justify-center text-5xl">🎯</div>`;
+  const modalCarouselHtml = buildCarouselHtml(user);
 
   const romanticBadge = user.romantic
     ? `<span class="inline-block bg-pink-100 text-pink-600 text-xs font-bold px-3 py-1 rounded-full">❤️ פתוח/ה לקשר רומנטי</span>`
@@ -216,8 +207,8 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
       </div>
 
       <!-- Images -->
-      <div class="px-5 flex flex-col gap-2 mt-2">
-        ${imagesHtml}
+      <div class="mt-2 overflow-hidden">
+        ${modalCarouselHtml}
       </div>
 
       <!-- Details -->
@@ -268,6 +259,7 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
 
   modal.addEventListener('click', () => modal.remove());
   document.body.appendChild(modal);
+  initCarousels();
 }
 
 // ─── Report Modal ─────────────────────────────────────────────────────────────

@@ -66,9 +66,13 @@ async function _setupFCM() {
 // Listen for new incoming likes → detect mutual matches in real-time
 function _startMatchListener() {
   if (_matchUnsub) _matchUnsub();
+  let listenerReady = false;
   _matchUnsub = db.collection('likes')
     .where('to', '==', me.email)
     .onSnapshot(async (snap) => {
+      // Skip initial snapshot — likedEmails may not be loaded yet and all docs
+      // arrive as "added", causing false match popups. _refreshMatches handles initial state.
+      if (!listenerReady) { listenerReady = true; await _refreshMatches(); return; }
       for (const change of snap.docChanges()) {
         if (change.type === 'added') {
           const fromEmail = change.doc.data().from;
