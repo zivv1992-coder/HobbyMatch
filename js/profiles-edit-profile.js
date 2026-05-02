@@ -24,7 +24,6 @@ function openEditDrawer() {
   document.getElementById('ed_city').value  = user.city     || '';
   document.getElementById('ed_hobby').value = user.hobby    || '';
   document.getElementById('ed_desc').value      = user.hobbyDescription || '';
-  document.getElementById('ed_interests').value = user.interests || '';
   document.getElementById('ed_email').value = user.email    || '';
   // Profile photo
   ed_profilePhotoFile = null;
@@ -177,7 +176,7 @@ async function handleSaveProfile() {
   const city  = document.getElementById('ed_city').value;
   const hobby = document.getElementById('ed_hobby').value.trim();
   const desc      = document.getElementById('ed_desc').value.trim();
-  const interests = document.getElementById('ed_interests').value.trim();
+  const interests = desc;
   if (!name || !phone || !age || !city || !hobby) {
     errEl.textContent = 'אנא מלא את כל שדות החובה (*)';
     errEl.classList.remove('hidden');
