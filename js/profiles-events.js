@@ -1235,12 +1235,34 @@ function shareEvent(eventId) {
 }
 
 function shareApp() {
-  const text = '🤝 קונקשן — מצאים אנשים עם תחביבים משותפים בסביבתך!\nhttps://zivv1992-coder.github.io/hobby-match/';
-  if (navigator.share) {
-    navigator.share({ title: 'קונקשן', text }).catch(() => {});
-  } else {
-    navigator.clipboard.writeText(text).then(() => alert('הקישור הועתק ללוח!')).catch(() => {});
-  }
+  const url  = 'https://hobby-connectionn.vercel.app/';
+  const text = '🤝 קונקשן — מוצאים אנשים עם תחביבים משותפים בסביבתך!\n' + url;
+
+  const existing = document.getElementById('shareAppMenu');
+  if (existing) { existing.remove(); return; }
+
+  const menu = document.createElement('div');
+  menu.id = 'shareAppMenu';
+  menu.style.cssText = 'position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:9999;background:#fff;border:1.5px solid #ede9fe;border-radius:16px;box-shadow:0 8px 32px rgba(139,92,246,0.15);padding:8px;display:flex;flex-direction:column;gap:4px;min-width:200px;';
+  menu.innerHTML = `
+    <a href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener noreferrer"
+       onclick="document.getElementById('shareAppMenu').remove()"
+       style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;color:#128C7E;font-weight:700;font-size:0.9rem;text-decoration:none;background:#f0fdf4;"
+       onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.523 5.83L.057 23.57a.5.5 0 0 0 .611.611l5.74-1.466A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.944 9.944 0 0 1-5.073-1.386l-.363-.215-3.761.961.977-3.762-.232-.375A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+      שתף בווצאפ
+    </a>
+    <button onclick="navigator.clipboard.writeText('${url}').then(()=>{document.getElementById('shareAppMenu').remove();alert('הקישור הועתק!')})"
+       style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;color:#6d28d9;font-weight:700;font-size:0.9rem;background:#f5f3ff;border:none;cursor:pointer;width:100%;"
+       onmouseover="this.style.background='#ede9fe'" onmouseout="this.style.background='#f5f3ff'">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      העתק קישור
+    </button>`;
+
+  document.body.appendChild(menu);
+  setTimeout(() => document.addEventListener('click', function h(e) {
+    if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener('click', h); }
+  }), 50);
 }
 
 // ── Smart Event Parse (paste text → auto-fill form) ───────────────────────────
