@@ -798,6 +798,13 @@ function renderEventCard(ev) {
         <div class="flex items-center justify-between pt-3 border-t border-gray-50 flex-wrap gap-3">
           <div class="flex items-center gap-2 flex-wrap">${circlesHtml}</div>
           <div class="flex items-center gap-2">
+            <button onclick="shareEvent('${ev.id}')" title="שתף אירוע"
+              class="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 bg-gray-50 hover:bg-purple-50 hover:border-purple-300 transition text-gray-500 hover:text-purple-700">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+            </button>
             ${!isPast ? `
               <a href="${calendarLink}" target="_blank" rel="noopener noreferrer" title="הוסף ליומן Google"
                 class="text-xs font-bold px-3 py-2 rounded-xl transition bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100">
@@ -1204,6 +1211,36 @@ function extractHobbyFromText(text) {
   }
 
   return null;
+}
+
+// ── Share helpers ─────────────────────────────────────────────────────────────
+function shareEvent(eventId) {
+  const ev = allEventsData.find(e => e.id === eventId);
+  if (!ev) return;
+  const evDate = ev.dateTime ? (ev.dateTime.toDate ? ev.dateTime.toDate() : new Date(ev.dateTime)) : null;
+  const dateStr = evDate ? evDate.toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'long' }) : '';
+  const lines = [
+    `🎯 ${ev.title || 'אירוע'}`,
+    dateStr ? `📅 ${dateStr}` : '',
+    ev.location ? `📍 ${ev.location}` : '',
+    '',
+    '🤝 קונקשן — https://zivv1992-coder.github.io/hobby-match/'
+  ].filter(Boolean).join('\n');
+
+  if (navigator.share) {
+    navigator.share({ title: ev.title || 'אירוע', text: lines }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(lines).then(() => alert('הפרטים הועתקו ללוח!')).catch(() => {});
+  }
+}
+
+function shareApp() {
+  const text = '🤝 קונקשן — מצאים אנשים עם תחביבים משותפים בסביבתך!\nhttps://zivv1992-coder.github.io/hobby-match/';
+  if (navigator.share) {
+    navigator.share({ title: 'קונקשן', text }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(text).then(() => alert('הקישור הועתק ללוח!')).catch(() => {});
+  }
 }
 
 // ── Smart Event Parse (paste text → auto-fill form) ───────────────────────────
