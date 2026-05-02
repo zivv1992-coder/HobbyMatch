@@ -100,14 +100,14 @@ function handleCardImageClick(user, isLiked, myUser, event) {
   showProfileModal(user, isLiked, myUser);
 }
 
-function renderCard(user, isLiked, myUser) {
+function renderCard(user, isLiked, myUser, isMatch) {
   const dist = (myUser && myUser.latitude && user.latitude)
     ? Math.round(distanceKm(myUser.latitude, myUser.longitude, user.latitude, user.longitude))
     : null;
 
-  // Avatar: profile photo → gradient initials fallback
+  // Avatar: show profile photo only for matched users
   const initials = (user.fullName || '?').trim()[0].toUpperCase();
-  const avatarHtml = user.profilePhotoURL
+  const avatarHtml = (isMatch && user.profilePhotoURL)
     ? `<img src="${user.profilePhotoURL}" class="w-10 h-10 rounded-full object-cover ring-2 ring-purple-100 shrink-0" alt=""/>`
     : `<div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-black text-base ring-2 ring-purple-100 shrink-0">${initials}</div>`;
 

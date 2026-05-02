@@ -45,7 +45,7 @@ function _appendLazyBatch() {
   if (batch.length === 0) { _detachLazyObserver(); return; }
   const frag = document.createDocumentFragment();
   const tmp  = document.createElement('div');
-  tmp.innerHTML = batch.map(u => renderCard(u, likedEmails.has(u.email), me)).join('');
+  tmp.innerHTML = batch.map(u => renderCard(u, likedEmails.has(u.email), me, _currentMatches.some(m => m.email === u.email))).join('');
   while (tmp.firstChild) frag.appendChild(tmp.firstChild);
   document.getElementById('lazyLoader')?.remove();
   grid.appendChild(frag);
@@ -326,7 +326,7 @@ function discoverHobby(hobby) {
   );
   switchTab('discover');
   grid.innerHTML = filtered.length > 0
-    ? filtered.map(u => renderCard(u, likedEmails.has(u.email), me)).join('')
+    ? filtered.map(u => renderCard(u, likedEmails.has(u.email), me, _currentMatches.some(m => m.email === u.email))).join('')
     : renderEmpty(`לא נמצאו אנשים עם תחביב "${hobby}" באזורך`);
   initCarousels();
 }
