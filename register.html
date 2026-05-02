@@ -356,9 +356,16 @@
         goToStep(3);
       }
     } catch (err) {
+      console.error('Google sign-in error:', err.code, err.message, err);
       if (err.code !== 'auth/popup-closed-by-user') {
-        showError('step1Error', 'שגיאה בהתחברות עם Google. נסה שוב.');
-        console.error(err);
+        const msg = err.code === 'auth/unauthorized-domain'
+          ? 'הדומיין לא מאושר ב-Firebase. הוסף אותו ב-Authentication → Settings → Authorized domains.'
+          : err.code === 'auth/operation-not-allowed'
+          ? 'התחברות עם Google לא מופעלת ב-Firebase. הפעל אותה ב-Authentication → Sign-in method.'
+          : err.code === 'auth/popup-blocked'
+          ? 'הדפדפן חסם את החלון. אפשר Popups לאתר זה.'
+          : `שגיאה בהתחברות עם Google: ${err.code || err.message}`;
+        showError('step1Error', msg);
       }
     } finally {
       btn.disabled = false;
