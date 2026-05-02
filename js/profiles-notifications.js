@@ -49,19 +49,12 @@ function denyPushPermission() {
   localStorage.setItem('kn_push_status', 'denied');
 }
 
-function _urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = atob(base64);
-  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
-}
-
 async function _setupFCM() {
   if (!('PushManager' in window)) return;
   if (typeof FCM_VAPID_KEY === 'undefined' || FCM_VAPID_KEY === 'YOUR_FCM_VAPID_KEY') return;
   try {
     _fcmMessaging = firebase.messaging();
-    const token = await _fcmMessaging.getToken({ vapidKey: _urlBase64ToUint8Array(FCM_VAPID_KEY) });
+    const token = await _fcmMessaging.getToken({ vapidKey: FCM_VAPID_KEY });
     if (token) {
       await db.collection('users').doc(sanitizeEmail(me.email)).update({ fcmToken: token });
     }

@@ -13,7 +13,7 @@ const db      = firebase.firestore();
 const storage = firebase.storage();
 
 // ─── Firebase Cloud Messaging — VAPID Key ───────────────────────────────────
-const FCM_VAPID_KEY = "p2vorxaidfcNY3v6cC_yrM_TbSrGecdn08ndERwF1yY";
+const FCM_VAPID_KEY = "BJ9FYrOsn301Wfq9tA6em9wfQO8sQH3Ku13ksh7Blc9s45WLNbPRZo68Ip3bKTECpzGqQ0UoTjDlvdgEGLixk2I";
 
 // ─── Admin ──────────────────────────────────────────────────────────────────
 // Replace with the email address of the admin user
