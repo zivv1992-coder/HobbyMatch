@@ -21,6 +21,8 @@ if (!me) {
 // ── Boot sequence ─────────────────────────────────────────────────────────────
 if (me) {
   loadFeed().then(() => { initNotifications(); initDiscovery(); });
+  db.collection('users').doc(sanitizeEmail(me.email)).update({ lastSeen: new Date() })
+    .catch(() => {});
 }
 if (new URLSearchParams(location.search).get('new') === '1') {
   setTimeout(() => showToast('הפרופיל נוצר בהצלחה! ברוך הבא לקונקשן 🎉'), 600);

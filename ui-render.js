@@ -157,6 +157,7 @@ function renderCard(user, isLiked, myUser, isMatch) {
           data-liked="${isLiked}"
         >${isLiked ? HEART_FILLED : HEART_OUTLINE}<span class="like-label text-sm font-semibold">${isLiked ? 'ביטול לייק' : 'לייק'}</span></button>
         ${user.hobbyDescription ? `<p class="text-gray-600 text-sm leading-relaxed line-clamp-2">${user.hobbyDescription}</p>` : ''}
+        ${user.interests ? `<p class="text-gray-400 text-xs leading-relaxed line-clamp-1">✨ ${user.interests}</p>` : ''}
         ${romanticBadge}
       </div>
     </div>`;
@@ -222,10 +223,16 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
         <!-- Description -->
         ${user.hobbyDescription ? `
         <div>
-          <p class="text-xs font-bold text-gray-400 uppercase mb-1">תיאור תחביב/ים</p>
+          <p class="text-xs font-bold text-gray-400 uppercase mb-1">תיאור התחביבים</p>
           <p class="text-gray-600 text-sm leading-relaxed">${user.hobbyDescription}</p>
         </div>` : ''}
 
+        <!-- Interests -->
+        ${user.interests ? `
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase mb-1">תחומי עניין</p>
+          <p class="text-gray-600 text-sm leading-relaxed">✨ ${user.interests}</p>
+        </div>` : ''}
 
         <!-- Badges -->
         ${romanticBadge ? `<div>${romanticBadge}</div>` : ''}
