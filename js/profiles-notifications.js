@@ -80,8 +80,7 @@ function _startMatchListener() {
             const profile = allUsers.find(u => u.email === fromEmail) || await _fetchUser(fromEmail);
             if (profile) {
               showMatchPopup(me, profile);
-              _seenMatchEmails.add(fromEmail);
-              localStorage.setItem(_seenKey, JSON.stringify([..._seenMatchEmails]));
+              // Don't mark as seen here — bell badge stays visible until user opens the panel
             }
           }
         }
