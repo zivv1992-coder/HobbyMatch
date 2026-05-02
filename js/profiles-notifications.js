@@ -195,7 +195,7 @@ function _renderNotifPanel() {
     html += unseenMatches.map(p => {
       const imgHtml = p.profilePhotoURL || p.hobbyImageUrl
         ? `<img src="${p.profilePhotoURL || p.hobbyImageUrl}" class="w-10 h-10 rounded-full object-cover border-2 border-purple-100 flex-shrink-0" loading="lazy"/>`
-        : `<div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 text-lg">🎯</div>`;
+        : `<div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 text-lg">🤝</div>`;
       return `
         <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-50 hover:bg-purple-50 cursor-pointer transition"
           onclick="closeNotifPanel(); switchTab('matches')">
@@ -204,7 +204,7 @@ function _renderNotifPanel() {
             <p class="font-bold text-purple-900 text-sm truncate">${p.fullName || p.name || ''}, ${p.age || ''}</p>
             <p class="text-xs text-gray-400 truncate">📍 ${p.city || ''} · 🎯 ${p.hobby || ''}</p>
           </div>
-          <span class="text-xs bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full shrink-0">מאצ' חדש!</span>
+          <span class="text-xs bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full shrink-0">חיבור! 🤝</span>
         </div>`;
     }).join('');
   }

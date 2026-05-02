@@ -457,9 +457,11 @@ function openImageLightbox(url) {
 // ─── Empty States ──────────────────────────────────────────────────────────────
 
 function renderEmpty(msg) {
-  return `<div class="col-span-full text-center py-16 text-gray-400">
-    <div class="text-5xl mb-4">🔍</div>
-    <p class="text-lg font-semibold">${msg}</p>
+  return `<div class="col-span-full text-center py-16">
+    <div class="text-6xl mb-4" style="filter:drop-shadow(0 4px 16px rgba(124,58,237,0.25))">🤝</div>
+    <p class="text-base font-bold text-gray-600 mb-1">${msg}</p>
+    <p class="text-sm text-gray-400 mb-5">נסה להרחיב את הרדיוס או לשנות פילטרים</p>
+    <button onclick="setRadius(null)" class="text-sm font-bold text-purple-600 border border-purple-200 px-5 py-2 rounded-xl hover:bg-purple-50 transition">הצג כל הארץ</button>
   </div>`;
 }
 

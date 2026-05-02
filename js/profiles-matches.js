@@ -178,6 +178,14 @@ async function handleLike(theirEmail, theirName, btn) {
       likedEmails.add(theirEmail);
       btn.dataset.liked = 'true';
       updateLikeBtn(btn, true);
+      // 🤝 float-up particle
+      const rect = btn.getBoundingClientRect();
+      const p = document.createElement('span');
+      p.textContent = '🤝';
+      p.className = 'handshake-particle';
+      p.style.cssText = `position:fixed;left:${rect.left + rect.width/2 - 14}px;top:${rect.top - 4}px;font-size:1.6rem;z-index:9999;`;
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 800);
 
       const isMatch = await checkMatch(me.email, theirEmail);
       if (isMatch) {
