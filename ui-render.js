@@ -15,7 +15,7 @@ function buildCarouselHtml(user) {
   }
 
   const slidesHtml = images.map(url =>
-    `<img src="${url}" alt="תמונת תחביב" class="w-full h-full flex-none object-contain bg-gray-50"/>`
+    `<img src="${url}" alt="תמונת תחביב" class="w-full h-full flex-none object-contain bg-gray-50 border border-gray-200 cursor-zoom-in" onclick="event.stopPropagation();openImageLightbox('${url}')"/>`
   ).join('');
 
   const multi = images.length > 1;
@@ -428,6 +428,23 @@ function showMatchPopup(myUser, matchedUser) {
       </button>
     </div>`;
   document.body.appendChild(popup);
+}
+
+// ─── Image Lightbox ───────────────────────────────────────────────────────────
+
+function openImageLightbox(url) {
+  const existing = document.getElementById('imageLightbox');
+  if (existing) existing.remove();
+
+  const lb = document.createElement('div');
+  lb.id = 'imageLightbox';
+  lb.className = 'fixed inset-0 z-[70] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4';
+  lb.innerHTML = `
+    <button onclick="document.getElementById('imageLightbox').remove()"
+      class="absolute top-4 left-4 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white text-xl flex items-center justify-center transition">✕</button>
+    <img src="${url}" class="max-w-full max-h-[90vh] rounded-xl object-contain shadow-2xl border border-white/10" alt="תמונה מוגדלת"/>`;
+  lb.addEventListener('click', (e) => { if (e.target === lb) lb.remove(); });
+  document.body.appendChild(lb);
 }
 
 // ─── Empty States ──────────────────────────────────────────────────────────────
