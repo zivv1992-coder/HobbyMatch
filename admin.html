@@ -671,10 +671,12 @@
 
     if (photoIdx >= photos.length) return;
 
+    const deletedUrl    = photos[photoIdx];
     const updatedPhotos = photos.filter((_, i) => i !== photoIdx);
     const newMain       = updatedPhotos[0] || '';
 
     try {
+      try { await storage.refFromURL(deletedUrl).delete(); } catch (_) {}
       await db.collection('users').doc(sanitizeEmail(email)).update({
         hobbyImages:   updatedPhotos,
         hobbyImageUrl: newMain

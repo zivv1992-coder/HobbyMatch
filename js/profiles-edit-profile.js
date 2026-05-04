@@ -10,7 +10,7 @@ function openEditDrawer() {
   const sel = document.getElementById('ed_city');
   if (sel.options.length <= 1) {
     sel.innerHTML = '<option value="">בחר עיר...</option>';
-    CITIES.forEach(c => {
+    [...CITIES].sort((a, b) => a.name.localeCompare(b.name, 'he')).forEach(c => {
       const o = document.createElement('option');
       o.value = c.name;
       o.textContent = c.name;
