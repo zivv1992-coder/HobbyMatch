@@ -52,6 +52,21 @@ document.getElementById('feedbackText').addEventListener('input', function () {
   document.getElementById('feedbackCharCount').textContent = `${this.value.length} / 1000`;
 });
 
+// ── App Shortcut deep-link: route hash to correct tab on load ─────────────────
+(function () {
+  const hash = window.location.hash;
+  if (!hash || !me) return;
+  const map = { '#chat': 'matches', '#discover': 'discover', '#edit': 'discover' };
+  const tab = map[hash];
+  if (tab) {
+    window.addEventListener('load', () => {
+      switchTab(tab);
+      if (hash === '#edit') setTimeout(openEditDrawer, 400);
+      history.replaceState(null, '', 'profiles.html');
+    });
+  }
+})();
+
 // ── Product tour: auto-start on first visit ───────────────────────────────────
 window.addEventListener('load', function () {
   const _tourKey = 'hobbyMatchTourDone_' + (me ? me.email : 'guest');

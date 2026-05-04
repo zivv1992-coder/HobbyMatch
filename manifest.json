@@ -1,0 +1,50 @@
+{
+  "name": "קונקשן",
+  "short_name": "קונקשן",
+  "description": "מצא שותפים לתחביבים לפי מיקום",
+  "start_url": "/hobby-match/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "portrait",
+  "background_color": "#f0edff",
+  "theme_color": "#4c1d95",
+  "lang": "he",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "שיחות שלי",
+      "short_name": "שיחות",
+      "description": "פתח את טאב השיחות",
+      "url": "/hobby-match/profiles.html#chat",
+      "icons": [{ "src": "icons/shortcut-chat.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "גלה שותפים",
+      "short_name": "גלה",
+      "description": "פתח את טאב הגילוי",
+      "url": "/hobby-match/profiles.html#discover",
+      "icons": [{ "src": "icons/shortcut-discover.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "ערוך פרופיל",
+      "short_name": "פרופיל",
+      "description": "פתח את עריכת הפרופיל",
+      "url": "/hobby-match/profiles.html#edit",
+      "icons": [{ "src": "icons/shortcut-edit.png", "sizes": "96x96" }]
+    }
+  ]
+}

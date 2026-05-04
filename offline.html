@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>אין חיבור — קונקשן</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤝</text></svg>">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4c1d95">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100..900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Heebo', sans-serif; }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+    .float { animation: float 3s ease-in-out infinite; }
+    @keyframes pulse-ring {
+      0% { transform: scale(1); opacity: 0.6; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+    .pulse-ring {
+      animation: pulse-ring 2s ease-out infinite;
+    }
+  </style>
+</head>
+<body class="bg-[#f0edff] min-h-screen flex items-center justify-center p-5">
+
+<!-- Background blobs -->
+<div class="fixed inset-0 overflow-hidden pointer-events-none">
+  <div class="absolute w-96 h-96 bg-purple-700 rounded-full opacity-20 blur-3xl -top-24 -right-24"></div>
+  <div class="absolute w-72 h-72 bg-blue-600 rounded-full opacity-15 blur-3xl bottom-0 -left-16"></div>
+</div>
+
+<div class="relative z-10 bg-white rounded-3xl shadow-xl p-10 w-full max-w-sm text-center">
+
+  <!-- Pulsing signal icon -->
+  <div class="relative flex items-center justify-center mb-6">
+    <div class="absolute w-24 h-24 rounded-full bg-purple-200 pulse-ring"></div>
+    <div class="relative text-6xl float">📡</div>
+  </div>
+
+  <h1 class="text-2xl font-black text-purple-900 mb-2">אין חיבור לאינטרנט</h1>
+  <p class="text-purple-600 text-sm leading-relaxed mb-8">
+    נראה שאתה לא מחובר כרגע.<br/>בדוק את החיבור ונסה שוב.
+  </p>
+
+  <button
+    onclick="location.reload()"
+    class="block w-full bg-gradient-to-l from-purple-900 to-blue-600 text-white font-bold text-lg py-4 rounded-2xl hover:opacity-90 transition mb-3"
+  >
+    🔄 נסה שוב
+  </button>
+
+  <p class="text-xs text-gray-400 mt-4">
+    קונקשן — מחובר לאנשים, לא רק לרשת 🤝
+  </p>
+</div>
+
+</body>
+</html>

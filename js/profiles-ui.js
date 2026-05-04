@@ -164,3 +164,71 @@ function startTour() {
 // Future "Neon Connection Card" UI logic goes here.
 // This card will display a matched user in a glowing neon style.
 // Example entry point: function openNeonConnectionCard(userEmail) { ... }
+
+// ── Notification Settings Modal ───────────────────────────────────────────────
+function openNotificationSettings() {
+  closeHamburger();
+  const existing = document.getElementById('notifSettingsModal');
+  if (existing) existing.remove();
+
+  const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
+  const permLabels = { granted: '✅ מופעל', denied: '🚫 חסום', default: '⏸ לא הוגדר', unsupported: '❌ לא נתמך' };
+  const isOn = perm === 'granted';
+
+  const modal = document.createElement('div');
+  modal.id = 'notifSettingsModal';
+  modal.className = 'fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4';
+  modal.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="font-black text-gray-800 text-base">🔔 הגדרות התראות</h3>
+        <button onclick="document.getElementById('notifSettingsModal').remove()"
+          class="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+      </div>
+
+      <div class="flex items-center justify-between bg-purple-50 rounded-xl px-4 py-3 mb-4">
+        <div>
+          <p class="font-bold text-gray-800 text-sm">התראות Push</p>
+          <p class="text-xs text-gray-500 mt-0.5">קבל התראות על התאמות ושיחות חדשות</p>
+        </div>
+        <button id="notifToggleBtn" onclick="handleNotifToggle()"
+          class="relative inline-flex items-center w-12 h-6 rounded-full transition-all duration-200 focus:outline-none shrink-0"
+          style="background:${isOn ? 'linear-gradient(to left,#4c1d95,#2563eb)' : '#e5e7eb'}">
+          <span id="notifToggleThumb"
+            class="inline-block w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+            style="transform:translateX(${isOn ? '-26px' : '-2px'})"></span>
+        </button>
+      </div>
+
+      <div id="notifPermStatus" class="text-xs text-center font-semibold py-2 rounded-xl mb-3
+        ${perm === 'granted' ? 'bg-green-50 text-green-700' : perm === 'denied' ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-500'}">
+        סטטוס: ${permLabels[perm] || perm}
+      </div>
+
+      ${perm === 'denied' ? `
+        <p class="text-xs text-red-500 text-center bg-red-50 rounded-xl px-3 py-2">
+          ההרשאה נחסמה — שנה בהגדרות הדפדפן שלך
+        </p>` : ''}
+    </div>`;
+  modal.addEventListener('click', () => modal.remove());
+  document.body.appendChild(modal);
+}
+
+async function handleNotifToggle() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'denied') {
+    showToast('ההרשאה חסומה — שנה בהגדרות הדפדפן', 'bg-red-500');
+    return;
+  }
+  if (Notification.permission === 'granted') {
+    showToast('כדי לבטל התראות — שנה בהגדרות הדפדפן', 'bg-gray-600');
+    return;
+  }
+  const result = await Notification.requestPermission();
+  document.getElementById('notifSettingsModal')?.remove();
+  if (result === 'granted') {
+    showToast('התראות הופעלו! 🔔', 'bg-purple-600');
+  } else {
+    showToast('התראות לא הופעלו', 'bg-gray-500');
+  }
+}
