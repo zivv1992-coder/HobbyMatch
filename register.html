@@ -250,11 +250,21 @@
       </div>
     </div>
 
+    <!-- Privacy consent -->
+    <label class="flex items-start gap-3 mt-5 cursor-pointer group">
+      <input id="privacyConsent" type="checkbox"
+        class="mt-0.5 w-4 h-4 accent-purple-700 shrink-0 cursor-pointer"/>
+      <span class="text-xs text-gray-500 leading-relaxed">
+        אני מסכים/ה שהפרטים שמילאתי (שם, גיל, עיר, תחביב ותמונה) יוצגו למשתמשים אחרים
+        לצורך יצירת חיבורים. המידע לא יועבר לגורמים חיצוניים ומשמש אך ורק לתפעול הפלטפורמה.
+      </span>
+    </label>
+
     <div id="step3Error" class="text-red-500 text-sm mt-3 hidden"></div>
 
     <button
       onclick="handleCreateProfile()"
-      class="w-full mt-6 bg-gradient-to-l from-purple-900 to-blue-600 text-white font-bold text-base py-3 rounded-xl hover:opacity-90 transition"
+      class="w-full mt-4 bg-gradient-to-l from-purple-900 to-blue-600 text-white font-bold text-base py-3 rounded-xl hover:opacity-90 transition"
     >
       צור פרופיל והתחל
     </button>
@@ -509,6 +519,10 @@
 
     if (!name || !phone || !age || !city || !hobby) {
       showError('step3Error', 'אנא מלא את כל שדות החובה (*)');
+      return;
+    }
+    if (!document.getElementById('privacyConsent').checked) {
+      showError('step3Error', 'יש לאשר את תנאי השימוש ומדיניות הפרטיות כדי להמשיך');
       return;
     }
     if (age < 18 || age > 99) {
