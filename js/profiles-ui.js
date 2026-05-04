@@ -191,20 +191,29 @@ function openNotificationSettings() {
           <p class="font-bold text-gray-800 text-sm">התראות Push</p>
           <p class="text-xs text-gray-500 mt-0.5">קבל התראות על התאמות ושיחות חדשות</p>
         </div>
-        <button id="notifToggleBtn" onclick="handleNotifToggle()"
-          class="relative inline-flex items-center w-12 h-6 rounded-full transition-all duration-200 focus:outline-none shrink-0"
-          style="background:${isOn ? 'linear-gradient(to left,#4c1d95,#2563eb)' : '#e5e7eb'}">
-          <span id="notifToggleThumb"
-            class="inline-block w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
-            style="transform:translateX(${isOn ? '-26px' : '-2px'})"></span>
-        </button>
+        ${isOn || perm === 'denied' ? `
+          <div class="relative inline-flex items-center w-12 h-6 rounded-full shrink-0 cursor-default opacity-60"
+            style="background:${isOn ? 'linear-gradient(to left,#4c1d95,#2563eb)' : '#e5e7eb'}">
+            <span class="inline-block w-5 h-5 bg-white rounded-full shadow"
+              style="transform:translateX(${isOn ? '-26px' : '-2px'})"></span>
+          </div>` : `
+          <button id="notifToggleBtn" onclick="handleNotifToggle()"
+            class="relative inline-flex items-center w-12 h-6 rounded-full transition-all duration-200 focus:outline-none shrink-0"
+            style="background:#e5e7eb">
+            <span class="inline-block w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+              style="transform:translateX(-2px)"></span>
+          </button>`}
       </div>
 
-      <div id="notifPermStatus" class="text-xs text-center font-semibold py-2 rounded-xl mb-3
+      <div class="text-xs text-center font-semibold py-2 rounded-xl mb-3
         ${perm === 'granted' ? 'bg-green-50 text-green-700' : perm === 'denied' ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-500'}">
         סטטוס: ${permLabels[perm] || perm}
       </div>
 
+      ${isOn ? `
+        <p class="text-xs text-gray-500 text-center bg-gray-50 rounded-xl px-3 py-2">
+          כדי לכבות התראות — פתח הגדרות דפדפן ← הרשאות אתר
+        </p>` : ''}
       ${perm === 'denied' ? `
         <p class="text-xs text-red-500 text-center bg-red-50 rounded-xl px-3 py-2">
           ההרשאה נחסמה — שנה בהגדרות הדפדפן שלך
