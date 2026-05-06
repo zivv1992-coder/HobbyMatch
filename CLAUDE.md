@@ -78,6 +78,19 @@ service cloud.firestore {
       allow create: if request.auth != null;
       allow delete: if request.auth != null && resource.data.from == request.auth.token.email;
     }
+    match /chats/{chatId}/messages/{messageId} {
+      allow read, write: if true;
+    }
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /feedback/{docId} {
+      allow read, write: if true;
+    }
+    match /reports/{docId} {
+      allow read, write: if true;
+    }
   }
 }
 ```
@@ -107,7 +120,7 @@ const EMAILJS_CONFIG = {
   publicKey:     'WJ8SooBxHjs4CX0Vo'
 };
 const IS_DEV_MODE = false;   // true = show OTP in alert (dev), false = send via EmailJS
-const FCM_VAPID_KEY = "p2vorxaidfcNY3v6cC_yrM_TbSrGecdn08ndERwF1yY"; // Push notifications
+const FCM_VAPID_KEY = "BJ9FYrOsn301Wfq9tA6em9wfQO8sQH3Ku13ksh7Blc9s45WLNbPRZo68Ip3bKTECpzGqQ0UoTjDlvdgEGLixk2I"; // Push notifications
 ```
 Template variables: `{{otp_code}}`, `{{email}}`
 
