@@ -3,31 +3,31 @@
 // Handles: asset caching, offline fallback, push notifications
 // ══════════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'connection-v1';
-const OFFLINE_URL = '/hobby-match/offline.html';
+const CACHE_NAME = 'connection-v2';
+const OFFLINE_URL = '/offline.html';
 
 const PRECACHE_ASSETS = [
-  '/hobby-match/',
-  '/hobby-match/index.html',
-  '/hobby-match/profiles.html',
-  '/hobby-match/register.html',
-  '/hobby-match/offline.html',
-  '/hobby-match/manifest.json',
-  '/hobby-match/config.js',
-  '/hobby-match/auth.js',
-  '/hobby-match/firebase-logic.js',
-  '/hobby-match/ui-render.js',
-  '/hobby-match/tourSteps.js',
-  '/hobby-match/js/profiles-boot.js',
-  '/hobby-match/js/profiles-ui.js',
-  '/hobby-match/js/profiles-pwa.js',
-  '/hobby-match/js/profiles-state.js',
-  '/hobby-match/js/profiles-utils.js',
-  '/hobby-match/js/profiles-matches.js',
-  '/hobby-match/js/profiles-events.js',
-  '/hobby-match/js/profiles-chat.js',
-  '/hobby-match/js/profiles-notifications.js',
-  '/hobby-match/js/profiles-edit-profile.js',
+  '/',
+  '/index.html',
+  '/profiles.html',
+  '/register.html',
+  '/offline.html',
+  '/manifest.json',
+  '/config.js',
+  '/auth.js',
+  '/firebase-logic.js',
+  '/ui-render.js',
+  '/tourSteps.js',
+  '/js/profiles-boot.js',
+  '/js/profiles-ui.js',
+  '/js/profiles-pwa.js',
+  '/js/profiles-state.js',
+  '/js/profiles-utils.js',
+  '/js/profiles-matches.js',
+  '/js/profiles-events.js',
+  '/js/profiles-chat.js',
+  '/js/profiles-notifications.js',
+  '/js/profiles-edit-profile.js',
 ];
 
 // CDN origins that should always be fetched from network
@@ -94,7 +94,7 @@ self.addEventListener('fetch', event => {
 
 // ── Push: show notification ───────────────────────────────────────────────────
 self.addEventListener('push', event => {
-  let data = { title: 'קונקשן', body: 'יש לך עדכון חדש! 🤝', url: '/hobby-match/profiles.html' };
+  let data = { title: 'קונקשן', body: 'יש לך עדכון חדש! 🤝', url: '/profiles.html' };
   try {
     if (event.data) data = { ...data, ...event.data.json() };
   } catch (e) {}
@@ -102,8 +102,8 @@ self.addEventListener('push', event => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: '/hobby-match/icons/icon-192.png',
-      badge: '/hobby-match/icons/icon-192.png',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
       vibrate: [100, 50, 100],
       dir: 'rtl',
       lang: 'he',
@@ -115,7 +115,7 @@ self.addEventListener('push', event => {
 // ── Notification click: open or focus the app ─────────────────────────────────
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url || '/hobby-match/profiles.html';
+  const targetUrl = event.notification.data?.url || '/profiles.html';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {

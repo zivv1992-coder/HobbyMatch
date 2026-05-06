@@ -2,7 +2,7 @@
   "name": "קונקשן",
   "short_name": "קונקשן",
   "description": "מצא שותפים לתחביבים לפי מיקום",
-  "start_url": "/hobby-match/",
+  "start_url": "/profiles.html",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone"],
   "orientation": "portrait",
@@ -41,21 +41,21 @@
       "name": "שיחות שלי",
       "short_name": "שיחות",
       "description": "פתח את טאב השיחות",
-      "url": "/hobby-match/profiles.html#chat",
+      "url": "/profiles.html#chat",
       "icons": [{ "src": "icons/shortcut-chat.png", "sizes": "96x96" }]
     },
     {
       "name": "גלה שותפים",
       "short_name": "גלה",
       "description": "פתח את טאב הגילוי",
-      "url": "/hobby-match/profiles.html#discover",
+      "url": "/profiles.html#discover",
       "icons": [{ "src": "icons/shortcut-discover.png", "sizes": "96x96" }]
     },
     {
       "name": "ערוך פרופיל",
       "short_name": "פרופיל",
       "description": "פתח את עריכת הפרופיל",
-      "url": "/hobby-match/profiles.html#edit",
+      "url": "/profiles.html#edit",
       "icons": [{ "src": "icons/shortcut-edit.png", "sizes": "96x96" }]
     }
   ]
