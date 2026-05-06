@@ -130,7 +130,7 @@ async function loadMatches() {
     listEl.classList.remove('hidden');
 
     if (matches.length === 0) {
-      listEl.innerHTML = renderEmpty('אין עדיין התאמות.');
+      listEl.innerHTML = renderEmpty('אין עדיין התאמות');
       return;
     }
     listEl.innerHTML = matches.map(u => renderMatchCard(u, me)).join('');

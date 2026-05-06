@@ -136,8 +136,8 @@ function renderCard(user, isLiked, myUser, isMatch) {
            onclick="showProfileModal(${userJson}, ${isLiked}, ${myUserJson})">
         ${avatarHtml}
         <div class="flex-1 min-w-0">
-          <p class="font-bold text-gray-900 text-sm leading-tight">${user.fullName}, ${user.age}</p>
-          <p class="text-xs text-gray-400 mt-0.5">📍 ${user.city}${dist !== null ? ` · ${dist} ק"מ` : ''}</p>
+          <p class="font-bold text-gray-900 text-sm leading-tight">${user.fullName}${user.age ? ', ' + user.age : ''}</p>
+          <p class="text-xs text-gray-400 mt-0.5">📍 ${user.city || ''}${dist !== null ? ` · ${dist} ק"מ` : ''}</p>
         </div>
         ${user.romantic ? `<span class="text-base shrink-0" title="פתוח/ה לקשר רומנטי">❤️</span>` : ''}
       </div>
@@ -200,8 +200,8 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
       <!-- Header -->
       <div class="flex items-center justify-between px-5 pt-5 pb-2">
         <div>
-          <h2 class="text-xl font-black text-purple-900">${user.fullName}, ${user.age}</h2>
-          <p class="text-sm text-gray-500">📍 ${user.city}${dist !== null ? ` · ${dist} ק"מ ממך` : ''}</p>
+          <h2 class="text-xl font-black text-purple-900">${user.fullName}${user.age ? ', ' + user.age : ''}</h2>
+          <p class="text-sm text-gray-500">📍 ${user.city || ''}${dist !== null ? ` · ${dist} ק"מ ממך` : ''}</p>
         </div>
         <button onclick="document.getElementById('profileModal').remove()"
           class="text-gray-400 hover:text-gray-600 text-2xl leading-none">✕</button>
