@@ -250,6 +250,10 @@
             class="w-full text-right px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-purple-50 hover:text-purple-800 transition flex items-center gap-2">
             🔔 הגדרות התראות
           </button>
+          <button onclick="triggerPWAInstallManual(); closeHamburger()" id="pwaMenuInstallBtn"
+            class="w-full text-right px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-purple-50 hover:text-purple-800 transition flex items-center gap-2">
+            📲 הוסף למסך הבית
+          </button>
           <button onclick="openReportFromMenu(); closeHamburger()"
             class="w-full text-right px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition flex items-center gap-2">
             🚩 דווח על משתמש
@@ -606,7 +610,7 @@
 
       <!-- Images gallery -->
       <div>
-        <span class="drawer-label">תמונות תחביב</span>
+        <span class="drawer-label">תמונות של התחביבים</span>
         <div id="ed_gallery" class="flex flex-wrap gap-2 mt-1"></div>
         <label class="mt-2 flex items-center justify-center gap-1 cursor-pointer text-sm font-bold text-purple-700 border-2 border-dashed border-purple-300 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition w-full">
           + הוסף תמונה

@@ -5,6 +5,7 @@
 let _deferredPrompt = null;
 const _isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
 const _isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+const _isMobile = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
 
 // ── Show install button in header ─────────────────────────────────────────────
 function _showInstallBtn() {
@@ -14,13 +15,14 @@ function _showInstallBtn() {
 }
 
 // ── iOS: show on load ─────────────────────────────────────────────────────────
-if (_isIOS) {
+if (_isIOS && _isMobile) {
   window.addEventListener('load', _showInstallBtn);
 }
 
-// ── Capture install prompt ────────────────────────────────────────────────────
+// ── Capture install prompt (mobile only) ─────────────────────────────────────
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
+  if (!_isMobile) return; // don't install as PWA on desktop
   _deferredPrompt = e;
   if (!localStorage.getItem('pwaInstalled')) {
     _showInstallBtn();
