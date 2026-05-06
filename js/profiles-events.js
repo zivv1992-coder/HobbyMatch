@@ -1242,7 +1242,7 @@ function shareEvent(eventId) {
 }
 
 function shareApp() {
-  const url  = 'https://hobby-connectionn.vercel.app/?v=3';
+  const url  = 'https://hobby-connectionn.vercel.app/?v=4';
   const text = '🤝 קונקשן — מוצאים אנשים עם תחביבים משותפים בסביבתך!\n' + url;
 
   const existing = document.getElementById('shareAppMenu');
