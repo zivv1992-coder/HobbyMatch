@@ -199,7 +199,7 @@ function _renderNotifPanel() {
 
   // Mystery likes — anonymous teaser
   if (unseenLikes > 0) {
-    const txt = unseenLikes === 1 ? 'מישהו/י עשה לך לייק 💜' : `${unseenLikes} אנשים עשו לך לייק 💜`;
+    const txt = unseenLikes === 1 ? 'מישהו/י עשה לך לייק' : `${unseenLikes} אנשים עשו לך לייק`;
     html += `
       <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-50 bg-pink-50 hover:bg-pink-100 cursor-pointer transition"
         onclick="closeNotifPanel(); switchTab('discover')">
