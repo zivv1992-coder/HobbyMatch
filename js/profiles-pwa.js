@@ -3,14 +3,28 @@
 // ══════════════════════════════════════════════════════════════════════════════
 
 let _deferredPrompt = null;
+const _isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+const _isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+
+// ── Show install button in header ─────────────────────────────────────────────
+function _showInstallBtn() {
+  if (_isInStandaloneMode || localStorage.getItem('pwaInstalled')) return;
+  const btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.classList.replace('hidden', 'flex');
+}
+
+// ── iOS: show on load ─────────────────────────────────────────────────────────
+if (_isIOS) {
+  window.addEventListener('load', _showInstallBtn);
+}
 
 // ── Capture install prompt ────────────────────────────────────────────────────
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   _deferredPrompt = e;
   if (!localStorage.getItem('pwaInstalled')) {
+    _showInstallBtn();
     document.getElementById('pwaInstallBanner')?.classList.remove('hidden');
-    // Show the education hint card once
     if (!localStorage.getItem('pwaHintShown')) {
       showPWAHint();
     }
@@ -26,9 +40,77 @@ window.triggerPWAInstall = async () => {
     localStorage.setItem('pwaInstalled', '1');
     document.getElementById('pwaInstallBanner')?.classList.add('hidden');
     document.getElementById('pwaHintCard')?.classList.add('hidden');
+    document.getElementById('pwaInstallBtn')?.classList.replace('flex', 'hidden');
   }
   _deferredPrompt = null;
 };
+
+// ── Manual install (header button) ───────────────────────────────────────────
+window.triggerPWAInstallManual = async () => {
+  if (_isIOS) {
+    showIOSInstallModal();
+    return;
+  }
+  if (_deferredPrompt) {
+    await window.triggerPWAInstall();
+  } else {
+    showIOSInstallModal(true);
+  }
+};
+
+function showIOSInstallModal(isAndroid = false) {
+  const existing = document.getElementById('pwaIOSModal');
+  if (existing) { existing.remove(); return; }
+
+  const modal = document.createElement('div');
+  modal.id = 'pwaIOSModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.5)';
+  const appPreviewHTML = `
+    <div style="margin:0 0 16px;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;box-shadow:0 2px 12px rgba(76,29,149,0.10)">
+      <div style="background:linear-gradient(135deg,#4c1d95,#6d28d9);padding:10px 14px;display:flex;align-items:center;gap:10px;direction:rtl">
+        <img src="/icons/icon-192.png" style="width:32px;height:32px;border-radius:8px" onerror="this.style.display='none'"/>
+        <span style="color:#fff;font-weight:900;font-size:1rem">קונקשן</span>
+        <span style="color:#c4b5fd;font-size:0.75rem;margin-right:auto">מצא שותפים לתחביבים</span>
+      </div>
+      <div style="background:#f5f3ff;padding:12px 14px;direction:rtl">
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <span style="background:#4c1d95;color:#fff;border-radius:20px;padding:4px 12px;font-size:0.75rem;font-weight:700">מי באזור</span>
+          <span style="background:#fff;color:#6b7280;border-radius:20px;padding:4px 12px;font-size:0.75rem;border:1px solid #e5e7eb">אירועים</span>
+          <span style="background:#fff;color:#6b7280;border-radius:20px;padding:4px 12px;font-size:0.75rem;border:1px solid #e5e7eb">קונקשנז'</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;background:#fff;border-radius:12px;padding:10px;border:1px solid #ede9fe;text-align:right">
+            <div style="width:36px;height:36px;background:#ddd6fe;border-radius:50%;margin:0 0 6px auto"></div>
+            <p style="font-size:0.72rem;font-weight:700;color:#1e1b4b;margin:0">דן, 28</p>
+            <p style="font-size:0.65rem;color:#7c3aed;margin:2px 0 0">🎸 גיטרה · תל אביב</p>
+          </div>
+          <div style="flex:1;background:#fff;border-radius:12px;padding:10px;border:1px solid #ede9fe;text-align:right">
+            <div style="width:36px;height:36px;background:#ddd6fe;border-radius:50%;margin:0 0 6px auto"></div>
+            <p style="font-size:0.72rem;font-weight:700;color:#1e1b4b;margin:0">שירה, 25</p>
+            <p style="font-size:0.65rem;color:#7c3aed;margin:2px 0 0">🧘 יוגה · ירושלים</p>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;direction:rtl;font-family:Heebo,sans-serif">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <p style="font-size:1.1rem;font-weight:900;margin:0;color:#1e1b4b">📲 הוסף למסך הבית</p>
+        <button onclick="document.getElementById('pwaIOSModal').remove()" style="font-size:1.4rem;background:none;border:none;cursor:pointer;color:#6b7280">✕</button>
+      </div>
+      ${appPreviewHTML}
+      ${isAndroid ? `<p style="color:#6b7280;font-size:0.9rem;margin:0">פתח בדפדפן Chrome ← לחץ על תפריט ⋮ ← "הוסף למסך הבית".</p>` : `
+      <ol style="padding-right:18px;margin:0;color:#374151;font-size:0.92rem;line-height:2">
+        <li>לחץ על כפתור ⬆️ <strong>שתף</strong> בתחתית הדפדפן</li>
+        <li>גלול ובחר <strong>הוסף למסך הבית</strong></li>
+        <li>לחץ <strong>הוסף</strong> בפינה הימנית העליונה</li>
+      </ol>`}
+    </div>
+  `;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
 
 // ── Dismiss banner ────────────────────────────────────────────────────────────
 window.dismissPWABanner = () => {
@@ -89,7 +171,7 @@ function showShortcutsTip() {
 // ── Service Worker registration ───────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/hobby-match/sw.js')
+    navigator.serviceWorker.register('/sw.js')
       .catch(err => console.warn('SW registration failed:', err));
   });
 }
