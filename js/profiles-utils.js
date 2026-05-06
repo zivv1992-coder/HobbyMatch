@@ -24,7 +24,7 @@ function showToast(msg = 'הפרופיל עודכן בהצלחה ✓', color = '
   toast._timer = setTimeout(() => {
     toast.classList.add('hiding');
     setTimeout(() => toast.classList.add('hidden'), 300);
-  }, 3000);
+  }, 6000);
 }
 
 function stripEmoji(str) {
