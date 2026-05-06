@@ -1242,7 +1242,7 @@ function shareEvent(eventId) {
 }
 
 function shareApp() {
-  const url  = 'https://hobby-connectionn.vercel.app/?v=5';
+  const url  = 'https://hobby-connectionn.vercel.app/?v=6';
   const text = url;
 
   const existing = document.getElementById('shareAppMenu');
