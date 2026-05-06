@@ -108,14 +108,18 @@ async function _refreshMatches() {
     const likedMeSnap  = await db.collection('likes').where('to',   '==', me.email).get();
 
     const matches = [];
+    let pendingCount = 0;
     for (const doc of likedMeSnap.docs) {
       const fromEmail = doc.data().from;
       if (iLikedEmails.has(fromEmail)) {
         const profile = allUsers.find(u => u.email === fromEmail) || await _fetchUser(fromEmail);
         if (profile) matches.push(profile);
+      } else {
+        pendingCount++;
       }
     }
-    _currentMatches = matches;
+    _currentMatches      = matches;
+    _pendingLikesCount   = pendingCount;
     initMatchChatListeners(matches);
     if (_notifPanelOpen) {
       matches.forEach(p => _seenMatchEmails.add(p.email));
@@ -129,7 +133,8 @@ async function _refreshMatches() {
 function _updateBellBadge() {
   const unseenMatches   = _currentMatches.filter(p => !_seenMatchEmails.has(p.email)).length;
   const totalUnreadChat = Object.values(_unreadCounts).reduce((sum, n) => sum + n, 0);
-  const total = unseenMatches + totalUnreadChat;
+  const unseenLikes     = Math.max(0, _pendingLikesCount - _seenLikesCount);
+  const total = unseenMatches + totalUnreadChat + unseenLikes;
   const badge = document.getElementById('bellBadge');
   if (total > 0) {
     badge.textContent = total > 9 ? '9+' : String(total);
@@ -162,6 +167,8 @@ function _openNotifPanel() {
   _renderNotifPanel();
   _currentMatches.forEach(p => _seenMatchEmails.add(p.email));
   localStorage.setItem(_seenKey, JSON.stringify([..._seenMatchEmails]));
+  _seenLikesCount = _pendingLikesCount;
+  localStorage.setItem(_seenLikesKey, String(_seenLikesCount));
   _updateBellBadge();
 }
 
@@ -181,13 +188,29 @@ function _renderNotifPanel() {
   const body          = document.getElementById('npPanelBody');
   const unseenMatches = _currentMatches.filter(p => !_seenMatchEmails.has(p.email));
   const unreadChats   = _getUnreadChats();
+  const unseenLikes   = Math.max(0, _pendingLikesCount - _seenLikesCount);
 
-  if (unseenMatches.length === 0 && unreadChats.length === 0) {
+  if (unseenMatches.length === 0 && unreadChats.length === 0 && unseenLikes === 0) {
     body.innerHTML = `<p class="text-center text-gray-400 py-8 text-sm">אין התראות חדשות 🎯<br/><button onclick="closeNotifPanel(); switchTab('matches')" class="mt-2 text-purple-600 font-semibold text-xs underline">ראה את כל החיבורים</button></p>`;
     return;
   }
 
   let html = '';
+
+  // Mystery likes — anonymous teaser
+  if (unseenLikes > 0) {
+    const txt = unseenLikes === 1 ? 'מישהו/י עשה לך לייק 💜' : `${unseenLikes} אנשים עשו לך לייק 💜`;
+    html += `
+      <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-50 bg-pink-50 hover:bg-pink-100 cursor-pointer transition"
+        onclick="closeNotifPanel(); switchTab('discover')">
+        <div class="w-10 h-10 rounded-full bg-pink-200 flex items-center justify-center flex-shrink-0 text-xl">💜</div>
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-pink-800 text-sm">${txt}</p>
+          <p class="text-xs text-pink-500">עשו להם לייק בחזרה כדי ליצור חיבור!</p>
+        </div>
+        <span class="text-xs bg-pink-500 text-white font-black px-2 py-0.5 rounded-full shrink-0">${unseenLikes > 9 ? '9+' : unseenLikes}</span>
+      </div>`;
+  }
 
   // New matches
   if (unseenMatches.length > 0) {

@@ -53,6 +53,11 @@ let _currentMatches  = [];
 let _notifPanelOpen  = false;
 let _matchUnsub      = null;
 
+// Anonymous "mystery like" — someone liked you but no mutual match yet
+const _seenLikesKey      = me ? `kn_seen_likes_${me.email}` : '';
+let _pendingLikesCount   = 0;  // current one-sided incoming likes count
+let _seenLikesCount      = parseInt(localStorage.getItem(_seenLikesKey) || '0', 10);
+
 // ── Discovery section ─────────────────────────────────────────────────────────
 let _discHobbiesPool = [];
 let _discEventsPool  = [];
