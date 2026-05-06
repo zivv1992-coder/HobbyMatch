@@ -6,276 +6,128 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     width: 1200px; height: 630px; overflow: hidden;
-    background: #ede9ff;
+    background: #f0edff;
     font-family: 'Segoe UI', Arial, sans-serif;
-    position: relative;
   }
 
   /* ── Header ── */
   .header {
     background: #fff;
-    border-bottom: 1px solid #e5e7eb;
-    padding: 0 24px;
-    height: 54px;
+    padding: 0 40px;
+    height: 90px;
     display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 2px solid #f3f0ff;
   }
-  .header-left { display: flex; align-items: center; gap: 10px; font-size: 0.95rem; color: #374151; font-weight: 700; }
-  .header-right { display: flex; align-items: center; gap: 10px; }
-  .logo { font-size: 1.4rem; font-weight: 900; color: #4c1d95; }
-  .icon-btn {
-    width: 30px; height: 30px; border-radius: 8px;
-    border: 1.5px solid #e5e7eb; display: flex; align-items: center; justify-content: center;
-    color: #6b7280; font-size: 0.8rem;
+  .logo {
+    font-size: 2.4rem; font-weight: 900; color: #4c1d95;
+    letter-spacing: -0.5px;
   }
-  .bell { font-size: 1.2rem; }
+  .pwa-btn {
+    width: 56px; height: 56px; border-radius: 14px;
+    background: linear-gradient(135deg, #4c1d95, #2563eb);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem;
+  }
 
   /* ── Tabs ── */
   .tabs {
     background: #fff;
-    padding: 8px 24px 0;
-    display: flex; gap: 4px;
-    border-bottom: 1px solid #e5e7eb;
+    padding: 0 40px;
+    height: 68px;
+    display: flex; align-items: flex-end; gap: 8px;
+    border-bottom: 2px solid #f3f0ff;
   }
   .tab {
-    padding: 9px 20px; border-radius: 12px 12px 0 0;
-    font-size: 0.88rem; font-weight: 700; color: #6b7280;
-    display: flex; align-items: center; gap: 6px;
+    padding: 12px 28px;
+    border-radius: 14px 14px 0 0;
+    font-size: 1.15rem; font-weight: 700; color: #9ca3af;
+    display: flex; align-items: center; gap: 8px;
   }
   .tab.active {
     background: linear-gradient(135deg, #4c1d95, #2563eb);
     color: #fff;
   }
 
-  /* ── Main layout ── */
-  .main { display: flex; gap: 0; height: calc(630px - 54px - 48px); }
-
-  /* ── Left panel (cards) ── */
-  .left-panel { flex: 1; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
-
-  /* ── Filters ── */
-  .filters {
-    background: #fff; border-radius: 14px;
-    padding: 10px 14px;
-    box-shadow: 0 1px 6px rgba(76,29,149,0.07);
-  }
-  .filter-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
-  .filter-chip {
-    padding: 4px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: 700;
-    border: 1.5px solid #e5e7eb; color: #6b7280; background: #fff;
-  }
-  .filter-chip.active { background: #4c1d95; color: #fff; border-color: #4c1d95; }
-  .search-box {
-    flex: 1; height: 30px; border-radius: 10px; border: 1.5px solid #e5e7eb;
-    background: #f9f8ff; padding: 0 10px; font-size: 0.75rem; color: #9ca3af;
-    display: flex; align-items: center;
-  }
-  .age-label { font-size: 0.72rem; color: #9ca3af; }
-  .age-input {
-    width: 42px; height: 26px; border-radius: 8px; border: 1.5px solid #e5e7eb;
-    text-align: center; font-size: 0.72rem; color: #374151; background: #f9f8ff;
-    display: flex; align-items: center; justify-content: center;
+  /* ── Cards area ── */
+  .cards-area {
+    padding: 36px 40px;
+    display: flex; gap: 28px;
+    height: calc(630px - 90px - 68px);
+    align-items: flex-start;
   }
 
-  /* ── Profile cards row ── */
-  .cards { display: flex; gap: 10px; }
+  /* ── Profile card ── */
   .card {
-    flex: 1; background: #fff; border-radius: 16px;
-    box-shadow: 0 2px 12px rgba(76,29,149,0.10);
-    overflow: hidden; position: relative;
+    flex: 1; background: #fff; border-radius: 24px;
+    box-shadow: 0 4px 24px rgba(76,29,149,0.10);
+    overflow: hidden; height: 100%;
+    display: flex; flex-direction: column;
   }
-  .card-img {
-    width: 100%; height: 140px;
-    background: linear-gradient(160deg, #ddd6fe 0%, #ede9fe 100%);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 3.5rem;
-  }
-  .card-body { padding: 10px 12px; }
-  .card-name { font-size: 0.95rem; font-weight: 900; color: #1e1b4b; margin-bottom: 2px; }
-  .card-city { font-size: 0.72rem; color: #6b7280; }
-  .card-hobby {
-    margin-top: 6px; display: inline-block;
-    background: #ede9fe; color: #6d28d9; font-size: 0.68rem; font-weight: 700;
-    padding: 2px 10px; border-radius: 20px;
-  }
-  .heart { font-size: 1.1rem; color: #ef4444; position: absolute; top: 10px; right: 10px; }
-
-  /* ── Right panel (modal overlay) ── */
-  .right-panel {
-    width: 420px;
-    padding: 12px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  /* ── Install modal ── */
-  .modal {
-    background: #fff;
-    border-radius: 20px;
-    box-shadow: 0 8px 40px rgba(76,29,149,0.18);
-    overflow: hidden;
-  }
-  .modal-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 18px 10px;
-    border-bottom: 1px solid #f3f4f6;
-  }
-  .modal-title { font-size: 1.05rem; font-weight: 900; color: #1e1b4b; display: flex; align-items: center; gap: 6px; }
-  .modal-close { font-size: 1.2rem; color: #9ca3af; }
-  .modal-app-bar {
-    margin: 12px 16px;
-    background: linear-gradient(135deg, #4c1d95, #2563eb);
-    border-radius: 12px; padding: 10px 14px;
-    display: flex; align-items: center; justify-content: space-between;
-    color: #fff;
-  }
-  .modal-app-name { font-size: 1.1rem; font-weight: 900; }
-  .modal-app-sub { font-size: 0.72rem; opacity: 0.85; }
-  .modal-app-icon { font-size: 1.8rem; }
-  .modal-mini-cards { display: flex; gap: 8px; margin: 0 16px 14px; }
-  .mini-card {
-    flex: 1; background: #f9f8ff; border-radius: 12px;
-    padding: 10px; text-align: right;
-    border: 1px solid #e5e7eb;
-  }
-  .mini-avatar {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: linear-gradient(135deg, #ddd6fe, #ede9fe);
-    margin: 0 auto 6px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.1rem;
-  }
-  .mini-name { font-size: 0.78rem; font-weight: 800; color: #1e1b4b; text-align: center; }
-  .mini-city { font-size: 0.65rem; color: #6b7280; text-align: center; }
-  .mini-hobby { font-size: 0.62rem; color: #6d28d9; font-weight: 700; text-align: center; margin-top: 3px; }
-  .modal-hint {
-    font-size: 0.75rem; color: #6b7280; padding: 0 16px 14px; line-height: 1.5; text-align: right;
-  }
-
-  /* ── Brand banner ── */
-  .brand-banner {
-    background: linear-gradient(135deg, #4c1d95, #2563eb);
-    border-radius: 16px;
-    padding: 16px 20px;
-    color: #fff;
-    text-align: right;
+  .card-avatar {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    background: linear-gradient(160deg, #e9e3ff 0%, #f3f0ff 100%);
+    display: flex; align-items: center; justify-content: center;
   }
-  .brand-title { font-size: 1.25rem; font-weight: 900; margin-bottom: 4px; }
-  .brand-sub { font-size: 0.82rem; opacity: 0.88; line-height: 1.5; }
+  .avatar-circle {
+    width: 110px; height: 110px; border-radius: 50%;
+    background: #c4b5fd;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3rem; color: #7c3aed;
+  }
+  .card-body {
+    padding: 20px 24px 24px;
+  }
+  .card-name {
+    font-size: 1.5rem; font-weight: 900; color: #1e1b4b;
+    margin-bottom: 8px;
+  }
+  .card-city {
+    font-size: 1.05rem; color: #4c1d95; font-weight: 600;
+    margin-bottom: 4px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .card-hobby {
+    font-size: 1.05rem; color: #4c1d95; font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+  }
 </style>
 </head>
 <body>
 
   <!-- Header -->
   <div class="header">
-    <div class="header-left">
-      <span class="bell">🔔</span>
-      <span>זיו וינטרוב</span>
-    </div>
-    <div class="header-right">
-      <span class="logo">קונקשן</span>
-      <span style="font-size:0.82rem;color:#374151;font-weight:600;">About</span>
-      <div class="icon-btn">⬡</div>
-      <div class="icon-btn">?</div>
-      <div class="icon-btn" style="font-size:1.1rem;font-weight:900;">≡</div>
-    </div>
+    <div class="pwa-btn">🤝</div>
+    <div class="logo">קונקשן</div>
   </div>
 
   <!-- Tabs -->
   <div class="tabs">
-    <div class="tab active">🔍 מי באזור</div>
-    <div class="tab">📅 אירועים</div>
-    <div class="tab">👤 קונקשנז'</div>
+    <div class="tab active">מי באזור</div>
+    <div class="tab">אירועים</div>
+    <div class="tab">קונקשן'ז</div>
   </div>
 
-  <!-- Main -->
-  <div class="main">
-
-    <!-- Left: filters + cards -->
-    <div class="left-panel">
-      <div class="filters">
-        <div class="filter-row">
-          <div class="filter-chip">כל הארץ</div>
-          <div class="filter-chip">100 ק"מ</div>
-          <div class="filter-chip active">50 ק"מ</div>
-          <div class="filter-chip">25 ק"מ</div>
-          <div class="filter-chip">10 ק"מ</div>
-          <div style="margin-right:auto;font-size:0.9rem">📍</div>
-        </div>
-        <div class="filter-row">
-          <div class="search-box">חפש לפי תחביב...</div>
-          <div class="age-label">גיל</div>
-          <div class="age-input">18</div>
-          <div class="age-label">–</div>
-          <div class="age-input">60</div>
-        </div>
+  <!-- Cards -->
+  <div class="cards-area">
+    <div class="card">
+      <div class="card-avatar">
+        <div class="avatar-circle">👤</div>
       </div>
-
-      <div class="cards">
-        <div class="card">
-          <span class="heart">❤️</span>
-          <div class="card-img">👤</div>
-          <div class="card-body">
-            <div class="card-name">יואב לוי, 32</div>
-            <div class="card-city">📍 חיפה · 36 ק"מ</div>
-            <div class="card-hobby">🏋️ כושר</div>
-          </div>
-        </div>
-        <div class="card">
-          <span class="heart">❤️</span>
-          <div class="card-img">👤</div>
-          <div class="card-body">
-            <div class="card-name">צביאור מן, 51</div>
-            <div class="card-city">📍 אור עקיבא · 6 ק"מ</div>
-            <div class="card-hobby">🎸 מוזיקה</div>
-          </div>
-        </div>
+      <div class="card-body">
+        <div class="card-name">דן, 28</div>
+        <div class="card-city">📍 תל אביב</div>
+        <div class="card-hobby">🎸 גיטרה</div>
       </div>
     </div>
-
-    <!-- Right: modal + brand -->
-    <div class="right-panel">
-
-      <!-- Install modal -->
-      <div class="modal">
-        <div class="modal-header">
-          <div class="modal-title">📲 הוסף למסך הבית</div>
-          <div class="modal-close">✕</div>
-        </div>
-        <div class="modal-app-bar">
-          <div>
-            <div class="modal-app-name">קונקשן</div>
-            <div class="modal-app-sub">מצא שותפים לתחביבים</div>
-          </div>
-          <div class="modal-app-icon">🤝</div>
-        </div>
-        <div class="modal-mini-cards">
-          <div class="mini-card">
-            <div class="mini-avatar">👤</div>
-            <div class="mini-name">דן, 28</div>
-            <div class="mini-city">📍 תל אביב</div>
-            <div class="mini-hobby">🎸 גיטרה</div>
-          </div>
-          <div class="mini-card">
-            <div class="mini-avatar">👤</div>
-            <div class="mini-name">שירה, 25</div>
-            <div class="mini-city">📍 ירושלים</div>
-            <div class="mini-hobby">🧘 יוגה</div>
-          </div>
-        </div>
-        <div class="modal-hint">פתח בדפדפן Chrome ← לחץ על הפריט ⋮ ← "הוסף למסך הבית".</div>
+    <div class="card">
+      <div class="card-avatar">
+        <div class="avatar-circle">👤</div>
       </div>
-
-      <!-- Brand banner -->
-      <div class="brand-banner">
-        <div class="brand-title">קונקשן · מצא שותפים לתחביבים 🤝</div>
-        <div class="brand-sub">פלטפורמה חברתית לחיבור לפי תחומי עניין.<br>מצא חיבור חדש עם אנשים באזור.</div>
+      <div class="card-body">
+        <div class="card-name">שירה, 25</div>
+        <div class="card-city">📍 ירושלים</div>
+        <div class="card-hobby">🧘 יוגה</div>
       </div>
-
     </div>
   </div>
 
