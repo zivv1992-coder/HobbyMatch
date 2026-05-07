@@ -268,9 +268,11 @@
 
 <script>
   // ── Access Control — Firebase Auth ──────────────────────────────────────────
+  let _dashboardLoaded = false;
   firebase.auth().onAuthStateChanged(user => {
     if (user && user.email === ADMIN_EMAIL) {
       document.getElementById('adminLoginScreen').classList.add('hidden');
+      if (!_dashboardLoaded) { _dashboardLoaded = true; initDashboard(); }
     } else {
       firebase.auth().signOut();
       document.getElementById('adminLoginScreen').classList.remove('hidden');
@@ -1144,8 +1146,7 @@
     window.location.href = 'index.html';
   }
 
-  // ── Boot ──────────────────────────────────────────────────────────────────────
-  initDashboard();
+  // initDashboard() is called from onAuthStateChanged after auth is confirmed
 </script>
 
 <!-- ── User Profile Modal ─────────────────────────────────────────────────── -->
