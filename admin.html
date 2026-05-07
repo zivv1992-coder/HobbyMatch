@@ -10,6 +10,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
   <script src="config.js"></script>
@@ -46,6 +47,35 @@
   </style>
 </head>
 <body class="bg-[#f0edff] min-h-screen">
+
+<!-- ── Admin Login Screen ────────────────────────────────────────────────────── -->
+<div id="adminLoginScreen" class="fixed inset-0 z-[100] bg-[#f0edff] flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8">
+    <div class="text-center mb-8">
+      <div class="text-4xl mb-3">🔐</div>
+      <h1 class="text-2xl font-black text-purple-900">כניסת מנהל</h1>
+      <p class="text-sm text-gray-400 mt-1">קונקשן — לוח ניהול</p>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-bold text-gray-500 mb-1.5">אימייל</label>
+        <input id="adminEmailInput" type="email" value="zivv1992@gmail.com" readonly
+          class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50 text-gray-500 cursor-not-allowed"/>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 mb-1.5">סיסמה</label>
+        <input id="adminPasswordInput" type="password" placeholder="הכנס סיסמה"
+          class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition"
+          onkeydown="if(event.key==='Enter') adminLogin()"/>
+      </div>
+      <p id="adminLoginError" class="hidden text-xs text-red-500 font-semibold text-center"></p>
+      <button id="adminLoginBtn" onclick="adminLogin()"
+        class="w-full bg-gradient-to-l from-purple-700 to-blue-600 text-white font-black py-3 rounded-xl hover:opacity-90 transition text-sm">
+        כניסה
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- ── Top Nav ──────────────────────────────────────────────────────────────── -->
 <header class="bg-white shadow-sm sticky top-0 z-40">
@@ -237,11 +267,30 @@
 </div>
 
 <script>
-  // ── Access Control ───────────────────────────────────────────────────────────
-  requireSession();
-  const adminUser = getSession();
-  if (!adminUser || adminUser.email !== ADMIN_EMAIL) {
-    window.location.href = 'index.html';
+  // ── Access Control — Firebase Auth ──────────────────────────────────────────
+  firebase.auth().onAuthStateChanged(user => {
+    if (user && user.email === ADMIN_EMAIL) {
+      document.getElementById('adminLoginScreen').classList.add('hidden');
+    } else {
+      firebase.auth().signOut();
+      document.getElementById('adminLoginScreen').classList.remove('hidden');
+    }
+  });
+
+  async function adminLogin() {
+    const password = document.getElementById('adminPasswordInput').value;
+    const errEl    = document.getElementById('adminLoginError');
+    const btn      = document.getElementById('adminLoginBtn');
+    if (!password) { errEl.textContent = 'נא להזין סיסמה'; errEl.classList.remove('hidden'); return; }
+    btn.disabled = true; btn.textContent = 'מתחבר...';
+    errEl.classList.add('hidden');
+    try {
+      await firebase.auth().signInWithEmailAndPassword(ADMIN_EMAIL, password);
+    } catch (e) {
+      errEl.textContent = 'סיסמה שגויה. נסה שנית.';
+      errEl.classList.remove('hidden');
+      btn.disabled = false; btn.textContent = 'כניסה';
+    }
   }
 
   // ── Global State ─────────────────────────────────────────────────────────────
@@ -1089,7 +1138,8 @@
   }
 
   // ── Logout ────────────────────────────────────────────────────────────────────
-  function handleLogout() {
+  async function handleLogout() {
+    await firebase.auth().signOut();
     clearSession();
     window.location.href = 'index.html';
   }
