@@ -64,7 +64,6 @@ Chat ID = sorted emails joined with `_`
 ---
 
 ## Firestore Security Rules
-> ⚠️ Update rules before **2026-05-09** expiry!
 ```
 rules_version = '2';
 service cloud.firestore {
@@ -94,6 +93,19 @@ service cloud.firestore {
   }
 }
 ```
+
+---
+
+## Privacy Policy
+- `privacy.html` — דף פרטיות מלא לפי חוק הגנת הפרטיות הישראלי, נגיש מכל דף
+- בדף ההרשמה (`register.html`) מופיעה הודעה שמספר הטלפון נשמר אך **לא מוצג** למשתמשים אחרים — מופיע רק למי שיש מאץ' משותף
+
+---
+
+## Admin Auth
+- `admin.html` מוגן עם Firebase Auth (Email/Password)
+- רק המייל שמוגדר כ-`ADMIN_EMAIL` ב-admin.html יכול להתחבר
+- Dashboard נטען רק אחרי אימות מוצלח (`onAuthStateChanged`)
 
 ---
 
