@@ -1,4 +1,10 @@
-﻿// ─── Profile Card ─────────────────────────────────────────────────────────────
+﻿// ─── XSS helpers ──────────────────────────────────────────────────────────────
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ─── Profile Card ─────────────────────────────────────────────────────────────
 
 const HEART_FILLED = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/></svg>`;
 const HEART_OUTLINE = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>`;
@@ -14,9 +20,10 @@ function buildCarouselHtml(user) {
     return `<div class="aspect-[4/3] bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center text-6xl">🎯</div>`;
   }
 
-  const slidesHtml = images.map(url =>
-    `<img src="${url}" alt="תמונת תחביב" class="w-full h-full flex-none object-contain bg-gray-50 border border-gray-200 cursor-zoom-in" onclick="event.stopPropagation();openImageLightbox('${url}')"/>`
-  ).join('');
+  const slidesHtml = images.map(url => {
+    const safeUrl = escapeHtml(url);
+    return `<img src="${safeUrl}" alt="תמונת תחביב" class="w-full h-full flex-none object-contain bg-gray-50 border border-gray-200 cursor-zoom-in" onclick="event.stopPropagation();openImageLightbox('${safeUrl}')"/>`;
+  }).join('');
 
   const multi = images.length > 1;
 
@@ -106,9 +113,9 @@ function renderCard(user, isLiked, myUser, isMatch) {
     : null;
 
   // Avatar: show profile photo only for matched users
-  const initials = (user.fullName || '?').trim()[0].toUpperCase();
+  const initials = escapeHtml((user.fullName || '?').trim()[0].toUpperCase());
   const avatarHtml = (isMatch && user.profilePhotoURL)
-    ? `<img src="${user.profilePhotoURL}" class="w-10 h-10 rounded-full object-cover ring-2 ring-purple-100 shrink-0" alt=""/>`
+    ? `<img src="${escapeHtml(user.profilePhotoURL)}" class="w-10 h-10 rounded-full object-cover ring-2 ring-purple-100 shrink-0" alt=""/>`
     : `<div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-black text-base ring-2 ring-purple-100 shrink-0">${initials}</div>`;
 
   // Like button
@@ -121,23 +128,23 @@ function renderCard(user, isLiked, myUser, isMatch) {
     : '';
 
   const hobbyTags = (user.hobby || '').split(',').map(h => h.trim()).filter(Boolean).slice(0, 3)
-    .map(h => `<span class="bg-black/50 backdrop-blur-sm text-white text-xs font-semibold px-2.5 py-1 rounded-full">#${h}</span>`)
+    .map(h => `<span class="bg-black/50 backdrop-blur-sm text-white text-xs font-semibold px-2.5 py-1 rounded-full">#${escapeHtml(h)}</span>`)
     .join('');
 
-  const userJson   = JSON.stringify(user).replace(/"/g, '&quot;');
-  const myUserJson = JSON.stringify(myUser).replace(/"/g, '&quot;');
+  const userJson   = JSON.stringify(user).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const myUserJson = JSON.stringify(myUser).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
   return `
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
-         data-email="${user.email}">
+         data-email="${escapeHtml(user.email)}">
 
       <!-- Post Header -->
       <div class="flex items-center gap-3 px-4 py-3 cursor-pointer"
            onclick="showProfileModal(${userJson}, ${isLiked}, ${myUserJson})">
         ${avatarHtml}
         <div class="flex-1 min-w-0">
-          <p class="font-bold text-gray-900 text-sm leading-tight">${user.fullName}${user.age ? ', ' + user.age : ''}</p>
-          <p class="text-xs text-gray-400 mt-0.5">📍 ${user.city || ''}${dist !== null ? ` · ${dist} ק"מ` : ''}</p>
+          <p class="font-bold text-gray-900 text-sm leading-tight">${escapeHtml(user.fullName)}${user.age ? ', ' + escapeHtml(user.age) : ''}</p>
+          <p class="text-xs text-gray-400 mt-0.5">📍 ${escapeHtml(user.city || '')}${dist !== null ? ` · ${dist} ק"מ` : ''}</p>
         </div>
         ${user.romantic ? `<span class="text-base shrink-0" title="פתוח/ה לקשר רומנטי">❤️</span>` : ''}
       </div>
@@ -153,11 +160,11 @@ function renderCard(user, isLiked, myUser, isMatch) {
       <div class="px-4 pt-3 pb-4 flex flex-col gap-2">
         <button
           class="${heartBtnClass}"
-          onclick="event.stopPropagation(); handleLike('${user.email}', '${user.fullName}', this)"
+          onclick="event.stopPropagation(); handleLike('${escapeHtml(user.email)}', '${escapeHtml(user.fullName)}', this)"
           data-liked="${isLiked}"
         >${isLiked ? HEART_FILLED : HEART_OUTLINE}<span class="like-label text-sm font-semibold">${isLiked ? 'ביטול לייק' : 'לייק'}</span></button>
-        ${user.hobbyDescription ? `<p class="text-gray-600 text-sm leading-relaxed line-clamp-2">${user.hobbyDescription}</p>` : ''}
-        ${user.interests ? `<p class="text-gray-400 text-xs leading-relaxed line-clamp-1">✨ ${user.interests}</p>` : ''}
+        ${user.hobbyDescription ? `<p class="text-gray-600 text-sm leading-relaxed line-clamp-2">${escapeHtml(user.hobbyDescription)}</p>` : ''}
+        ${user.interests ? `<p class="text-gray-400 text-xs leading-relaxed line-clamp-1">✨ ${escapeHtml(user.interests)}</p>` : ''}
         ${romanticBadge}
       </div>
     </div>`;
@@ -177,7 +184,7 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
   // Hobbies — support comma-separated list
   const hobbies = (user.hobby || '').split(',').map(h => h.trim()).filter(Boolean);
   const hobbyTags = hobbies.map(h =>
-    `<span class="inline-block bg-purple-100 text-purple-700 text-sm font-bold px-3 py-1 rounded-full">${h}</span>`
+    `<span class="inline-block bg-purple-100 text-purple-700 text-sm font-bold px-3 py-1 rounded-full">${escapeHtml(h)}</span>`
   ).join('');
 
   const modalCarouselHtml = buildCarouselHtml(user);
@@ -200,8 +207,8 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
       <!-- Header -->
       <div class="flex items-center justify-between px-5 pt-5 pb-2">
         <div>
-          <h2 class="text-xl font-black text-purple-900">${user.fullName}${user.age ? ', ' + user.age : ''}</h2>
-          <p class="text-sm text-gray-500">📍 ${user.city || ''}${dist !== null ? ` · ${dist} ק"מ ממך` : ''}</p>
+          <h2 class="text-xl font-black text-purple-900">${escapeHtml(user.fullName)}${user.age ? ', ' + escapeHtml(user.age) : ''}</h2>
+          <p class="text-sm text-gray-500">📍 ${escapeHtml(user.city || '')}${dist !== null ? ` · ${dist} ק"מ ממך` : ''}</p>
         </div>
         <button onclick="document.getElementById('profileModal').remove()"
           class="text-gray-400 hover:text-gray-600 text-2xl leading-none">✕</button>
@@ -224,14 +231,14 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
         ${user.hobbyDescription ? `
         <div>
           <p class="text-xs font-bold text-gray-400 uppercase mb-1">תיאור התחביבים</p>
-          <p class="text-gray-600 text-sm leading-relaxed">${user.hobbyDescription}</p>
+          <p class="text-gray-600 text-sm leading-relaxed">${escapeHtml(user.hobbyDescription)}</p>
         </div>` : ''}
 
         <!-- Interests -->
         ${user.interests ? `
         <div>
           <p class="text-xs font-bold text-gray-400 uppercase mb-1">תחומי עניין</p>
-          <p class="text-gray-600 text-sm leading-relaxed">✨ ${user.interests}</p>
+          <p class="text-gray-600 text-sm leading-relaxed">✨ ${escapeHtml(user.interests)}</p>
         </div>` : ''}
 
         <!-- Badges -->
@@ -351,7 +358,7 @@ function renderMatchCard(user, myUser) {
   // Show personal profile photo; fall back to hobby image; then placeholder
   const photoSrc = user.profilePhotoURL || user.hobbyImageUrl || '';
   const imgHtml = photoSrc
-    ? `<img src="${photoSrc}" alt="" class="w-16 h-16 rounded-full object-cover border-2 border-purple-300"/>`
+    ? `<img src="${escapeHtml(photoSrc)}" alt="" class="w-16 h-16 rounded-full object-cover border-2 border-purple-300"/>`
     : `<div class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-300 to-blue-300 flex items-center justify-center text-2xl border-2 border-purple-300">🎯</div>`;
 
   const waNumber = formatWhatsApp(user.phone || '');
@@ -366,16 +373,16 @@ function renderMatchCard(user, myUser) {
 
   const safeEmail = (user.email || '').replace(/'/g, "\\'");
   const safeName  = (user.fullName || '').replace(/'/g, "\\'");
-  const userJson   = JSON.stringify(user).replace(/"/g, '&quot;');
-  const myUserJson = JSON.stringify(myUser || null).replace(/"/g, '&quot;');
+  const userJson   = JSON.stringify(user).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const myUserJson = JSON.stringify(myUser || null).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   return `
     <div class="bg-white rounded-2xl shadow-md p-4 flex items-center gap-4">
       <div class="flex items-center gap-4 flex-1 min-w-0 cursor-pointer"
            onclick="showProfileModal(${userJson}, false, ${myUserJson}, true)">
         ${imgHtml}
         <div class="min-w-0">
-          <p class="font-black text-purple-900">${user.fullName}</p>
-          <p class="text-sm text-gray-500">📍 ${user.city}${dist !== null ? ` · ${dist} ק"מ` : ''} · 🎯 ${user.hobby}</p>
+          <p class="font-black text-purple-900">${escapeHtml(user.fullName)}</p>
+          <p class="text-sm text-gray-500">📍 ${escapeHtml(user.city)}${dist !== null ? ` · ${dist} ק"מ` : ''} · 🎯 ${escapeHtml(user.hobby)}</p>
         </div>
       </div>
       <div class="flex items-center gap-2 shrink-0">
@@ -449,19 +456,19 @@ function openImageLightbox(url) {
   lb.innerHTML = `
     <button onclick="document.getElementById('imageLightbox').remove()"
       class="absolute top-4 left-4 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white text-xl flex items-center justify-center transition">✕</button>
-    <img src="${url}" class="max-w-full max-h-[90vh] rounded-xl object-contain shadow-2xl border border-white/10" alt="תמונה מוגדלת"/>`;
+    <img src="${escapeHtml(url)}" class="max-w-full max-h-[90vh] rounded-xl object-contain shadow-2xl border border-white/10" alt="תמונה מוגדלת"/>`;
   lb.addEventListener('click', (e) => { if (e.target === lb) lb.remove(); });
   document.body.appendChild(lb);
 }
 
 // ─── Empty States ──────────────────────────────────────────────────────────────
 
-function renderEmpty(msg) {
+function renderEmpty(msg, showRadiusBtn = true) {
   return `<div class="col-span-full text-center py-16">
     <div class="text-6xl mb-4" style="filter:drop-shadow(0 4px 16px rgba(124,58,237,0.25))">🤝</div>
     <p class="text-base font-bold text-gray-600 mb-1">${msg}</p>
-    <p class="text-sm text-gray-400 mb-5">נסה להרחיב את הרדיוס או לשנות פילטרים</p>
-    <button onclick="setRadius(null)" class="text-sm font-bold text-purple-600 border border-purple-200 px-5 py-2 rounded-xl hover:bg-purple-50 transition">הצג כל הארץ</button>
+    ${showRadiusBtn ? `<p class="text-sm text-gray-400 mb-5">נסה להרחיב את הרדיוס או לשנות פילטרים</p>
+    <button onclick="setRadius(null)" class="text-sm font-bold text-purple-600 border border-purple-200 px-5 py-2 rounded-xl hover:bg-purple-50 transition">הצג כל הארץ</button>` : ''}
   </div>`;
 }
 
