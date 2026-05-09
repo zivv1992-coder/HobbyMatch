@@ -89,7 +89,7 @@ function _startMatchListener() {
             }
           } else if (!likedEmails.has(fromEmail)) {
             // Non-mutual like — anonymous toast
-            showToast('💜 מישהו/י עשה לך לייק לתחביב!', 'bg-pink-500');
+            showToast('מישהו/י עשה לך לייק לתחביב!', 'bg-pink-500');
           }
         }
       }
