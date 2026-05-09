@@ -87,6 +87,9 @@ function _startMatchListener() {
               showMatchPopup(me, profile);
               // Don't mark as seen here — bell badge stays visible until user opens the panel
             }
+          } else if (!likedEmails.has(fromEmail)) {
+            // Non-mutual like — anonymous toast
+            showToast('💜 מישהו/י עשה לך לייק לתחביב!', 'bg-pink-500');
           }
         }
       }
