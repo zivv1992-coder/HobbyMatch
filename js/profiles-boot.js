@@ -20,7 +20,14 @@ if (!me) {
 
 // ── Boot sequence ─────────────────────────────────────────────────────────────
 if (me) {
-  loadFeed().then(() => { initNotifications(); initDiscovery(); });
+  loadFeed().then(() => {
+    initNotifications();
+    initDiscovery();
+    const hasPhotos = (me.hobbyImages && me.hobbyImages.length > 0) || !!me.hobbyImageUrl;
+    if (!hasPhotos) {
+      document.getElementById('noHobbyPhotoBanner').classList.remove('hidden');
+    }
+  });
   db.collection('users').doc(sanitizeEmail(me.email)).update({ lastSeen: new Date() })
     .catch(() => {});
 }
