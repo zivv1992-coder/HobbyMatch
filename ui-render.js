@@ -135,7 +135,7 @@ function renderCard(user, isLiked, myUser, isMatch) {
   const myUserJson = JSON.stringify(myUser).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
   return `
-    <div class="bg-white rounded-2xl border-2 border-gray-200 shadow-md overflow-hidden flex flex-col transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
+    <div class="bg-white rounded-2xl border-2 border-sky-200 shadow-md overflow-hidden flex flex-col transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
          data-email="${escapeHtml(user.email)}">
 
       <!-- Post Header -->
