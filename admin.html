@@ -281,7 +281,7 @@
   });
 
   async function adminLogin() {
-    const password = document.getElementById('adminPasswordInput').value;
+    const password = document.getElementById('adminPasswordInput').value.trim();
     const errEl    = document.getElementById('adminLoginError');
     const btn      = document.getElementById('adminLoginBtn');
     if (!password) { errEl.textContent = 'נא להזין סיסמה'; errEl.classList.remove('hidden'); return; }
