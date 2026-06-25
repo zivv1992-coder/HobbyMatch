@@ -5,7 +5,6 @@
 // ── Load discover feed ────────────────────────────────────────────────────────
 async function loadFeed() {
   try {
-    if (!me) radiusKm = null; // guests see all users nationwide
     const [users, liked] = await Promise.all([
       fetchAllUsers(),
       me ? fetchLikedEmails(me.email) : Promise.resolve(new Set())
@@ -16,7 +15,11 @@ async function loadFeed() {
     document.getElementById('loadingDiscover').classList.add('hidden');
     const grid = document.getElementById('feedGrid');
     grid.classList.remove('hidden');
-    renderFeedGrid();
+    if (!me) {
+      setRadius(null); // show all-country, update button UI
+    } else {
+      renderFeedGrid();
+    }
   } catch (err) {
     document.getElementById('loadingDiscover').innerHTML =
       '<p class="text-red-400 font-semibold">שגיאה בטעינת הפרופילים. רענן את הדף.</p>';
