@@ -4,14 +4,7 @@
 // ══════════════════════════════════════════════════════════════════════════════
 
 // ── Session guard ─────────────────────────────────────────────────────────────
-if (!me) {
-  const _evParam = new URLSearchParams(window.location.search).get('event');
-  if (!_evParam) {
-    const returnTo = encodeURIComponent(window.location.href);
-    window.location.href = 'index.html?returnTo=' + returnTo;
-  }
-  // else: guest with ?event=xxx — allow limited view (modal only)
-} else {
+if (me) {
   document.getElementById('navName').textContent = me.fullName;
   if (me.email === ADMIN_EMAIL) {
     document.getElementById('adminLink').classList.remove('hidden');
@@ -30,14 +23,14 @@ if (me) {
   });
   db.collection('users').doc(sanitizeEmail(me.email)).update({ lastSeen: new Date() })
     .catch(() => {});
+} else {
+  // Guest: load browse feed and optionally open event deep-link
+  loadFeed();
+  if (new URLSearchParams(location.search).get('event')) loadEvents();
 }
 if (new URLSearchParams(location.search).get('new') === '1') {
   setTimeout(() => showToast('הפרופיל נוצר בהצלחה! ברוך הבא לקונקשן 🎉'), 600);
   history.replaceState(null, '', 'profiles.html');
-}
-// Guest deep-link: skip feed, load events and auto-open modal
-if (!me && new URLSearchParams(location.search).get('event')) {
-  loadEvents();
 }
 
 // ── Keyboard: Esc closes any open modal ──────────────────────────────────────

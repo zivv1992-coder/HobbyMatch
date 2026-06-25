@@ -108,20 +108,34 @@ function handleCardImageClick(user, isLiked, myUser, event) {
 }
 
 function renderCard(user, isLiked, myUser, isMatch) {
+  const isGuest = !myUser;
   const dist = (myUser && myUser.latitude && user.latitude)
     ? Math.round(distanceKm(myUser.latitude, myUser.longitude, user.latitude, user.longitude))
     : null;
 
+  // Guests see only first name
+  const displayName = isGuest
+    ? escapeHtml((user.fullName || '').split(' ')[0])
+    : escapeHtml(user.fullName);
+
   // Avatar: show profile photo only for matched users
-  const initials = escapeHtml((user.fullName || '?').trim()[0].toUpperCase());
+  const initials = displayName[0]?.toUpperCase() || '?';
   const avatarHtml = (isMatch && user.profilePhotoURL)
     ? `<img src="${escapeHtml(user.profilePhotoURL)}" class="w-10 h-10 rounded-full object-cover ring-2 ring-purple-100 shrink-0" alt=""/>`
     : `<div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-black text-base ring-2 ring-purple-100 shrink-0">${initials}</div>`;
 
-  // Like button
+  // Like button — gated for guests
   const heartBtnClass = isLiked
     ? 'flex items-center gap-1.5 transition-all duration-150 active:scale-125 text-red-500 heart-liked'
     : 'flex items-center gap-1.5 transition-all duration-150 active:scale-125 text-gray-400 hover:text-red-400';
+  const likeBtn = isGuest
+    ? `<button class="flex items-center gap-1.5 transition-all duration-150 text-gray-400 hover:text-red-400"
+         onclick="event.stopPropagation(); showGuestSignupWall()"
+       >${HEART_OUTLINE}<span class="like-label text-sm font-semibold">לייק</span></button>`
+    : `<button class="${heartBtnClass}"
+         onclick="event.stopPropagation(); handleLike('${escapeHtml(user.email)}', '${escapeHtml(user.fullName)}', this)"
+         data-liked="${isLiked}"
+       >${isLiked ? HEART_FILLED : HEART_OUTLINE}<span class="like-label text-sm font-semibold">${isLiked ? 'ביטול לייק' : 'לייק'}</span></button>`;
 
   const romanticBadge = user.romantic
     ? `<span class="inline-flex items-center gap-1 bg-pink-50 text-pink-500 text-xs font-semibold px-2.5 py-1 rounded-full border border-pink-100">❤️ פתוח/ה לקשר רומנטי</span>`
@@ -143,7 +157,7 @@ function renderCard(user, isLiked, myUser, isMatch) {
            onclick="showProfileModal(${userJson}, ${isLiked}, ${myUserJson})">
         ${avatarHtml}
         <div class="flex-1 min-w-0">
-          <p class="font-bold text-gray-900 text-sm leading-tight">${escapeHtml(user.fullName)}${user.age ? ', ' + escapeHtml(user.age) : ''}</p>
+          <p class="font-bold text-gray-900 text-sm leading-tight">${displayName}${!isGuest && user.age ? ', ' + escapeHtml(user.age) : ''}</p>
           <p class="text-xs text-gray-400 mt-0.5">📍 ${escapeHtml(user.city || '')}${dist !== null ? ` · ${dist} ק"מ` : ''}</p>
         </div>
         ${user.romantic ? `<span class="text-base shrink-0" title="פתוח/ה לקשר רומנטי">❤️</span>` : ''}
@@ -158,11 +172,7 @@ function renderCard(user, isLiked, myUser, isMatch) {
 
       <!-- Actions & Caption -->
       <div class="px-4 pt-3 pb-4 flex flex-col gap-2">
-        <button
-          class="${heartBtnClass}"
-          onclick="event.stopPropagation(); handleLike('${escapeHtml(user.email)}', '${escapeHtml(user.fullName)}', this)"
-          data-liked="${isLiked}"
-        >${isLiked ? HEART_FILLED : HEART_OUTLINE}<span class="like-label text-sm font-semibold">${isLiked ? 'ביטול לייק' : 'לייק'}</span></button>
+        ${likeBtn}
         ${user.hobbyDescription ? `<p class="text-gray-600 text-sm leading-relaxed line-clamp-2">${escapeHtml(user.hobbyDescription)}</p>` : ''}
         ${user.interests ? `<p class="text-gray-400 text-xs leading-relaxed line-clamp-1">✨ ${escapeHtml(user.interests)}</p>` : ''}
         ${romanticBadge}
@@ -176,6 +186,11 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
   // Remove any existing modal
   const existing = document.getElementById('profileModal');
   if (existing) existing.remove();
+
+  const isGuest = !myUser;
+  const displayName = isGuest
+    ? escapeHtml((user.fullName || '').split(' ')[0])
+    : escapeHtml(user.fullName);
 
   const dist = (myUser && myUser.latitude && user.latitude)
     ? Math.round(distanceKm(myUser.latitude, myUser.longitude, user.latitude, user.longitude))
@@ -207,7 +222,7 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
       <!-- Header -->
       <div class="flex items-center justify-between px-5 pt-5 pb-2">
         <div>
-          <h2 class="text-xl font-black text-purple-900">${escapeHtml(user.fullName)}${user.age ? ', ' + escapeHtml(user.age) : ''}</h2>
+          <h2 class="text-xl font-black text-purple-900">${displayName}${!isGuest && user.age ? ', ' + escapeHtml(user.age) : ''}</h2>
           <p class="text-sm text-gray-500">📍 ${escapeHtml(user.city || '')}${dist !== null ? ` · ${dist} ק"מ ממך` : ''}</p>
         </div>
         <button onclick="document.getElementById('profileModal').remove()"
@@ -245,7 +260,11 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
         ${romanticBadge ? `<div>${romanticBadge}</div>` : ''}
 
         <!-- Like / Match actions -->
-        ${myUser && isMatched ? `
+        ${isGuest ? `
+        <button onclick="document.getElementById('profileModal').remove(); showGuestSignupWall()"
+          class="w-full py-3 rounded-xl font-bold text-sm transition bg-gradient-to-l from-purple-700 to-blue-600 text-white hover:opacity-90">
+          💬 התחבר / הירשם לשליחת הודעה
+        </button>` : myUser && isMatched ? `
         <div class="flex flex-col gap-2">
           <div class="flex gap-2">
             <button onclick="openChat('${user.email.replace(/'/g,"\\'")}', '${user.fullName.replace(/'/g,"\\'")}'); document.getElementById('profileModal').remove()"
@@ -459,6 +478,37 @@ function openImageLightbox(url) {
     <img src="${escapeHtml(url)}" class="max-w-full max-h-[90vh] rounded-xl object-contain shadow-2xl border border-white/10" alt="תמונה מוגדלת"/>`;
   lb.addEventListener('click', (e) => { if (e.target === lb) lb.remove(); });
   document.body.appendChild(lb);
+}
+
+// ─── Guest Sign-up Wall ───────────────────────────────────────────────────────
+
+function showGuestSignupWall() {
+  const existing = document.getElementById('guestWallModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'guestWallModal';
+  modal.className = 'fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4';
+  modal.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center" onclick="event.stopPropagation()">
+      <div class="text-5xl mb-3">👋</div>
+      <h3 class="font-black text-gray-800 text-lg mb-2">הצטרף לקהילה!</h3>
+      <p class="text-gray-500 text-sm mb-5">עליך להירשם או להתחבר כדי להתחבר עם חברי הקהילה ולשלוח הודעות.</p>
+      <div class="flex flex-col gap-2">
+        <a href="register.html"
+          class="block w-full py-3 bg-gradient-to-l from-purple-700 to-blue-600 text-white font-bold rounded-xl hover:opacity-90 transition text-sm">
+          הרשמה
+        </a>
+        <a href="register.html"
+          class="block w-full py-3 border border-purple-200 text-purple-700 font-bold rounded-xl hover:bg-purple-50 transition text-sm">
+          כניסה
+        </a>
+      </div>
+      <button onclick="document.getElementById('guestWallModal').remove()"
+        class="mt-3 text-xs text-gray-400 hover:text-gray-600">ביטול</button>
+    </div>`;
+  modal.addEventListener('click', () => modal.remove());
+  document.body.appendChild(modal);
 }
 
 // ─── Empty States ──────────────────────────────────────────────────────────────

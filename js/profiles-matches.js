@@ -7,9 +7,9 @@ async function loadFeed() {
   try {
     const [users, liked] = await Promise.all([
       fetchAllUsers(),
-      fetchLikedEmails(me.email)
+      me ? fetchLikedEmails(me.email) : Promise.resolve(new Set())
     ]);
-    allUsers    = users.filter(u => u.email !== me.email);
+    allUsers    = me ? users.filter(u => u.email !== me.email) : users;
     likedEmails = liked;
 
     document.getElementById('loadingDiscover').classList.add('hidden');
@@ -96,7 +96,7 @@ function renderFeedGrid() {
   const hobbyQ  = (document.getElementById('filterHobby')?.value || '').trim().toLowerCase();
 
   let filtered = allUsers;
-  if (radiusKm !== null && me.latitude) {
+  if (radiusKm !== null && me?.latitude) {
     filtered = filtered.filter(u => u.latitude &&
       distanceKm(me.latitude, me.longitude, u.latitude, u.longitude) <= radiusKm);
   }
@@ -130,7 +130,7 @@ async function loadMatches() {
     listEl.classList.remove('hidden');
 
     if (matches.length === 0) {
-      listEl.innerHTML = renderEmpty('אין עדיין התאמות');
+      listEl.innerHTML = renderEmpty('אין עדיין התאמות', false);
       return;
     }
     listEl.innerHTML = matches.map(u => renderMatchCard(u, me)).join('');

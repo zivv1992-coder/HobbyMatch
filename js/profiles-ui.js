@@ -4,6 +4,7 @@
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
 function switchTab(tab) {
+  if (!me && tab === 'matches') { showGuestSignupWall(); return; }
   activeTab = tab;
   const panes = ['discover', 'events', 'matches'];
   panes.forEach(p => {
