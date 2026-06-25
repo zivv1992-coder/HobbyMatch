@@ -285,6 +285,7 @@ function evRefreshAtmosphereChips() {
 
 // ── Event Detail Modal ────────────────────────────────────────────────────────
 function openEventDetailModal(eventId) {
+  if (!me) { showGuestSignupWall(); return; }
   const ev = allEventsData.find(e => e.id === eventId);
   if (!ev) return;
 

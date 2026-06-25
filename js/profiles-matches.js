@@ -5,6 +5,7 @@
 // ── Load discover feed ────────────────────────────────────────────────────────
 async function loadFeed() {
   try {
+    if (!me) radiusKm = null; // guests see all users nationwide
     const [users, liked] = await Promise.all([
       fetchAllUsers(),
       me ? fetchLikedEmails(me.email) : Promise.resolve(new Set())
