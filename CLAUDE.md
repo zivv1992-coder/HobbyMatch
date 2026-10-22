@@ -30,6 +30,7 @@ hobby-match/
     ├── profiles-chat.js         ← Real-time chat between matched users
     ├── profiles-notifications.js← FCM push notifications, bell badge, panel
     ├── profiles-edit-profile.js ← Edit profile drawer, gallery, romantic toggle
+    ├── analytics.js             ← Anonymous sign-up funnel tracking (trackEvent) → admin "משפך הרשמה"
     └── hobby-picker.js          ← Category bubbles → sub-hobby pills + custom hobbies (register + edit), HOBBY_CATEGORIES in config.js
 ```
 
@@ -57,6 +58,14 @@ Document ID = email with `@` → `_at_` and `.` → `_dot_`
   organizerName, organizerPhone, organizerType: 'self'|'other',
   actionLinks: string[], attendees: string[], createdBy, createdAt }
 ```
+
+### `analytics_events/{autoId}`
+Written by `js/analytics.js`, read only by admin. No PII.
+```
+{ event, visitorId, source, path, device: 'mobile'|'desktop', createdAt }
+```
+Events: `landing_view`, `register_view`, `signup_start`, `profile_form`, `profile_created`,
+`guest_browse`, `login_start`, `login`. Skipped on `file:` / localhost.
 
 ### `chats/{chatId}/messages/{messageId}`
 Chat ID = sorted emails joined with `_`
@@ -90,6 +99,14 @@ service cloud.firestore {
     match /reports/{docId} {
       allow read: if request.auth != null && request.auth.token.email == 'zivv1992@gmail.com';
       allow write: if true;
+    }
+    match /event_reviews/{docId} {
+      allow create: if true;
+      allow read: if request.auth != null && request.auth.token.email == 'zivv1992@gmail.com';
+    }
+    match /analytics_events/{docId} {
+      allow create: if true;
+      allow read: if request.auth != null && request.auth.token.email == 'zivv1992@gmail.com';
     }
     match /admin_verify/{docId} {
       allow read, write: if request.auth != null && request.auth.token.email == 'zivv1992@gmail.com';

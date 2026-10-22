@@ -150,6 +150,19 @@
 
     </div>
 
+    <!-- ── Sign-up Funnel (js/analytics.js → analytics_events) ──────────────── -->
+    <div class="bg-white rounded-2xl shadow-sm p-6 fade-up">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <h2 class="font-black text-purple-900 text-base">🔻 משפך הרשמה</h2>
+        <div class="flex gap-1 bg-purple-50 rounded-xl p-1 text-sm font-bold" id="funnelRangeBtns">
+          <button onclick="loadFunnel(1)"  data-days="1"  class="px-3 py-1 rounded-lg">היום</button>
+          <button onclick="loadFunnel(7)"  data-days="7"  class="px-3 py-1 rounded-lg">7 ימים</button>
+          <button onclick="loadFunnel(30)" data-days="30" class="px-3 py-1 rounded-lg">30 ימים</button>
+        </div>
+      </div>
+      <div id="funnelBody" class="text-sm text-gray-400">טוען...</div>
+    </div>
+
     <!-- ── Row 2: Charts ───────────────────────────────────────────────────── -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 fade-up" style="animation-delay:0.05s">
 
@@ -357,6 +370,7 @@
       renderEventsList(allEventsData);
       renderFeedbackList(allFeedbackData);
       renderReportsList(allReportsData);
+      loadFunnel(7);
 
       // ── Show dashboard ────────────────────────────────────────────────────
       document.getElementById('loadingState').classList.add('hidden');
@@ -1145,6 +1159,119 @@
     await firebase.auth().signOut();
     clearSession();
     window.location.href = 'index.html';
+  }
+
+  // ── Sign-up Funnel ──────────────────────────────────────────────────────────
+  const FUNNEL_STEPS = [
+    { key: 'visit',           label: 'ביקרו באתר' },
+    { key: 'register_view',   label: 'הגיעו לדף ההרשמה' },
+    { key: 'signup_start',    label: 'התחילו הרשמה (מייל / Google)' },
+    { key: 'profile_form',    label: 'אימתו והגיעו לטופס הפרופיל' },
+    { key: 'profile_created', label: 'יצרו פרופיל ✅' },
+  ];
+
+  async function loadFunnel(days) {
+    const body = document.getElementById('funnelBody');
+    document.querySelectorAll('#funnelRangeBtns button').forEach(b => {
+      const on = Number(b.dataset.days) === days;
+      b.classList.toggle('bg-white', on);
+      b.classList.toggle('text-purple-700', on);
+      b.classList.toggle('shadow-sm', on);
+      b.classList.toggle('text-gray-500', !on);
+    });
+    body.innerHTML = '<span class="text-gray-400">טוען...</span>';
+
+    const since = new Date();
+    if (days === 1) since.setHours(0, 0, 0, 0);
+    else since.setDate(since.getDate() - days);
+
+    let events;
+    try {
+      const snap = await db.collection('analytics_events').where('createdAt', '>=', since).get();
+      events = snap.docs.map(d => d.data());
+    } catch (err) {
+      console.error(err);
+      body.innerHTML = err.code === 'permission-denied'
+        ? `<p class="text-red-600 font-bold">אין הרשאה לקרוא את הסטטיסטיקה.</p>
+           <p class="text-gray-500 mt-1">צריך להוסיף את החוק של <code>analytics_events</code> ב-Firestore Rules (ראה CLAUDE.md).</p>`
+        : '<p class="text-red-600">שגיאה בטעינת הסטטיסטיקה. נסה שוב.</p>';
+      return;
+    }
+
+    // Group by visitor; returning users who logged in are not part of the sign-up funnel
+    const visitors = {};
+    events.forEach(e => {
+      const v = visitors[e.visitorId] || (visitors[e.visitorId] = { events: new Set(), source: e.source || 'direct', device: e.device });
+      v.events.add(e.event);
+    });
+    const all       = Object.values(visitors);
+    const returning = all.filter(v => v.events.has('login') || v.events.has('login_start'));
+    const newVis    = all.filter(v => !returning.includes(v));
+    const has       = (v, key) => key === 'visit' || v.events.has(key);
+
+    if (!newVis.length) {
+      body.innerHTML = `<p class="text-gray-400">אין עדיין נתונים בטווח הזה.</p>
+        <p class="text-gray-400 text-xs mt-1">התחברויות של משתמשים קיימים: ${returning.length}</p>`;
+      return;
+    }
+
+    const counts = FUNNEL_STEPS.map(s => newVis.filter(v => has(v, s.key)).length);
+    const top    = counts[0];
+    const bars = FUNNEL_STEPS.map((s, i) => {
+      const pct     = Math.round((counts[i] / top) * 100);
+      const fromPrev = i > 0 && counts[i - 1] ? Math.round((counts[i] / counts[i - 1]) * 100) : null;
+      return `
+        <div>
+          <div class="flex justify-between text-xs font-bold mb-1">
+            <span class="text-gray-700">${s.label}</span>
+            <span class="text-purple-700">${counts[i]}
+              ${fromPrev !== null ? `<span class="text-gray-400 font-normal">(${fromPrev}% מהשלב הקודם)</span>` : ''}</span>
+          </div>
+          <div class="h-3 bg-purple-50 rounded-full overflow-hidden">
+            <div class="h-full rounded-full bg-gradient-to-l from-purple-600 to-indigo-500" style="width:${Math.max(pct, 2)}%"></div>
+          </div>
+        </div>`;
+    }).join('');
+
+    // Per-source breakdown
+    const bySource = {};
+    newVis.forEach(v => {
+      const s = bySource[v.source] || (bySource[v.source] = { visitors: 0, register: 0, created: 0 });
+      s.visitors++;
+      if (v.events.has('register_view'))   s.register++;
+      if (v.events.has('profile_created')) s.created++;
+    });
+    const sourceRows = Object.entries(bySource)
+      .sort((a, b) => b[1].visitors - a[1].visitors)
+      .map(([src, s]) => `
+        <tr class="border-t border-gray-100">
+          <td class="py-1.5 font-semibold text-gray-700" dir="ltr" style="text-align:right">${escapeHtml(src)}</td>
+          <td class="py-1.5 text-center">${s.visitors}</td>
+          <td class="py-1.5 text-center">${s.register}</td>
+          <td class="py-1.5 text-center font-bold text-purple-700">${s.created}</td>
+        </tr>`).join('');
+
+    const guests = newVis.filter(v => v.events.has('guest_browse')).length;
+    const mobile = Math.round((newVis.filter(v => v.device === 'mobile').length / newVis.length) * 100);
+
+    body.innerHTML = `
+      <div class="space-y-3">${bars}</div>
+      <div class="flex flex-wrap gap-2 mt-4 text-xs">
+        <span class="bg-purple-50 text-purple-700 font-bold rounded-full px-3 py-1">👀 גלשו כאורחים: ${guests}</span>
+        <span class="bg-purple-50 text-purple-700 font-bold rounded-full px-3 py-1">📱 מהטלפון: ${mobile}%</span>
+        <span class="bg-gray-50 text-gray-500 font-bold rounded-full px-3 py-1">🔁 התחברויות של משתמשים קיימים: ${returning.length}</span>
+      </div>
+      <h3 class="font-black text-purple-900 text-sm mt-6 mb-2">מאיפה הגיעו</h3>
+      <table class="w-full text-sm">
+        <thead><tr class="text-xs text-gray-400">
+          <th class="text-right font-semibold pb-1">מקור</th>
+          <th class="font-semibold pb-1">מבקרים</th>
+          <th class="font-semibold pb-1">דף הרשמה</th>
+          <th class="font-semibold pb-1">נרשמו</th>
+        </tr></thead>
+        <tbody>${sourceRows}</tbody>
+      </table>
+      <p class="text-xs text-gray-400 mt-3">טיפ: הוסף <code dir="ltr">?utm_source=שם</code> לקישורים שאתה משתף (למשל <code dir="ltr">?utm_source=fb-running</code>) כדי לראות כאן איזה פוסט מביא אנשים.</p>`;
   }
 
   // initDashboard() is called from onAuthStateChanged after auth is confirmed

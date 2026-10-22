@@ -3,7 +3,7 @@
 // Handles: asset caching, offline fallback, push notifications
 // ══════════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'connection-v4';
+const CACHE_NAME = 'connection-v5';
 const OFFLINE_URL = '/offline.html';
 
 const PRECACHE_ASSETS = [
@@ -29,6 +29,7 @@ const PRECACHE_ASSETS = [
   '/js/profiles-notifications.js',
   '/js/profiles-edit-profile.js',
   '/js/hobby-picker.js',
+  '/js/analytics.js',
 ];
 
 // CDN origins that should always be fetched from network

@@ -25,6 +25,7 @@
   <script src="auth.js"></script>
   <script src="firebase-logic.js"></script>
   <script src="js/hobby-picker.js"></script>
+  <script src="js/analytics.js"></script>
   <style>
     body { font-family: 'Heebo', sans-serif; }
     .step { display: none; }
@@ -274,6 +275,7 @@
 <script>
   // ── Init ──────────────────────────────────────────────────────────────────
   redirectIfLoggedIn();
+  if (!getSession()) trackEvent('register_view');
 
   const _mode = new URLSearchParams(location.search).get('mode');
   if (_mode === 'login') {
@@ -293,6 +295,8 @@
       sessionStorage.removeItem('googlePrefill');
       verifiedEmail = prefill.email;
       if (prefill.name) document.getElementById('f_name').value = prefill.name;
+      trackEvent('signup_start');
+      trackEvent('profile_form');
       goToStep(3);
     }
   }
@@ -359,6 +363,7 @@
       const existing = await getUserByEmail(email);
       if (existing) {
         saveSession(existing);
+        await trackEvent('login');
         const _rt = new URLSearchParams(window.location.search).get('returnTo');
         window.location.href = _rt ? decodeURIComponent(_rt) : 'profiles.html';
       } else {
@@ -370,6 +375,8 @@
         // Hide progress bar step 2 (not needed for Google flow)
         document.getElementById('line1').classList.add('bg-purple-700');
         document.getElementById('line2').classList.add('bg-purple-700');
+        trackEvent('signup_start');
+        trackEvent('profile_form');
         goToStep(3);
       }
     } catch (err) {
@@ -411,6 +418,7 @@
 
       await sendOTP(email);
       verifiedEmail = email;
+      trackEvent(isReturningUser ? 'login_start' : 'signup_start');
       document.getElementById('otpSentTo').textContent = `הקוד נשלח ל-${email}`;
       goToStep(2);
     } catch (err) {
@@ -442,6 +450,7 @@
       try {
         const userData = await getUserByEmail(verifiedEmail);
         saveSession(userData);
+        await trackEvent('login');
         const _rt = new URLSearchParams(window.location.search).get('returnTo');
         window.location.href = _rt ? decodeURIComponent(_rt) : 'profiles.html';
       } catch (err) {
@@ -450,6 +459,7 @@
       }
     } else {
       // New user — proceed to profile creation form
+      trackEvent('profile_form');
       goToStep(3);
     }
   }
@@ -574,6 +584,7 @@
 
       await saveProfileToFirestore(user);
       saveSession(user);
+      await trackEvent('profile_created');
       const _rt = new URLSearchParams(window.location.search).get('returnTo');
       window.location.href = _rt ? decodeURIComponent(_rt) : 'profiles.html?new=1';
     } catch (err) {

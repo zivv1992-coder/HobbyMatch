@@ -25,6 +25,7 @@ if (me) {
     .catch(() => {});
 } else {
   // Guest: load browse feed and optionally open event deep-link
+  trackEvent('guest_browse');
   loadFeed();
   if (new URLSearchParams(location.search).get('event')) loadEvents();
 }

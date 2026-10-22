@@ -30,6 +30,7 @@
   <script>emailjs.init('WJ8SooBxHjs4CX0Vo');</script>
   <script src="config.js"></script>
   <script src="auth.js"></script>
+  <script src="js/analytics.js"></script>
   <style>
     body { font-family: 'Heebo', sans-serif; }
   </style>
@@ -73,6 +74,7 @@
 
 <script>
   redirectIfLoggedIn();
+  if (!getSession()) trackEvent('landing_view');
   // Forward returnTo param to both register/login links
   const _rt = new URLSearchParams(window.location.search).get('returnTo');
   if (_rt) {
