@@ -30,6 +30,7 @@ let ev_expandedCategories    = new Set();
 
 // ── Edit Profile drawer ───────────────────────────────────────────────────────
 let ed_isRomantic            = false;
+let ed_hobbyPicker           = null;   // hobby-picker instance in edit drawer
 let ed_savedImages           = [];   // existing URLs from Firestore
 let ed_newFiles              = [];   // File objects waiting to be uploaded
 let ed_profilePhotoFile      = null; // new profile photo file

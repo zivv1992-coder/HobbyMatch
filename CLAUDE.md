@@ -29,7 +29,8 @@ hobby-match/
     ├── profiles-events.js       ← Events tab: render, modal, join/leave, WhatsApp
     ├── profiles-chat.js         ← Real-time chat between matched users
     ├── profiles-notifications.js← FCM push notifications, bell badge, panel
-    └── profiles-edit-profile.js ← Edit profile drawer, gallery, romantic toggle
+    ├── profiles-edit-profile.js ← Edit profile drawer, gallery, romantic toggle
+    └── hobby-picker.js          ← Category bubbles → sub-hobby pills + custom hobbies (register + edit), HOBBY_CATEGORIES in config.js
 ```
 
 ---
@@ -39,9 +40,11 @@ hobby-match/
 ### `users/{email_sanitized}`
 Document ID = email with `@` → `_at_` and `.` → `_dot_`
 ```
-{ fullName, email, phone, age, city, hobby, hobbyDescription,
+{ fullName, email, phone, age, city, hobby, hobbies: string[], hobbyDescription,
   romantic, hobbyImageUrl, latitude, longitude, createdAt }
 ```
+`hobbies` = source of truth (array). `hobby` = same list joined with `', '`, kept for existing consumers
+(cards, filters, events, admin). Read with `getUserHobbies(user)` — falls back to splitting legacy `hobby`.
 
 ### `likes/{senderEmail_receiverEmail}`
 ```
@@ -152,5 +155,6 @@ Template variables: `{{otp_code}}`, `{{email}}`
 ---
 
 ## GitHub
-- Repo: https://github.com/zivv1992-coder/hobby-match
-- Live: https://zivv1992-coder.github.io/hobby-match/
+- Repo: https://github.com/zivv1992-coder/HobbyMatch
+- Live: https://hobby-connectionn.vercel.app/ (Vercel, auto-deploys from `main`)
+- Firebase project `hobby-connection-adaca` is on the **Blaze** plan — Storage and Cloud Functions require it

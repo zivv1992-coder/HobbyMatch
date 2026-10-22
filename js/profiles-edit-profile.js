@@ -22,7 +22,8 @@ function openEditDrawer() {
   document.getElementById('ed_phone').value = (user.phone || '').replace(/\D/g, '');
   document.getElementById('ed_age').value   = user.age      || '';
   document.getElementById('ed_city').value  = user.city     || '';
-  document.getElementById('ed_hobby').value = user.hobby    || '';
+  if (!ed_hobbyPicker) ed_hobbyPicker = createHobbyPicker('ed_hobbyPicker');
+  ed_hobbyPicker.setHobbies(getUserHobbies(user));
   document.getElementById('ed_desc').value      = user.hobbyDescription || '';
   document.getElementById('ed_email').value = user.email    || '';
   // Profile photo
@@ -174,7 +175,8 @@ async function handleSaveProfile() {
   const phone = document.getElementById('ed_phone').value.trim();
   const age   = parseInt(document.getElementById('ed_age').value, 10);
   const city  = document.getElementById('ed_city').value;
-  const hobby = document.getElementById('ed_hobby').value.trim();
+  const hobbies = ed_hobbyPicker.getHobbies();
+  const hobby   = hobbies.join(', ');
   const desc      = document.getElementById('ed_desc').value.trim();
   const interests = desc;
   if (!name || !phone || !age || !city || !hobby) {
@@ -224,6 +226,7 @@ async function handleSaveProfile() {
       age:              age,
       city:             city,
       hobby:            hobby,
+      hobbies:          hobbies,
       hobbyDescription: desc,
       interests:        interests,
       romantic:         ed_isRomantic,

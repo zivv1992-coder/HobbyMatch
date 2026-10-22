@@ -24,6 +24,7 @@
   <script src="config.js"></script>
   <script src="auth.js"></script>
   <script src="firebase-logic.js"></script>
+  <script src="js/hobby-picker.js"></script>
   <style>
     body { font-family: 'Heebo', sans-serif; }
     .step { display: none; }
@@ -214,9 +215,8 @@
       </div>
 
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-1">תחביבים * <span class="text-xs font-normal text-gray-400">(הפרד בפסיקים)</span></label>
-        <input id="f_hobby" type="text" placeholder="למשל: צילום, טיולים, בישול..."
-          class="w-full border border-gray-300 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-purple-400"/>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">תחביבים * <span class="text-xs font-normal text-gray-400">(בחר/י קטגוריה ואז תחביבים)</span></label>
+        <div id="f_hobbyPicker"></div>
       </div>
 
       <div>
@@ -307,6 +307,8 @@
       sel.appendChild(opt);
     });
   })();
+
+  const hobbyPicker = createHobbyPicker('f_hobbyPicker');
 
   // ── Step navigation ───────────────────────────────────────────────────────
   function goToStep(n) {
@@ -511,7 +513,8 @@
     const phone = document.getElementById('f_phone').value.trim();
     const age   = parseInt(document.getElementById('f_age').value, 10);
     const city  = document.getElementById('f_city').value;
-    const hobby = document.getElementById('f_hobby').value.trim();
+    const hobbies = hobbyPicker.getHobbies();
+    const hobby   = hobbies.join(', ');
     const desc  = document.getElementById('f_desc').value.trim();
     const imageFile        = document.getElementById('f_image').files[0] || null;
     const profilePhotoFile = document.getElementById('f_profile_photo').files[0] || null;
@@ -559,6 +562,7 @@
         age:              age,
         city:             city,
         hobby:            hobby,
+        hobbies:          hobbies,
         hobbyDescription: desc,
         romantic:         isRomantic,
         hobbyImageUrl:    hobbyImageUrl,
