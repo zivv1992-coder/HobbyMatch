@@ -15,12 +15,44 @@ function sanitizePhone(raw) {
 
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
+// Shrinks an image to max 1200px (longest side), JPEG quality 0.8, before upload.
+// Falls back to the original file if it can't be decoded (e.g. HEIC) or if compression doesn't help.
+async function compressImage(file, maxSize = 1200, quality = 0.8) {
+  if (file.type === 'image/gif') return file; // keep animation
+  try {
+    const url = URL.createObjectURL(file);
+    const img = await new Promise((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = url;
+    });
+    URL.revokeObjectURL(url);
+
+    const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+    const canvas = document.createElement('canvas');
+    canvas.width  = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff'; // transparent PNG → white background instead of black
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+    if (!blob || blob.size >= file.size) return file;
+    return blob;
+  } catch (err) {
+    console.warn('כיווץ התמונה נכשל, מעלה את הקובץ המקורי', err);
+    return file;
+  }
+}
+
 async function uploadHobbyImage(file, email) {
   if (!file || !file.type.startsWith('image/')) {
     throw new Error('הקובץ חייב להיות תמונה');
   }
   const ref = storage.ref(`hobby-images/${sanitizeEmail(email)}`);
-  const snapshot = await ref.put(file);
+  const snapshot = await ref.put(await compressImage(file));
   const downloadUrl = await snapshot.ref.getDownloadURL();
   return downloadUrl;
 }
@@ -30,7 +62,7 @@ async function uploadProfilePhoto(file, email) {
     throw new Error('הקובץ חייב להיות תמונה');
   }
   const ref = storage.ref(`profile_photos/${sanitizeEmail(email)}`);
-  const snapshot = await ref.put(file);
+  const snapshot = await ref.put(await compressImage(file, 600));
   return snapshot.ref.getDownloadURL();
 }
 
@@ -64,7 +96,7 @@ async function getUserByEmail(email) {
 
 async function fetchAllUsers() {
   const snap = await db.collection('users').get();
-  return snap.docs.map(doc => doc.data());
+  return snap.docs.map(doc => doc.data()).filter(u => u.fullName && u.email);
 }
 
 async function fetchLikedEmails(myEmail) {
@@ -142,7 +174,7 @@ async function updateProfileInFirestore(userObj) {
 async function uploadHobbyImageIndexed(file, email, index) {
   if (!file || !file.type.startsWith('image/')) throw new Error('הקובץ חייב להיות תמונה');
   const ref = storage.ref(`hobby-images/${sanitizeEmail(email)}/${index}_${Date.now()}`);
-  const snapshot = await ref.put(file);
+  const snapshot = await ref.put(await compressImage(file));
   return snapshot.ref.getDownloadURL();
 }
 
