@@ -9,6 +9,13 @@ function sanitizeEmail(email) {
     .replace(/@/g, '_at_').replace(/\./g, '_dot_');
 }
 
+// Same as displayName() in js/profiles-utils.js: "דן כהן" → "דן כ."
+function displayName(fullName) {
+  const parts = (fullName || '').trim().split(/\s+/);
+  if (parts.length < 2) return parts[0] || 'מישהו';
+  return `${parts[0]} ${parts[parts.length - 1].charAt(0)}.`;
+}
+
 async function sendPush(fcmToken, title, body, link) {
   if (!fcmToken) return;
   try {
@@ -32,7 +39,7 @@ exports.onNewLike = functions.firestore
     if (!from || !to) return null;
 
     const senderDoc = await db.collection('users').doc(sanitizeEmail(from)).get();
-    const senderName = senderDoc.exists ? (senderDoc.data().fullName || 'מישהו') : 'מישהו';
+    const senderName = senderDoc.exists ? displayName(senderDoc.data().fullName) : 'מישהו';
 
     const recipientDoc = await db.collection('users').doc(sanitizeEmail(to)).get();
     if (!recipientDoc.exists) return null;
@@ -63,8 +70,8 @@ exports.onNewMatch = functions.firestore
       db.collection('users').doc(sanitizeEmail(to)).get()
     ]);
 
-    const fromName = fromDoc.exists ? (fromDoc.data().fullName || 'מישהו') : 'מישהו';
-    const toName   = toDoc.exists   ? (toDoc.data().fullName   || 'מישהו') : 'מישהו';
+    const fromName = fromDoc.exists ? displayName(fromDoc.data().fullName) : 'מישהו';
+    const toName   = toDoc.exists   ? displayName(toDoc.data().fullName)   : 'מישהו';
 
     await Promise.all([
       sendPush(fromDoc.data()?.fcmToken, '🎉 יש לך מאצ\'!', `${toName} אוהב/ת אותך בחזרה!`, APP_URL),

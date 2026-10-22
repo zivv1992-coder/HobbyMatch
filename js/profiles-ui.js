@@ -61,7 +61,7 @@ function renderReportSearchResults() {
   if (!q) { el.innerHTML = ''; return; }
 
   const results = allUsers.filter(u =>
-    (u.fullName || '').toLowerCase().includes(q) && u.email !== me.email
+    displayName(u.fullName).toLowerCase().includes(q) && u.email !== me.email
   ).slice(0, 6);
 
   if (results.length === 0) {
@@ -83,7 +83,7 @@ function renderReportSearchResults() {
         class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-purple-50 transition text-right">
         ${imgHtml}
         <div class="min-w-0">
-          <p class="font-bold text-gray-800 text-sm">${u.fullName}</p>
+          <p class="font-bold text-gray-800 text-sm">${escapeHtml(displayName(u.fullName))}</p>
           <p class="text-xs text-gray-400 truncate">📍 ${u.city||''} · 🎯 ${u.hobby||''}</p>
         </div>
       </button>`;

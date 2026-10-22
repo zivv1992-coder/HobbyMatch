@@ -296,7 +296,7 @@ function openEventDetailModal(eventId) {
     timeStr = d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
   }
 
-  const orgName  = ev.organizerName  || ev.creatorName  || '';
+  const orgName  = escapeHtml(eventOrganizerDisplay(ev));
   const waNum    = formatWhatsApp(ev.organizerPhone || ev.creatorPhone || '');
   const waValid  = waNum.length >= 11;
 
@@ -795,7 +795,7 @@ function renderEventCard(ev) {
         <div class="grid grid-cols-3 gap-2">
           ${dateStr ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">מתי</span><span class="text-xs font-bold text-gray-800 leading-tight">${dateStr}</span>${timeStr ? `<span class="text-xs font-semibold text-violet-600">${timeStr}</span>` : ''}</div>` : ''}
           ${ev.location ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">איפה</span><span class="text-xs font-bold text-gray-800 leading-tight line-clamp-2">${ev.location}</span></div>` : ''}
-          ${(ev.organizerName || ev.creatorName) ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">מארגן</span><span class="text-xs font-bold text-gray-800 leading-tight line-clamp-2">${ev.organizerName || ev.creatorName || ''}</span></div>` : ''}
+          ${(ev.organizerName || ev.creatorName) ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">מארגן</span><span class="text-xs font-bold text-gray-800 leading-tight line-clamp-2">${escapeHtml(eventOrganizerDisplay(ev))}</span></div>` : ''}
         </div>
 
         ${atmosphereRow ? `<div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">אווירת מפגש</p>${atmosphereRow}</div>` : ''}
@@ -936,7 +936,7 @@ function selectOrganizerType(type) {
   });
 
   if (type === 'self') {
-    document.getElementById('ev_organizer_name').value  = (me && me.fullName) ? me.fullName : '';
+    document.getElementById('ev_organizer_name').value  = (me && me.fullName) ? displayName(me.fullName) : '';
     document.getElementById('ev_organizer_phone').value = (me && me.phone)    ? me.phone    : '';
     document.getElementById('ev_paste_section').classList.add('hidden');
     document.getElementById('ev_paste_text').value = '';
@@ -995,7 +995,7 @@ async function handleCreateEvent() {
       title, description: desc, dateTime, location, associatedHobbies,
       hobby: associatedHobbies[0],
       createdBy: me.email, creatorName: me.fullName || me.email, creatorPhone: me.phone || '',
-      organizerName: organizerName || me.fullName || me.email,
+      organizerName: organizerName || displayName(me.fullName) || me.email,
       organizerPhone: organizerPhone || me.phone || '',
       actionLinks, detectedHobbyTag,
       interested: [{ email: me.email, name: me.fullName || '', display: formatAttendeeDisplay(me.fullName || me.email) }],
@@ -1008,7 +1008,7 @@ async function handleCreateEvent() {
       id: docRef.id, title, description: desc, dateTime, location, associatedHobbies,
       hobby: associatedHobbies[0], createdBy: me.email,
       creatorName: me.fullName || me.email, creatorPhone: me.phone || '',
-      organizerName: organizerName || me.fullName || me.email,
+      organizerName: organizerName || displayName(me.fullName) || me.email,
       organizerPhone: organizerPhone || me.phone || '',
       actionLinks, detectedHobbyTag, interested: [creatorEntry],
       atmosphereTags, eventActivityTags

@@ -113,13 +113,11 @@ function renderCard(user, isLiked, myUser, isMatch) {
     ? Math.round(distanceKm(myUser.latitude, myUser.longitude, user.latitude, user.longitude))
     : null;
 
-  // Guests see only first name
-  const displayName = isGuest
-    ? escapeHtml((user.fullName || '').split(' ')[0])
-    : escapeHtml(user.fullName);
+  // Everyone (guests included) sees first name + last initial
+  const shownName = escapeHtml(displayName(user.fullName));
 
   // Avatar: show profile photo only for matched users
-  const initials = displayName[0]?.toUpperCase() || '?';
+  const initials = shownName[0]?.toUpperCase() || '?';
   const avatarHtml = (isMatch && user.profilePhotoURL)
     ? `<img src="${escapeHtml(user.profilePhotoURL)}" class="w-10 h-10 rounded-full object-cover ring-2 ring-purple-100 shrink-0" alt=""/>`
     : `<div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-black text-base ring-2 ring-purple-100 shrink-0">${initials}</div>`;
@@ -157,7 +155,7 @@ function renderCard(user, isLiked, myUser, isMatch) {
            onclick="showProfileModal(${userJson}, ${isLiked}, ${myUserJson})">
         ${avatarHtml}
         <div class="flex-1 min-w-0">
-          <p class="font-bold text-gray-900 text-sm leading-tight">${displayName}${!isGuest && user.age ? ', ' + escapeHtml(user.age) : ''}</p>
+          <p class="font-bold text-gray-900 text-sm leading-tight">${shownName}${!isGuest && user.age ? ', ' + escapeHtml(user.age) : ''}</p>
           <p class="text-xs text-gray-400 mt-0.5">📍 ${escapeHtml(user.city || '')}${dist !== null ? ` · ${dist} ק"מ` : ''}</p>
         </div>
         ${user.romantic ? `<span class="text-base shrink-0" title="פתוח/ה לקשר רומנטי">❤️</span>` : ''}
@@ -188,9 +186,7 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
   if (existing) existing.remove();
 
   const isGuest = !myUser;
-  const displayName = isGuest
-    ? escapeHtml((user.fullName || '').split(' ')[0])
-    : escapeHtml(user.fullName);
+  const shownName = escapeHtml(displayName(user.fullName));
 
   const dist = (myUser && myUser.latitude && user.latitude)
     ? Math.round(distanceKm(myUser.latitude, myUser.longitude, user.latitude, user.longitude))
@@ -222,7 +218,7 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
       <!-- Header -->
       <div class="flex items-center justify-between px-5 pt-5 pb-2">
         <div>
-          <h2 class="text-xl font-black text-purple-900">${displayName}${!isGuest && user.age ? ', ' + escapeHtml(user.age) : ''}</h2>
+          <h2 class="text-xl font-black text-purple-900">${shownName}${!isGuest && user.age ? ', ' + escapeHtml(user.age) : ''}</h2>
           <p class="text-sm text-gray-500">📍 ${escapeHtml(user.city || '')}${dist !== null ? ` · ${dist} ק"מ ממך` : ''}</p>
         </div>
         <button onclick="document.getElementById('profileModal').remove()"
@@ -267,7 +263,7 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
         </button>` : myUser && isMatched ? `
         <div class="flex flex-col gap-2">
           <div class="flex gap-2">
-            <button onclick="openChat('${user.email.replace(/'/g,"\\'")}', '${user.fullName.replace(/'/g,"\\'")}'); document.getElementById('profileModal').remove()"
+            <button onclick="openChat('${user.email.replace(/'/g,"\\'")}', '${displayName(user.fullName).replace(/'/g,"\\'")}'); document.getElementById('profileModal').remove()"
               class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-sm border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 transition">
               💬 צ'אט
             </button>
@@ -315,7 +311,7 @@ function showReportModal(reportedEmail, reportedName, reporterEmail, reporterNam
   modal.innerHTML = `
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-5" onclick="event.stopPropagation()">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="font-black text-gray-800 text-base">🚩 דיווח על ${reportedName}</h3>
+        <h3 class="font-black text-gray-800 text-base">🚩 דיווח על ${escapeHtml(displayName(reportedName))}</h3>
         <button onclick="document.getElementById('reportModal').remove()" class="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
       </div>
       <p class="text-xs text-gray-500 mb-3">בחר סיבת הדיווח:</p>
@@ -391,7 +387,7 @@ function renderMatchCard(user, myUser) {
     : ``;
 
   const safeEmail = (user.email || '').replace(/'/g, "\\'");
-  const safeName  = (user.fullName || '').replace(/'/g, "\\'");
+  const safeName  = displayName(user.fullName).replace(/'/g, "\\'");
   const userJson   = JSON.stringify(user).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const myUserJson = JSON.stringify(myUser || null).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   return `
@@ -400,7 +396,7 @@ function renderMatchCard(user, myUser) {
            onclick="showProfileModal(${userJson}, false, ${myUserJson}, true)">
         ${imgHtml}
         <div class="min-w-0">
-          <p class="font-black text-purple-900">${escapeHtml(user.fullName)}</p>
+          <p class="font-black text-purple-900">${escapeHtml(displayName(user.fullName))}</p>
           <p class="text-sm text-gray-500">📍 ${escapeHtml(user.city)}${dist !== null ? ` · ${dist} ק"מ` : ''} · 🎯 ${escapeHtml(user.hobby)}</p>
         </div>
       </div>
@@ -450,7 +446,7 @@ function showMatchPopup(myUser, matchedUser) {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.523 5.83L.057 23.57a.5.5 0 0 0 .611.611l5.74-1.466A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.944 9.944 0 0 1-5.073-1.386l-.363-.215-3.761.961.977-3.762-.232-.375A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
         שלח הודעה בווצאפ
       </a>
-      <button onclick="document.getElementById('matchPopup').remove(); openChat('${matchedUser.email}', '${matchedUser.fullName.replace(/'/g, "\\'")}')"
+      <button onclick="document.getElementById('matchPopup').remove(); openChat('${matchedUser.email}', '${displayName(matchedUser.fullName).replace(/'/g, "\\'")}')"
         class="flex items-center justify-center gap-2 w-full font-bold py-3 rounded-xl mb-3 transition"
         style="background:#f5f3ff;color:#6d28d9;border:1.5px solid #ddd6fe;">
         💬 שלח הודעה בצ'אט

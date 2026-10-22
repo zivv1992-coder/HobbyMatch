@@ -165,6 +165,9 @@ Template variables: `{{otp_code}}`, `{{email}}`
 - All HTML files load Firebase + EmailJS via CDN in `<head>` before custom JS
 - Images → upload to Storage first, save Download URL to Firestore (no Base64)
 - `<html lang="he" dir="rtl">` on every page, all UI text in Hebrew
+- Other users' names are always shown via `displayName(fullName)` ("דן כהן" → "דן כ.", in `js/profiles-utils.js`;
+  copy in `functions/index.js` for push texts). Full name only for the user themself and in admin.html
+- Open work items: `docs/BACKLOG.md`
 - Every async op (Firebase, EmailJS, uploads) must have `try-catch` with Hebrew error message
 - `config.js` = config/data only · `auth.js` = auth/session only · `firebase-logic.js` = Firestore/Storage only
 - Static Web App — no server-side code, compatible with GitHub Pages / Netlify / cPanel

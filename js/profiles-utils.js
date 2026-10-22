@@ -38,6 +38,20 @@ function formatAttendeeDisplay(fullName) {
   return `${parts[0]} ${parts[parts.length - 1].charAt(0)}.`;
 }
 
+// Public display name for other users everywhere in the app: "דן כהן" → "דן כ."
+// Full name is shown only to the user themself and in the admin panel.
+function displayName(fullName) {
+  return formatAttendeeDisplay(fullName);
+}
+
+// Event organizer: free-text organizer names stay as typed, but when it's the
+// creator's own name (the default) show it shortened.
+function eventOrganizerDisplay(ev) {
+  const org = ev.organizerName || '';
+  if (!org || org === ev.creatorName) return displayName(ev.creatorName || org);
+  return org;
+}
+
 function getInitials(display) {
   const clean = (display || '').replace(/\.$/, '').trim();
   const parts = clean.split(/\s+/);
