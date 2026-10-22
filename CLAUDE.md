@@ -70,25 +70,26 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.email == userId;
+      allow write: if true;
     }
     match /likes/{likeId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow delete: if request.auth != null && resource.data.from == request.auth.token.email;
+      allow read, write: if true;
     }
     match /chats/{chatId}/messages/{messageId} {
       allow read, write: if true;
     }
     match /events/{eventId} {
-      allow read: if true;
-      allow write: if true;
+      allow read, write: if true;
     }
     match /feedback/{docId} {
       allow read, write: if true;
     }
     match /reports/{docId} {
-      allow read, write: if true;
+      allow read: if request.auth != null && request.auth.token.email == 'zivv1992@gmail.com';
+      allow write: if true;
+    }
+    match /admin_verify/{docId} {
+      allow read, write: if request.auth != null && request.auth.token.email == 'zivv1992@gmail.com';
     }
   }
 }
