@@ -21,7 +21,7 @@ function openEditDrawer() {
   document.getElementById('ed_profile_photo').value = '';
   const ppWrap = document.getElementById('ed_profilePhotoWrap');
   if (user.profilePhotoURL) {
-    ppWrap.innerHTML = `<img src="${user.profilePhotoURL}" class="w-full h-full object-cover"/>`;
+    ppWrap.innerHTML = `<img src="${user.profilePhotoURL}" class="w-full h-full object-cover cursor-zoom-in" onclick="openImageLightbox(this.src)"/>`;
   } else {
     ppWrap.innerHTML = `<svg viewBox="0 0 24 24" fill="#a78bfa" xmlns="http://www.w3.org/2000/svg" style="width:55%;height:55%;"><path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-3.314 0-10 1.657-10 5v2h20v-2c0-3.343-6.686-5-10-5z"/></svg>`;
   }
@@ -58,6 +58,12 @@ function closeEditDrawer() {
   ed_profilePhotoFile = null;
 }
 
+// Enlarge a gallery thumbnail; arrows page through the whole gallery (saved + new)
+function ed_openGalleryImage(img) {
+  const all = [...document.querySelectorAll('#ed_gallery img')];
+  openImageLightbox(all.map(im => im.src), all.indexOf(img));
+}
+
 function ed_renderGallery() {
   const gallery = document.getElementById('ed_gallery');
   const total   = ed_savedImages.length + ed_newFiles.length;
@@ -66,7 +72,7 @@ function ed_renderGallery() {
   ed_savedImages.forEach((url, i) => {
     html += `
       <div class="relative w-20 h-20 shrink-0">
-        <img src="${url}" class="w-full h-full rounded-xl object-cover border-2 border-purple-200"/>
+        <img src="${url}" class="w-full h-full rounded-xl object-cover cursor-zoom-in border-2 border-purple-200" onclick="ed_openGalleryImage(this)"/>
         <button onclick="ed_removeSaved(${i})"
           class="absolute -top-1.5 -left-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center leading-none hover:bg-red-600">✕</button>
       </div>`;
@@ -75,7 +81,7 @@ function ed_renderGallery() {
     const url = URL.createObjectURL(file);
     html += `
       <div class="relative w-20 h-20 shrink-0">
-        <img src="${url}" class="w-full h-full rounded-xl object-cover border-2 border-blue-200 opacity-80"/>
+        <img src="${url}" class="w-full h-full rounded-xl object-cover cursor-zoom-in border-2 border-blue-200 opacity-80" onclick="ed_openGalleryImage(this)"/>
         <span class="absolute bottom-0.5 right-0.5 text-xs bg-blue-500 text-white px-1 rounded">חדשה</span>
         <button onclick="ed_removeNew(${i})"
           class="absolute -top-1.5 -left-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center leading-none hover:bg-red-600">✕</button>
@@ -112,7 +118,7 @@ function ed_previewProfilePhoto(input) {
   const reader = new FileReader();
   reader.onload = e => {
     const wrap = document.getElementById('ed_profilePhotoWrap');
-    wrap.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover"/>`;
+    wrap.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover cursor-zoom-in" onclick="openImageLightbox(this.src)"/>`;
   };
   reader.readAsDataURL(file);
 }

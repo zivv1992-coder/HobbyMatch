@@ -20,9 +20,9 @@ function buildCarouselHtml(user) {
     return `<div class="aspect-[4/3] bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center text-6xl">🎯</div>`;
   }
 
-  const slidesHtml = images.map(url => {
+  const slidesHtml = images.map((url, i) => {
     const safeUrl = escapeHtml(url);
-    return `<img src="${safeUrl}" alt="תמונת תחביב" class="w-full h-full flex-none object-contain bg-gray-50 border border-gray-200 cursor-zoom-in" onclick="event.stopPropagation();openImageLightbox('${safeUrl}')"/>`;
+    return `<img src="${safeUrl}" alt="תמונת תחביב" class="w-full h-full flex-none object-contain bg-gray-50 border border-gray-200 cursor-zoom-in" onclick="event.stopPropagation();openImageLightbox([...this.parentNode.children].map(im => im.src), ${i})"/>`;
   }).join('');
 
   const multi = images.length > 1;
@@ -461,18 +461,65 @@ function showMatchPopup(myUser, matchedUser) {
 
 // ─── Image Lightbox ───────────────────────────────────────────────────────────
 
-function openImageLightbox(url) {
+// openImageLightbox('url') or openImageLightbox(['url1', 'url2'], startIdx)
+// Multiple images → arrows, swipe, keyboard ←/→ and an "2 / 5" counter.
+function openImageLightbox(urls, startIdx = 0) {
   const existing = document.getElementById('imageLightbox');
   if (existing) existing.remove();
+
+  const images = Array.isArray(urls) ? urls : [urls];
+  let idx = startIdx;
+  const multi = images.length > 1;
+  const arrowCls = 'absolute top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 text-white text-3xl font-bold leading-none flex items-center justify-center transition select-none';
 
   const lb = document.createElement('div');
   lb.id = 'imageLightbox';
   lb.className = 'fixed inset-0 z-[70] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4';
   lb.innerHTML = `
-    <button onclick="document.getElementById('imageLightbox').remove()"
-      class="absolute top-4 left-4 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white text-xl flex items-center justify-center transition">✕</button>
-    <img src="${escapeHtml(url)}" class="max-w-full max-h-[90vh] rounded-xl object-contain shadow-2xl border border-white/10" alt="תמונה מוגדלת"/>`;
-  lb.addEventListener('click', (e) => { if (e.target === lb) lb.remove(); });
+    <button data-close
+      class="absolute top-4 left-4 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white text-xl flex items-center justify-center transition z-10">✕</button>
+    <img data-img class="max-w-full max-h-[90vh] rounded-xl object-contain shadow-2xl border border-white/10" alt="תמונה מוגדלת"/>
+    ${multi ? `
+    <button data-next class="${arrowCls} right-3">&#8250;</button>
+    <button data-prev class="${arrowCls} left-3">&#8249;</button>
+    <div data-counter class="absolute bottom-5 left-1/2 -translate-x-1/2 bg-black/50 text-white text-sm font-bold px-3 py-1 rounded-full" dir="ltr"></div>` : ''}`;
+
+  const img = lb.querySelector('[data-img]');
+  function show(i) {
+    idx = ((i % images.length) + images.length) % images.length;
+    img.src = images[idx];
+    if (multi) lb.querySelector('[data-counter]').textContent = `${idx + 1} / ${images.length}`;
+  }
+  function close() {
+    lb.remove();
+    document.removeEventListener('keydown', onKey);
+  }
+  function onKey(e) {
+    if (e.key === 'Escape') close();
+    else if (multi && e.key === 'ArrowLeft')  show(idx + 1);
+    else if (multi && e.key === 'ArrowRight') show(idx - 1);
+  }
+
+  lb.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (e.target === lb || e.target.closest('[data-close]')) close();
+    else if (e.target.closest('[data-next]')) show(idx + 1);
+    else if (e.target.closest('[data-prev]')) show(idx - 1);
+  });
+  document.addEventListener('keydown', onKey);
+
+  if (multi) {
+    let touchX = null;
+    lb.addEventListener('touchstart', (e) => { touchX = e.touches[0].clientX; }, { passive: true });
+    lb.addEventListener('touchend', (e) => {
+      if (touchX === null) return;
+      const dx = e.changedTouches[0].clientX - touchX;
+      touchX = null;
+      if (Math.abs(dx) > 40) show(dx < 0 ? idx + 1 : idx - 1);
+    });
+  }
+
+  show(idx);
   document.body.appendChild(lb);
 }
 
