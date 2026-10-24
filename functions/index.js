@@ -9,11 +9,11 @@ function sanitizeEmail(email) {
     .replace(/@/g, '_at_').replace(/\./g, '_dot_');
 }
 
-// Same as displayName() in js/profiles-utils.js: "דן כהן" → "דן כ."
+// Same as displayName() in js/profiles-utils.js: "דן כהן" → "דן כ"
 function displayName(fullName) {
   const parts = (fullName || '').trim().split(/\s+/);
   if (parts.length < 2) return parts[0] || 'מישהו';
-  return `${parts[0]} ${parts[parts.length - 1].charAt(0)}.`;
+  return `${parts[0]} ${parts[parts.length - 1].charAt(0)}`;
 }
 
 async function sendPush(fcmToken, title, body, link) {

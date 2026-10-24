@@ -31,14 +31,14 @@ function stripEmoji(str) {
   return str.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim().toLowerCase();
 }
 
-// "דן כהן" → "דן כ."
+// "דן כהן" → "דן כ"
 function formatAttendeeDisplay(fullName) {
   const parts = (fullName || '').trim().split(/\s+/);
   if (parts.length < 2) return parts[0] || '';
-  return `${parts[0]} ${parts[parts.length - 1].charAt(0)}.`;
+  return `${parts[0]} ${parts[parts.length - 1].charAt(0)}`;
 }
 
-// Public display name for other users everywhere in the app: "דן כהן" → "דן כ."
+// Public display name for other users everywhere in the app: "דן כהן" → "דן כ"
 // Full name is shown only to the user themself and in the admin panel.
 function displayName(fullName) {
   return formatAttendeeDisplay(fullName);
