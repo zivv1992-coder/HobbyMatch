@@ -6,22 +6,12 @@
 
 function openEditDrawer() {
   const user = getSession();
-  // Populate cities dropdown once
-  const sel = document.getElementById('ed_city');
-  if (sel.options.length <= 1) {
-    sel.innerHTML = '<option value="">בחר עיר...</option>';
-    [...CITIES].sort((a, b) => a.name.localeCompare(b.name, 'he')).forEach(c => {
-      const o = document.createElement('option');
-      o.value = c.name;
-      o.textContent = c.name;
-      sel.appendChild(o);
-    });
-  }
+  if (!ed_cityPicker) ed_cityPicker = createCityPicker('ed_city', 'drawer-input bg-white');
   // Pre-fill fields
   document.getElementById('ed_name').value  = user.fullName || '';
   document.getElementById('ed_phone').value = (user.phone || '').replace(/\D/g, '');
   document.getElementById('ed_age').value   = user.age      || '';
-  document.getElementById('ed_city').value  = user.city     || '';
+  ed_cityPicker.setCity(user.city);
   if (!ed_hobbyPicker) ed_hobbyPicker = createHobbyPicker('ed_hobbyPicker');
   ed_hobbyPicker.setHobbies(getUserHobbies(user));
   document.getElementById('ed_desc').value      = user.hobbyDescription || '';

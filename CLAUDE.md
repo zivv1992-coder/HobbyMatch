@@ -31,6 +31,7 @@ hobby-match/
     ├── profiles-notifications.js← FCM push notifications, bell badge, panel
     ├── profiles-edit-profile.js ← Edit profile drawer, gallery, romantic toggle
     ├── analytics.js             ← Anonymous sign-up funnel tracking (trackEvent) → admin "משפך הרשמה"
+    ├── city-picker.js           ← Searchable city field (type a letter → matching cities, א-ב order)
     └── hobby-picker.js          ← Category bubbles → sub-hobby pills + custom hobbies (register + edit), HOBBY_CATEGORIES in config.js
 ```
 
@@ -165,7 +166,7 @@ Template variables: `{{otp_code}}`, `{{email}}`
 - All HTML files load Firebase + EmailJS via CDN in `<head>` before custom JS
 - Images → upload to Storage first, save Download URL to Firestore (no Base64)
 - `<html lang="he" dir="rtl">` on every page, all UI text in Hebrew
-- Other users' names are always shown via `displayName(fullName)` ("דן כהן" → "דן כ.", in `js/profiles-utils.js`;
+- Other users' names are always shown via `displayName(fullName)` ("דן כהן" → "דן כ", in `js/profiles-utils.js`;
   copy in `functions/index.js` for push texts). Full name only for the user themself and in admin.html
 - Open work items: `docs/BACKLOG.md`
 - Every async op (Firebase, EmailJS, uploads) must have `try-catch` with Hebrew error message
