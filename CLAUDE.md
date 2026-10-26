@@ -177,8 +177,7 @@ Template variables: `{{otp_code}}`, `{{email}}`
 
 ## Tests (Playwright, `tests/`)
 - Firebase is mocked in `tests/helpers.js` (users, likes, message_requests).
-- `npm test` needs `npx playwright install`; alternatively use the installed Chrome with a config that spreads
-  `playwright.config.js` and sets `use.channel: 'chrome'`.
+- **`npm run test:chrome`** — runs on the installed Chrome (`playwright.chrome.config.js`). `npm test` needs `npx playwright install` first.
 - `serve.json` (`cleanUrls: false`) keeps query strings like `?mode=login` locally, as on Vercel.
 - 3 tests were already failing before 2026-10-26: the OTP dev-mode alert, the guest redirect, and the full name on the card.
 
