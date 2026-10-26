@@ -36,7 +36,7 @@ test.describe('Message requests', () => {
     const box = page.locator('#requestsBox');
     await expect(box).toContainText('דנה כ', { timeout: 15000 });
     await expect(box).not.toContainText('דנה כהן');
-    await expect(box).toContainText('בא לרוץ ביחד?');
+    await expect(box).not.toContainText('בא לרוץ ביחד?');   // revealed only after approving
 
     await box.locator('button:has-text("אישור")').click();
     await expect(box).toBeHidden();
@@ -56,6 +56,43 @@ test.describe('Message requests', () => {
     await box.locator('button:has-text("לא עכשיו")').click();
     await expect(box).toBeHidden();
     await expect(page.locator('#chatModal')).toBeHidden();
+  });
+
+});
+
+test.describe('Bell', () => {
+
+  test('shows who liked me by name; "💜 בחזרה" makes a connection', async ({ page }) => {
+    await setupFirebaseMock(page, {
+      users: MOCK_FEED_USERS,
+      likes: [{ from: 'dana@example.com', to: MOCK_SESSION.email }],
+    });
+    await injectSession(page, MOCK_SESSION);
+    await page.goto('/profiles.html');
+    await expect(page.locator('#bellBadge')).toBeVisible({ timeout: 15000 });
+    await page.click('#bellBtn');
+    const panel = page.locator('#npPanelBody');
+    await expect(panel).toContainText('עשו לך לייק');
+    await expect(panel).toContainText('דנה כ');
+    await expect(panel).not.toContainText('דנה כהן');
+    await panel.locator('button:has-text("בחזרה")').click();
+    await expect(page.locator('#matchPopup')).toBeVisible();
+  });
+
+  test('message request: approve from the bell → chat opens (text hidden before)', async ({ page }) => {
+    await setupFirebaseMock(page, {
+      users: MOCK_FEED_USERS,
+      requests: [{ from: 'dana@example.com', to: MOCK_SESSION.email, text: 'סוד עד שמאשרים', status: 'pending' }],
+    });
+    await injectSession(page, MOCK_SESSION);
+    await page.goto('/profiles.html');
+    await expect(page.locator('#bellBadge')).toBeVisible({ timeout: 15000 });
+    await page.click('#bellBtn');
+    const panel = page.locator('#npPanelBody');
+    await expect(panel).toContainText('רוצה לשלוח לך הודעה');
+    await expect(panel).not.toContainText('סוד עד שמאשרים');
+    await panel.locator('button:has-text("אישור")').click();
+    await expect(page.locator('#chatModal')).toBeVisible();
   });
 
 });

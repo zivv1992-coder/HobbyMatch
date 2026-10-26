@@ -73,18 +73,18 @@ function renderReportSearchResults() {
     const photo = u.profilePhotoURL || u.hobbyImageUrl;
     const imgHtml = photo
       ? `<img src="${photo}" class="w-9 h-9 rounded-full object-cover shrink-0 border border-purple-100"/>`
-      : `<div class="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center shrink-0 text-base font-black text-purple-600">${(u.fullName||'?')[0]}</div>`;
-    const safeEmail   = (u.email||'').replace(/'/g,"\\'");
-    const safeName    = (u.fullName||'').replace(/'/g,"\\'");
-    const safeMyName  = (me.fullName||'').replace(/'/g,"\\'");
-    const safeMyEmail = (me.email||'').replace(/'/g,"\\'");
+      : `<div class="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center shrink-0 text-base font-black text-purple-600">${escapeHtml((u.fullName||'?')[0])}</div>`;
+    const safeEmail   = jsArg(u.email);
+    const safeName    = jsArg(u.fullName);
+    const safeMyName  = jsArg(me.fullName);
+    const safeMyEmail = jsArg(me.email);
     return `
       <button onclick="document.getElementById('reportMenuModal').remove(); showReportModal('${safeEmail}','${safeName}','${safeMyEmail}','${safeMyName}')"
         class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-purple-50 transition text-right">
         ${imgHtml}
         <div class="min-w-0">
           <p class="font-bold text-gray-800 text-sm">${escapeHtml(displayName(u.fullName))}</p>
-          <p class="text-xs text-gray-400 truncate">📍 ${u.city||''} · 🎯 ${u.hobby||''}</p>
+          <p class="text-xs text-gray-400 truncate">📍 ${escapeHtml(u.city||'')} · 🎯 ${escapeHtml(u.hobby||'')}</p>
         </div>
       </button>`;
   }).join('');

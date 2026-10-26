@@ -1,287 +1,9 @@
 // ══════════════════════════════════════════════════════════════════════════════
 // profiles-events.js — Full events system: load, render, create, join, parse
 //
-// ATMOSPHERE / VIBE TAGS
-// ─────────────────────
-// ATMOSPHERE_MAP (defined in config.js) maps activity tags → vibe chip options.
-// Used in the Create Event form to let organizers tag the mood/style of an event.
-// To add a new vibe category: edit ATMOSPHERE_MAP in config.js.
+// Activity hobbies are picked with the profile hobby picker (HOBBY_CATEGORIES in config.js).
 // To add new hobby keywords for auto-detection: edit extractHobbyFromText() below.
 // ══════════════════════════════════════════════════════════════════════════════
-
-let ev_selectedActivities = new Set();
-let ev_selectedAtmosphere = new Set();
-let ev_customActivityInput = null;
-
-function evRenderActivityChips() {
-  const container = document.getElementById('ev_activity_tags');
-  if (!container) return;
-  container.innerHTML = '';
-
-  ACTIVITY_CATEGORIES.forEach(cat => {
-    const selectedCount = cat.tags.filter(t => ev_selectedActivities.has(t)).length;
-    const isExpanded    = ev_expandedCategories.has(cat.label);
-
-    const catBtn = document.createElement('button');
-    catBtn.type = 'button';
-    catBtn.dataset.catLabel = cat.label;
-    const badge = selectedCount > 0
-      ? ` <span style="background:#7c3aed;color:#fff;border-radius:999px;padding:1px 7px;font-size:0.65rem;vertical-align:middle;margin-right:2px;">${selectedCount}</span>`
-      : '';
-    catBtn.innerHTML = `${cat.label}${badge}`;
-    catBtn.className = selectedCount > 0
-      ? 'px-3 py-1.5 rounded-full text-xs font-bold border-2 border-purple-500 bg-purple-50 text-purple-800 transition cursor-pointer'
-      : isExpanded
-        ? 'px-3 py-1.5 rounded-full text-xs font-bold border-2 border-purple-400 bg-purple-50 text-purple-700 shadow-sm transition cursor-pointer'
-        : TAG_CHIP_INACTIVE_CLASS + ' cursor-pointer';
-
-    catBtn.onclick = (e) => {
-      e.stopPropagation();
-      if (ev_expandedCategories.has(cat.label)) {
-        ev_expandedCategories.delete(cat.label);
-        _closeActivityPopover();
-        evRenderActivityChips();
-      } else {
-        ev_expandedCategories.clear();
-        ev_expandedCategories.add(cat.label);
-        evRenderActivityChips();
-        const newBtn = document.querySelector(`[data-cat-label="${cat.label}"]`);
-        if (newBtn) _openActivityPopover(cat, newBtn);
-      }
-    };
-    container.appendChild(catBtn);
-  });
-
-  // Show chips for custom (non-category) activities
-  const allCategoryTags = ACTIVITY_CATEGORIES.flatMap(c => c.tags);
-  [...ev_selectedActivities].filter(t => !allCategoryTags.includes(t)).forEach((tag, idx) => {
-    const chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = getTagChipActiveClassByIndex(idx) + ' cursor-pointer';
-    chip.innerHTML = `${tag} <span style="margin-right:4px;opacity:0.7;">✕</span>`;
-    chip.onclick = (e) => {
-      e.stopPropagation();
-      ev_selectedActivities.delete(tag);
-      evRenderActivityChips();
-      evRefreshAtmosphereChips();
-    };
-    container.appendChild(chip);
-  });
-
-  const otherBtn = document.createElement('button');
-  otherBtn.type = 'button';
-  otherBtn.className = TAG_CHIP_INACTIVE_CLASS + ' cursor-pointer';
-  otherBtn.innerHTML = '➕ אחר';
-  otherBtn.onclick = (e) => {
-    e.stopPropagation();
-    ev_expandedCategories.clear();
-    _openCustomActivityInput();
-  };
-  container.appendChild(otherBtn);
-}
-
-function _openActivityPopover(cat, anchorBtn) {
-  _closeActivityPopover();
-
-  const popover = document.createElement('div');
-  popover.id = 'evActivityPopover';
-  popover.style.cssText = `
-    position:fixed;z-index:9999;
-    background:#fff;
-    border:1.5px solid #c4b5fd;
-    border-radius:18px;
-    padding:14px 14px 12px;
-    box-shadow:0 12px 40px rgba(109,40,217,0.22),0 2px 8px rgba(0,0,0,0.08);
-    display:flex;flex-wrap:wrap;gap:8px;
-    max-width:300px;min-width:200px;
-    direction:rtl;
-    animation:popoverIn 0.18s cubic-bezier(.34,1.56,.64,1) both;
-  `;
-
-  if (!document.getElementById('_popoverKeyframes')) {
-    const s = document.createElement('style');
-    s.id = '_popoverKeyframes';
-    s.textContent = `@keyframes popoverIn{from{opacity:0;transform:scale(0.88) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}`;
-    document.head.appendChild(s);
-  }
-
-  // header label
-  const hdr = document.createElement('div');
-  hdr.style.cssText = 'width:100%;font-size:0.7rem;font-weight:700;color:#7c3aed;margin-bottom:4px;padding-bottom:6px;border-bottom:1px solid #ede9fe;';
-  hdr.textContent = cat.label;
-  popover.appendChild(hdr);
-
-  cat.tags.forEach((tag, idx) => {
-    const tagBtn = document.createElement('button');
-    tagBtn.type = 'button';
-    tagBtn.textContent = tag;
-    const active = ev_selectedActivities.has(tag);
-    tagBtn.className = active ? getTagChipActiveClassByIndex(idx) : TAG_CHIP_INACTIVE_CLASS;
-    tagBtn.onclick = (e) => {
-      e.stopPropagation();
-      if (ev_selectedActivities.has(tag)) ev_selectedActivities.delete(tag);
-      else ev_selectedActivities.add(tag);
-      ev_expandedCategories.clear();
-      _closeActivityPopover();
-      evRenderActivityChips();
-      evRefreshAtmosphereChips();
-    };
-    popover.appendChild(tagBtn);
-  });
-
-  // tiny stem arrow
-  const stem = document.createElement('div');
-  stem.style.cssText = `
-    position:absolute;bottom:-8px;right:20px;
-    width:14px;height:8px;overflow:hidden;
-  `;
-  stem.innerHTML = `<div style="width:14px;height:14px;background:#fff;border:1.5px solid #c4b5fd;transform:rotate(45deg);margin-top:-8px;border-radius:3px;box-shadow:2px 2px 6px rgba(109,40,217,0.12);"></div>`;
-  popover.appendChild(stem);
-
-  document.body.appendChild(popover);
-
-  // position above the anchor button
-  const rect = anchorBtn.getBoundingClientRect();
-  const pw   = Math.min(300, window.innerWidth - 16);
-  popover.style.width = pw + 'px';
-  const ph = popover.offsetHeight;
-  let top  = rect.top - ph - 12;
-  let left = rect.right - pw;
-
-  // if too high, flip below
-  if (top < 8) { top = rect.bottom + 12; stem.style.bottom = 'auto'; stem.style.top = '-8px'; stem.style.transform = 'rotate(180deg)'; }
-  if (left < 8) left = 8;
-  if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
-
-  popover.style.top  = top  + 'px';
-  popover.style.left = left + 'px';
-
-  setTimeout(() => document.addEventListener('click', _closeActivityPopoverHandler), 0);
-}
-
-function _closeActivityPopoverHandler(e) {
-  const p = document.getElementById('evActivityPopover');
-  if (p && !p.contains(e.target)) {
-    ev_expandedCategories.clear();
-    _closeActivityPopover();
-    evRenderActivityChips();
-  }
-}
-
-function _closeActivityPopover() {
-  const p = document.getElementById('evActivityPopover');
-  if (p) p.remove();
-  document.removeEventListener('click', _closeActivityPopoverHandler);
-}
-
-function _openCustomActivityInput() {
-  _closeActivityPopover();
-  _closeCustomActivityInput();
-
-  const inputDiv = document.createElement('div');
-  inputDiv.id = 'evCustomActivityInput';
-  inputDiv.style.cssText = `
-    position:fixed;z-index:9999;top:50%;left:50%;transform:translate(-50%,-50%);
-    background:#fff;border:1.5px solid #c4b5fd;border-radius:14px;
-    padding:14px;box-shadow:0 8px 32px rgba(109,40,217,0.22);
-    width:76%;max-width:256px;direction:rtl;
-    animation:popoverIn 0.18s cubic-bezier(.34,1.56,.64,1) both;
-  `;
-
-  inputDiv.innerHTML = `
-    <p style="font-size:0.78rem;font-weight:600;color:#374151;margin:0 0 8px;">סוג פעילות מותאם:</p>
-    <input id="customActivityField" type="text" placeholder="למשל: סיור טבע, משחק לוח..."
-      style="width:100%;border:1.5px solid #e5e7eb;border-radius:10px;padding:8px 10px;
-             font-size:0.85rem;font-family:'Heebo',sans-serif;direction:rtl;text-align:right;
-             outline:none;box-sizing:border-box;transition:border-color 0.15s;"
-      onkeydown="if(event.key==='Enter') document.getElementById('customActivityBtn').click()"/>
-    <div style="display:flex;gap:6px;margin-top:10px;">
-      <button id="customActivityBtn" onclick="_addCustomActivity()"
-        style="flex:1;background:#7c3aed;color:#fff;border:none;border-radius:10px;
-               padding:8px;font-size:0.85rem;font-weight:700;cursor:pointer;transition:background 0.15s;"
-        onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='#7c3aed'">
-        הוסף
-      </button>
-      <button onclick="_closeCustomActivityInput()"
-        style="flex:1;background:#f3f4f6;color:#6b7280;border:none;border-radius:10px;
-               padding:8px;font-size:0.85rem;font-weight:700;cursor:pointer;transition:background 0.15s;"
-        onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
-        ביטול
-      </button>
-    </div>
-  `;
-
-  document.body.appendChild(inputDiv);
-  ev_customActivityInput = inputDiv;
-  const field = document.getElementById('customActivityField');
-  field.focus();
-  setTimeout(() => document.addEventListener('click', _closeCustomActivityInputHandler), 0);
-}
-
-function _closeCustomActivityInputHandler(e) {
-  const el = document.getElementById('evCustomActivityInput');
-  if (el && !el.contains(e.target)) {
-    _closeCustomActivityInput();
-  }
-}
-
-function _closeCustomActivityInput() {
-  const el = document.getElementById('evCustomActivityInput');
-  if (el) el.remove();
-  document.removeEventListener('click', _closeCustomActivityInputHandler);
-  ev_customActivityInput = null;
-}
-
-function _addCustomActivity() {
-  const field = document.getElementById('customActivityField');
-  const value = (field?.value || '').trim();
-  if (!value) {
-    alert('אנא הזן סוג פעילות');
-    field?.focus();
-    return;
-  }
-  ev_selectedActivities.add(value);
-  _closeCustomActivityInput();
-  evRenderActivityChips();
-  evRefreshAtmosphereChips();
-}
-
-function evRefreshAtmosphereChips() {
-  const container = document.getElementById('ev_atmosphere_tags');
-  const hint = document.getElementById('ev_atmosphere_hint');
-  if (!container) return;
-
-  const available = mergeAtmosphereOptionsForActivities([...ev_selectedActivities]);
-  [...ev_selectedAtmosphere].forEach(t => {
-    if (!available.includes(t)) ev_selectedAtmosphere.delete(t);
-  });
-
-  if (ev_selectedActivities.size === 0) {
-    container.innerHTML = '';
-    if (hint) {
-      hint.textContent = 'בחרו לפחות סוג פעילות אחד כדי לראות כאן אפשרויות אווירה.';
-      hint.classList.remove('hidden');
-    }
-    return;
-  }
-  if (hint) hint.classList.add('hidden');
-
-  container.innerHTML = '';
-  available.forEach(tag => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = tag;
-    const idx = available.indexOf(tag);
-    const active = ev_selectedAtmosphere.has(tag);
-    btn.className = active ? getTagChipActiveClassByIndex(idx) : TAG_CHIP_INACTIVE_CLASS;
-    btn.onclick = () => {
-      if (ev_selectedAtmosphere.has(tag)) ev_selectedAtmosphere.delete(tag);
-      else ev_selectedAtmosphere.add(tag);
-      evRefreshAtmosphereChips();
-    };
-    container.appendChild(btn);
-  });
-}
 
 // ── Event Detail Modal ────────────────────────────────────────────────────────
 function openEventDetailModal(eventId) {
@@ -303,7 +25,7 @@ function openEventDetailModal(eventId) {
   const contactFooterHtml = `
     <div style="padding:16px 24px 20px;border-top:1.5px solid #ede9fe;flex-shrink:0;" dir="rtl">
       ${orgName ? `<p style="font-size:0.8rem;color:#6b7280;text-align:center;margin:0 0 12px;">
-        יוזם/ת הפעילות: <strong style="color:#5b21b6;">${orgName}</strong></p>` : ''}
+        יוזם/ת הפעילות: <strong style="color:#5b21b6;">${escapeHtml(orgName)}</strong></p>` : ''}
       ${waValid
         ? `<a href="https://wa.me/${waNum}" target="_blank" rel="noopener noreferrer"
             style="display:flex;align-items:center;justify-content:center;gap:8px;
@@ -329,10 +51,10 @@ function openEventDetailModal(eventId) {
             : 'background:#f9fafb;color:#374151;border-color:#e5e7eb;';
           const icon = link.type.includes('whatsapp') ? '💬'
             : link.type === 'maps' ? '📍' : link.type === 'waze' ? '🚗' : '🔗';
-          return `<a href="${link.url}" target="_blank" rel="noopener noreferrer"
+          return `<a href="${escapeHtml(safeUrl(link.url))}" target="_blank" rel="noopener noreferrer"
             style="display:inline-flex;align-items:center;gap:6px;font-size:0.8rem;font-weight:700;
                    padding:6px 14px;border-radius:10px;border:1px solid;${s}text-decoration:none;">
-            ${icon} ${link.label}</a>`;
+            ${icon} ${escapeHtml(link.label)}</a>`;
         }).join('')}
       </div>` : '';
 
@@ -359,17 +81,9 @@ function openEventDetailModal(eventId) {
     : '';
 
 
-  const eventAtmosphereBlock = (ev.atmosphereTags && ev.atmosphereTags.length)
-    ? `<div style="margin-bottom:16px;">
-        <p style="font-size:0.7rem;font-weight:700;color:#9ca3af;margin:0 0 8px;letter-spacing:0.04em;">אווירת מפגש</p>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">${formatColoredTagBadgesHtml(ev.atmosphereTags)}</div>
-      </div>`
-    : '';
-
   const descSectionHtml = `
     <div class="ev-modal-scroll" style="flex:1;overflow-y:auto;padding:20px 24px;scrollbar-width:thin;scrollbar-color:#ddd6fe transparent;" dir="rtl">
       ${linksHtml}
-      ${eventAtmosphereBlock}
       ${ev.description ? `
       <div>
         <p style="font-size:0.7rem;font-weight:700;color:#9ca3af;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em;">תיאור הפעילות</p>
@@ -405,7 +119,7 @@ function openEventDetailModal(eventId) {
       <div style="display:flex;align-items:flex-start;justify-content:space-between;
                   padding:20px 24px 16px;border-bottom:1.5px solid #ede9fe;flex-shrink:0;" dir="rtl">
         <div style="flex:1;padding-left:14px;">
-          <h2 style="font-size:1.25rem;font-weight:900;color:#3b0764;line-height:1.3;margin:0 0 8px;">${ev.title || ''}</h2>
+          <h2 style="font-size:1.25rem;font-weight:900;color:#3b0764;line-height:1.3;margin:0 0 8px;">${escapeHtml(ev.title || '')}</h2>
           ${ev.detectedHobbyTag
             ? `<span style="display:inline-flex;align-items:center;font-size:0.72rem;font-weight:600;
                             color:#6d28d9;border:1px solid #7c3aed;border-radius:999px;
@@ -450,7 +164,7 @@ function openEventDetailModal(eventId) {
           ? (me
             ? `<div style="display:flex;align-items:center;gap:10px;font-size:0.9rem;color:#374151;">
                  <span>📍</span>
-                 <span style="font-weight:500;flex:1;">${ev.location}</span>
+                 <span style="font-weight:500;flex:1;">${escapeHtml(ev.location)}</span>
                  <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}"
                     target="_blank" rel="noopener noreferrer"
                     style="display:inline-flex;align-items:center;gap:5px;font-size:0.75rem;font-weight:700;
@@ -462,7 +176,7 @@ function openEventDetailModal(eventId) {
                </div>`
             : `<div style="display:flex;align-items:center;gap:10px;font-size:0.85rem;color:#6b7280;">
                  <span>📍</span>
-                 <span style="font-weight:500;">${ev.location}</span>
+                 <span style="font-weight:500;">${escapeHtml(ev.location)}</span>
                  <span style="font-size:0.72rem;color:#9ca3af;background:#f3f4f6;padding:2px 8px;border-radius:999px;white-space:nowrap;">מיקום כללי</span>
                </div>`)
           : ''}
@@ -775,7 +489,7 @@ function renderEventCard(ev) {
       ? `<a href="https://wa.me/${waNum}" target="_blank" rel="noopener noreferrer" dir="rtl"
             class="flex items-center justify-center gap-2 w-full bg-[#25D366] text-white font-bold text-sm py-2.5 rounded-2xl hover:bg-[#1ebe5d] transition">
            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.523 5.83L.057 23.57a.5.5 0 0 0 .611.611l5.74-1.466A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.944 9.944 0 0 1-5.073-1.386l-.363-.215-3.761.961.977-3.762-.232-.375A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-           שלח הודעה ליוצר${ev.creatorName ? ' — ' + ev.creatorName : ''} בוואטסאפ
+           שלח הודעה ליוצר${ev.creatorName ? ' — ' + escapeHtml(ev.creatorName) : ''} בוואטסאפ
          </a>`
       : `<p class="text-center text-xs text-gray-400 py-1">🙋 הצטרפת! ניתן לפנות ליוצר דרך הפרופיל שלו.</p>`;
     waSection = `<div>${waLink}</div>`;
@@ -783,7 +497,7 @@ function renderEventCard(ev) {
 
   const hobbyTags = ((ev.associatedHobbies && ev.associatedHobbies.length)
     ? ev.associatedHobbies : [ev.hobby || '🎯 כללי']
-  ).map(h => `<span class="text-xs font-bold bg-violet-100 text-violet-700 px-2.5 py-1 rounded-full">${h}</span>`).join('');
+  ).map(h => `<span class="text-xs font-bold bg-violet-100 text-violet-700 px-2.5 py-1 rounded-full">${escapeHtml(h)}</span>`).join('');
 
   const matchBadge = isMatch
     ? `<span class="text-xs font-bold bg-amber-50 text-amber-600 border border-amber-200 px-2.5 py-1 rounded-full match-badge">✨ מתאים לך</span>`
@@ -792,9 +506,6 @@ function renderEventCard(ev) {
     ? `<span class="text-xs bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full font-semibold">הסתיים</span>`
     : '';
 
-  const atmosphereRow = (ev.atmosphereTags && ev.atmosphereTags.length)
-    ? `<div class="flex flex-wrap gap-1.5 items-center">${formatColoredTagBadgesHtml(ev.atmosphereTags)}</div>`
-    : '';
 
   const actionLinksHtml = (ev.actionLinks && ev.actionLinks.length > 0) ? `
     <div class="flex flex-wrap gap-2">
@@ -806,9 +517,9 @@ function renderEventCard(ev) {
           : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100';
         const icon = link.type === 'whatsapp_group' || link.type === 'whatsapp' ? '💬'
           : link.type === 'maps' ? '📍' : link.type === 'waze' ? '🚗' : '🔗';
-        return `<a href="${link.url}" target="_blank" rel="noopener noreferrer"
+        return `<a href="${escapeHtml(safeUrl(link.url))}" target="_blank" rel="noopener noreferrer"
           class="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition ${styles}">
-          ${icon} ${link.label}
+          ${icon} ${escapeHtml(link.label)}
         </a>`;
       }).join('')}
     </div>` : '';
@@ -820,14 +531,14 @@ function renderEventCard(ev) {
 
       ${ev.imageUrl ? `
       <div class="relative w-full h-44 overflow-hidden">
-        <img src="${ev.imageUrl}" class="w-full h-full object-cover" alt="${ev.title || ''}"/>
+        <img src="${escapeHtml(safeUrl(ev.imageUrl))}" class="w-full h-full object-cover" alt="${escapeHtml(ev.title || '')}"/>
         <div class="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent"></div>
         <div class="absolute bottom-3 right-4 flex flex-wrap gap-1.5 items-center">${hobbyTags}${matchBadge}${pastBadge}</div>
       </div>` : `
       <div class="relative w-full h-28 overflow-hidden" style="background:linear-gradient(135deg,#4c1d95 0%,#2563eb 100%);">
         <div class="absolute inset-0 opacity-20" style="background-image:radial-gradient(circle at 20% 50%,#fff 1px,transparent 1px),radial-gradient(circle at 80% 20%,#fff 1px,transparent 1px);background-size:30px 30px;"></div>
         <div class="absolute inset-0 flex flex-col justify-end p-4">
-          <h3 class="font-black text-white text-lg leading-snug line-clamp-2 drop-shadow">${ev.title || ''}</h3>
+          <h3 class="font-black text-white text-lg leading-snug line-clamp-2 drop-shadow">${escapeHtml(ev.title || '')}</h3>
         </div>
         <div class="absolute top-3 left-3 flex flex-wrap gap-1.5 items-center">${matchBadge}${pastBadge}</div>
       </div>`}
@@ -836,7 +547,7 @@ function renderEventCard(ev) {
         ${!ev.imageUrl ? `<div class="flex flex-wrap gap-1.5 items-center">${hobbyTags}</div>` : `<div class="flex flex-wrap gap-1.5 items-center">${hobbyTags}${matchBadge}${pastBadge}</div>`}
 
         <div>
-          ${ev.imageUrl ? `<h3 class="font-black text-purple-900 text-lg leading-snug">${ev.title || ''}</h3>` : ''}
+          ${ev.imageUrl ? `<h3 class="font-black text-purple-900 text-lg leading-snug">${escapeHtml(ev.title || '')}</h3>` : ''}
           ${ev.detectedHobbyTag ? `
           <span style="display:inline-flex;align-items:center;font-size:0.72rem;font-weight:600;color:#6d28d9;border:1px solid #7c3aed;border-radius:999px;padding:2px 10px;background:transparent;margin-top:4px;">
             ${formatHobbyTag(ev.detectedHobbyTag)}
@@ -845,13 +556,12 @@ function renderEventCard(ev) {
 
         <div class="grid grid-cols-3 gap-2">
           ${dateStr ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">מתי</span><span class="text-xs font-bold text-gray-800 leading-tight">${dateStr}</span>${timeStr ? `<span class="text-xs font-semibold text-violet-600">${timeStr}</span>` : ''}</div>` : ''}
-          ${ev.location ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">איפה</span><span class="text-xs font-bold text-gray-800 leading-tight line-clamp-2">${ev.location}${eventKmLabel(ev)}</span></div>` : ''}
+          ${ev.location ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">איפה</span><span class="text-xs font-bold text-gray-800 leading-tight line-clamp-2">${escapeHtml(ev.location)}${eventKmLabel(ev)}</span></div>` : ''}
           ${(ev.organizerName || ev.creatorName) ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">מארגן</span><span class="text-xs font-bold text-gray-800 leading-tight line-clamp-2">${escapeHtml(eventOrganizerDisplay(ev))}</span></div>` : ''}
         </div>
 
-        ${atmosphereRow ? `<div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">אווירת מפגש</p>${atmosphereRow}</div>` : ''}
 
-        ${ev.description ? `<p class="text-sm text-gray-500 leading-relaxed line-clamp-2">${ev.description}</p>` : ''}
+        ${ev.description ? `<p class="text-sm text-gray-500 leading-relaxed line-clamp-2">${escapeHtml(ev.description)}</p>` : ''}
         ${actionLinksHtml}
 
         <div class="flex items-center justify-between pt-3 border-t border-gray-50 flex-wrap gap-3">
@@ -882,7 +592,7 @@ function renderEventCard(ev) {
 
         ${isPast && iAmIn ? `
         <button onclick="openPostEventModal('${ev.id}', this)"
-          data-ev-title="${(ev.title||'').replace(/"/g,'&quot;')}"
+          data-ev-title="${escapeHtml(ev.title || '')}"
           class="w-full text-sm font-semibold text-gray-400 border border-dashed border-gray-200 py-2.5 rounded-2xl hover:bg-gray-50 hover:text-purple-600 hover:border-purple-200 transition">
           🙌 שתף את החוויה שלך מהפעילות הזו
         </button>` : ''}
@@ -940,7 +650,7 @@ function openCreateEventModal() {
   document.getElementById('ev_form_body').classList.add('hidden');
   document.getElementById('ev_footer').classList.add('hidden');
 
-  ['ev_title','ev_desc','ev_datetime','ev_location','ev_hobbies','ev_organizer_name','ev_organizer_phone','ev_paste_text'].forEach(id => {
+  ['ev_title','ev_desc','ev_datetime','ev_location','ev_organizer_name','ev_organizer_phone','ev_paste_text'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('ev_paste_section').classList.add('hidden');
@@ -949,9 +659,8 @@ function openCreateEventModal() {
   document.getElementById('ev_detected_hobby_wrap').classList.add('hidden');
   document.getElementById('ev_detected_hobby_display').innerHTML = '';
   window._pendingHobbyTag = null;
-  ev_selectedActivities.clear();
-  ev_selectedAtmosphere.clear();
-  ev_expandedCategories.clear();
+  if (!ev_hobbyPicker) ev_hobbyPicker = createHobbyPicker('ev_hobbyPicker');
+  ev_hobbyPicker.setHobbies([]);
   document.getElementById('ev_error').classList.add('hidden');
   const submitBtn = document.getElementById('ev_submitBtn');
   submitBtn.disabled    = false;
@@ -965,8 +674,7 @@ function openCreateEventModal() {
 }
 
 function getSelectedEvHobbies() {
-  const hobbiesText = document.getElementById('ev_hobbies').value.trim();
-  return hobbiesText ? hobbiesText.split(',').map(h => h.trim()).filter(h => h.length > 0) : [];
+  return ev_hobbyPicker ? ev_hobbyPicker.getHobbies() : [];
 }
 
 function closeCreateEventModal() {
@@ -1001,8 +709,6 @@ function selectOrganizerType(type) {
   }
   document.getElementById('ev_form_body').classList.remove('hidden');
   document.getElementById('ev_footer').classList.remove('hidden');
-  evRenderActivityChips();
-  evRefreshAtmosphereChips();
 }
 
 async function handleCreateEvent() {
@@ -1028,7 +734,7 @@ async function handleCreateEvent() {
   if (!btn._dedupeConfirmed) {
     const dup = findDuplicateEvent(title, dtVal, location);
     if (dup) {
-      errEl.innerHTML = `⚠️ פעילות דומה כבר קיימת: <strong>"${dup.title}"</strong>. לחץ שוב לפרסום בכל זאת.`;
+      errEl.innerHTML = `⚠️ פעילות דומה כבר קיימת: <strong>"${escapeHtml(dup.title)}"</strong>. לחץ שוב לפרסום בכל זאת.`;
       errEl.classList.remove('hidden');
       btn._dedupeConfirmed = true;
       return;
@@ -1042,8 +748,6 @@ async function handleCreateEvent() {
     const dateTime         = firebase.firestore.Timestamp.fromDate(new Date(dtVal));
     const actionLinks      = window._pendingEventLinks || [];
     const detectedHobbyTag = window._pendingHobbyTag   || null;
-    const atmosphereTags = [...ev_selectedAtmosphere];
-    const eventActivityTags = [...ev_selectedActivities];
     const cityData = CITIES.find(c => c.name === city);
     const place    = { city, latitude: cityData ? cityData.lat : null, longitude: cityData ? cityData.lng : null };
 
@@ -1055,7 +759,6 @@ async function handleCreateEvent() {
       organizerPhone: organizerPhone || me.phone || '',
       actionLinks, detectedHobbyTag,
       interested: [{ email: me.email, name: me.fullName || '', display: formatAttendeeDisplay(me.fullName || me.email) }],
-      atmosphereTags, eventActivityTags,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
@@ -1067,7 +770,6 @@ async function handleCreateEvent() {
       organizerName: organizerName || displayName(me.fullName) || me.email,
       organizerPhone: organizerPhone || me.phone || '',
       actionLinks, detectedHobbyTag, interested: [creatorEntry],
-      atmosphereTags, eventActivityTags
     });
     window._pendingEventLinks = [];
 
@@ -1118,11 +820,7 @@ function openRepeatEvent(eventId) {
     if (ev.organizerPhone) document.getElementById('ev_organizer_phone').value = ev.organizerPhone;
     const hobbies = ev.associatedHobbies && ev.associatedHobbies.length
       ? ev.associatedHobbies : (ev.hobby ? [ev.hobby] : []);
-    if (hobbies.length > 0) document.getElementById('ev_hobbies').value = hobbies.join(', ');
-    ev_selectedActivities = new Set((ev.eventActivityTags || []).filter(a => ACTIVITY_TAGS.includes(a)));
-    ev_selectedAtmosphere = new Set(ev.atmosphereTags || []);
-    evRenderActivityChips();
-    evRefreshAtmosphereChips();
+    ev_hobbyPicker.setHobbies(hobbies.map(stripEmoji).filter(Boolean));
   }, 60);
 }
 
@@ -1424,7 +1122,7 @@ function handleParseText() {
     linksList.innerHTML = parsed.links.map(link => {
       const icon = link.type === 'whatsapp_group' || link.type === 'whatsapp' ? '💬'
         : link.type === 'maps' ? '📍' : link.type === 'waze' ? '🚗' : '🔗';
-      return `<span class="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-purple-100 text-purple-700">${icon} ${link.label}</span>`;
+      return `<span class="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-purple-100 text-purple-700">${icon} ${escapeHtml(link.label)}</span>`;
     }).join('');
     linksPreview.classList.remove('hidden');
   }

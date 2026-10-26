@@ -50,7 +50,7 @@ const MOCK_FEED_USERS = [
 // Blocks real Firebase/EmailJS CDN scripts and injects lightweight mocks.
 // Call this before page.goto().
 
-async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [], requests = [] } = {}) {
+async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [], requests = [], events = [] } = {}) {
   // Block Firebase SDK CDN — empty JS prevents overwriting our mock
   await page.route(/gstatic\.com\/firebasejs/, route =>
     route.fulfill({ contentType: 'text/javascript', body: '// firebase mocked' })
@@ -61,7 +61,7 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
   );
 
   // Inject window.firebase + window.emailjs before any page script runs
-  await page.addInitScript(({ users, likedEmails, likes, requests }) => {
+  await page.addInitScript(({ users, likedEmails, likes, requests, events }) => {
     // EmailJS stub
     window.emailjs = {
       init: () => {},
@@ -82,6 +82,7 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
         if (collectionName === 'users') data = users;
         else if (collectionName === 'likes') data = likes;
         else if (collectionName === 'message_requests') data = requests;
+        else if (collectionName === 'events') data = events;
         else data = [];
         return filterFn ? data.filter(filterFn) : data;
       };
@@ -146,7 +147,7 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
         }),
       }),
     };
-  }, { users, likedEmails, likes, requests });
+  }, { users, likedEmails, likes, requests, events });
 }
 
 // ─── Set localStorage session before page load ────────────────────────────────

@@ -80,7 +80,7 @@ function openChat(otherEmail, otherName) {
             <div class="max-w-[78%] px-4 py-2.5 text-sm ${isMine
               ? 'bg-gradient-to-br from-purple-600 to-blue-600 text-white rounded-2xl rounded-tr-sm shadow-md'
               : 'bg-white text-gray-800 rounded-2xl rounded-tl-sm border border-gray-100 shadow-sm'}">
-              <p class="leading-relaxed">${msg.text}</p>
+              <p class="leading-relaxed">${escapeHtml(msg.text)}</p>
               <p class="text-[10px] mt-1 ${isMine ? 'text-white/60' : 'text-gray-400'} text-left">${time}</p>
             </div>
           </div>`;

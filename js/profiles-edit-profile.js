@@ -74,7 +74,7 @@ function ed_renderGallery() {
   ed_savedImages.forEach((url, i) => {
     html += `
       <div class="relative w-20 h-20 shrink-0">
-        <img src="${url}" class="w-full h-full rounded-xl object-cover cursor-zoom-in border-2 border-purple-200" onclick="ed_openGalleryImage(this)"/>
+        <img src="${escapeHtml(safeUrl(url))}" class="w-full h-full rounded-xl object-cover cursor-zoom-in border-2 border-purple-200" onclick="ed_openGalleryImage(this)"/>
         <button onclick="ed_removeSaved(${i})"
           class="absolute -top-1.5 -left-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center leading-none hover:bg-red-600">✕</button>
       </div>`;

@@ -9,7 +9,7 @@ const REQUEST_MAX_LEN = 300;
 // Button used on people cards and in the profile modal
 function messageButtonHtml(email, cls = '') {
   const sent = sentRequestEmails.has(email);
-  return `<button data-msg-email="${escapeHtml(email)}" data-cls="${cls}" ${sent ? 'disabled' : `onclick="event.stopPropagation(); openMessageComposer('${email.replace(/'/g, "\\'")}')"`}
+  return `<button data-msg-email="${escapeHtml(email)}" data-cls="${cls}" ${sent ? 'disabled' : `onclick="event.stopPropagation(); openMessageComposer('${jsArg(email)}')"`}
     class="${cls} inline-flex items-center justify-center gap-1.5 font-bold text-sm rounded-xl transition ${sent
       ? 'text-purple-400 bg-purple-50 cursor-default'
       : 'text-purple-700 bg-purple-50 hover:bg-purple-100'}">${sent ? '✓ ההודעה נשלחה' : '💬 שלח הודעה'}</button>`;
@@ -59,7 +59,7 @@ async function openMessageComposer(email) {
       <textarea id="mc_text" rows="4" maxlength="${REQUEST_MAX_LEN}"
         class="w-full border border-purple-200 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:border-purple-400">${escapeHtml(_suggestMessage(user))}</textarea>
       <p class="text-xs text-gray-400 mt-1.5 leading-relaxed">ההודעה תגיע כבקשה. אם ${escapeHtml(name)} י/תאשר — תיפתח שיחה ביניכם.</p>
-      <button id="mc_send" onclick="sendMessageFromComposer('${email.replace(/'/g, "\\'")}')"
+      <button id="mc_send" onclick="sendMessageFromComposer('${jsArg(email)}')"
         class="w-full mt-3 bg-gradient-to-l from-purple-700 to-blue-600 text-white font-bold py-3 rounded-xl hover:opacity-90 transition">
         שלח ←
       </button>
@@ -128,7 +128,7 @@ function renderRequests() {
             <div class="flex-1 min-w-0"><p class="font-bold text-gray-900 text-sm">${escapeHtml(name)}${r.user.age ? ', ' + escapeHtml(r.user.age) : ''}</p>
               <p class="text-xs text-gray-400 truncate">${escapeHtml(r.user.city || '')}</p></div>
           </div>
-          <p class="bg-purple-50 rounded-xl px-3 py-2 text-sm text-gray-700 leading-relaxed mb-3">${escapeHtml(r.text)}</p>
+          <p class="bg-purple-50 rounded-xl px-3 py-2 text-sm text-purple-600 leading-relaxed mb-3">💌 רוצה לשלוח לך הודעה — אשר/י כדי לקרוא אותה ולפתוח שיחה</p>
           <div class="flex gap-2">
             <button onclick="respondToRequest(${i}, true, this)" class="flex-1 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-l from-purple-700 to-blue-600 text-white hover:opacity-90 transition">אישור 💬</button>
             <button onclick="respondToRequest(${i}, false, this)" class="flex-1 py-2.5 rounded-xl font-bold text-sm border border-gray-200 text-gray-500 hover:bg-gray-50 transition">לא עכשיו</button>
@@ -137,6 +137,7 @@ function renderRequests() {
       }).join('')}</div>`;
   }
   if (typeof _updateBellBadge === 'function') _updateBellBadge();
+  if (typeof _notifPanelOpen !== 'undefined' && _notifPanelOpen) _renderNotifPanel();
 }
 
 async function respondToRequest(i, accept, btn) {

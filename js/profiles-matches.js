@@ -296,9 +296,9 @@ function _renderDiscovery() {
 
   document.getElementById('discoveryHobbies').innerHTML = hobbies.map(({ hobby, count }) => `
     <div class="flex items-center justify-between px-4 py-3.5 hover:bg-purple-50 cursor-pointer transition"
-      onclick="discoverHobby('${hobby.replace(/'/g, "\\'")}')">
+      onclick="discoverHobby('${jsArg(hobby)}')">
       <div>
-        <p class="font-bold text-gray-800 text-sm">${hobby}</p>
+        <p class="font-bold text-gray-800 text-sm">${escapeHtml(hobby)}</p>
         <p class="text-xs text-gray-400 mt-0.5">${count} ${count === 1 ? 'אדם' : 'אנשים'} פעילים באזורך</p>
       </div>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5"
@@ -315,8 +315,8 @@ function _renderDiscovery() {
       <div class="flex items-start justify-between gap-3 px-4 py-3.5 hover:bg-purple-50 cursor-pointer transition"
         onclick="openEventDetailModal('${ev.id}')">
         <div class="flex-1 min-w-0">
-          <p class="font-bold text-gray-800 text-sm truncate">${ev.title || ''}</p>
-          <p class="text-xs text-gray-400 mt-0.5">${ev.location || ''} · ${dateStr}</p>
+          <p class="font-bold text-gray-800 text-sm truncate">${escapeHtml(ev.title || '')}</p>
+          <p class="text-xs text-gray-400 mt-0.5">${escapeHtml(ev.location || '')} · ${dateStr}</p>
         </div>
         <span class="shrink-0 text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full whitespace-nowrap">גילוי חדש</span>
       </div>`;
@@ -339,6 +339,6 @@ function discoverHobby(hobby) {
   switchTab('discover');
   grid.innerHTML = filtered.length > 0
     ? filtered.map(u => renderCard(u, likedEmails.has(u.email), me, _currentMatches.some(m => m.email === u.email))).join('')
-    : renderEmpty(`לא נמצאו אנשים עם תחביב "${hobby}" באזורך`);
+    : renderEmpty(`לא נמצאו אנשים עם תחביב "${escapeHtml(hobby)}" באזורך`);
   initCarousels();
 }
