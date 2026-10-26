@@ -178,3 +178,17 @@ test.describe('Edit profile', () => {
     expect(session.wantToTry).toEqual(['קרמיקה']);
   });
 });
+
+test.describe('Create activity', () => {
+  test('uses the profile hobby categories; no "אווירת המפגש"', async ({ page }) => {
+    await setupFirebaseMock(page, { users: MOCK_FEED_USERS });
+    await injectSession(page, MOCK_SESSION);
+    await page.goto('/profiles.html');
+    await page.click('button:has-text("+ פעילות חדשה")');
+    await page.click('#org_btn_self');
+    const modal = page.locator('#createEventOverlay');
+    await expect(modal.locator('#ev_hobbyPicker')).toContainText('תנועה וספורט');
+    await expect(modal).not.toContainText('אווירת המפגש');
+    await expect(modal).not.toContainText('סוג פעילות');
+  });
+});

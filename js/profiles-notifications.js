@@ -111,18 +111,16 @@ async function _refreshMatches() {
     const likedMeSnap  = await db.collection('likes').where('to',   '==', me.email).get();
 
     const matches = [];
-    let pendingCount = 0;
+    const likers  = [];
     for (const doc of likedMeSnap.docs) {
       const fromEmail = doc.data().from;
-      if (iLikedEmails.has(fromEmail)) {
-        const profile = allUsers.find(u => u.email === fromEmail) || await _fetchUser(fromEmail);
-        if (profile) matches.push(profile);
-      } else {
-        pendingCount++;
-      }
+      const profile = allUsers.find(u => u.email === fromEmail) || await _fetchUser(fromEmail);
+      if (!profile) continue;
+      (iLikedEmails.has(fromEmail) ? matches : likers).push(profile);
     }
     _currentMatches      = matches;
-    _pendingLikesCount   = pendingCount;
+    _pendingLikers       = likers;
+    _pendingLikesCount   = likers.length;
     initMatchChatListeners(matches);
     if (_notifPanelOpen) {
       matches.forEach(p => _seenMatchEmails.add(p.email));
@@ -191,44 +189,42 @@ function _renderNotifPanel() {
   const body          = document.getElementById('npPanelBody');
   const unseenMatches = _currentMatches.filter(p => !_seenMatchEmails.has(p.email));
   const unreadChats   = _getUnreadChats();
-  const unseenLikes   = Math.max(0, _pendingLikesCount - _seenLikesCount);
 
-  if (unseenMatches.length === 0 && unreadChats.length === 0 && unseenLikes === 0 && incomingRequests.length === 0) {
+  if (unseenMatches.length === 0 && unreadChats.length === 0 && _pendingLikers.length === 0 && incomingRequests.length === 0) {
     body.innerHTML = `<p class="text-center text-gray-400 py-8 text-sm">אין התראות חדשות 🎯<br/><button onclick="closeNotifPanel(); switchTab('matches')" class="mt-2 text-purple-600 font-semibold text-xs underline">ראה את כל החיבורים</button></p>`;
     return;
   }
 
   let html = '';
 
-  // Message requests from people I'm not matched with yet
-  if (incomingRequests.length > 0) {
-    const n   = incomingRequests.length;
-    const txt = n === 1 ? `${displayName(incomingRequests[0].user.fullName)} שלח/ה לך הודעה` : `${n} אנשים שלחו לך הודעה`;
-    html += `
-      <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-50 bg-purple-50 hover:bg-purple-100 cursor-pointer transition"
-        onclick="closeNotifPanel(); switchTab('matches')">
-        <div class="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center flex-shrink-0 text-xl">💌</div>
+  // A person row: initials, shortened name + age, a short line, and action buttons
+  const personRow = (p, line, actions, bg, onclick) => `
+      <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-50 ${bg} cursor-pointer transition" onclick="${onclick}">
+        <div class="w-10 h-10 rounded-full bg-white border border-purple-100 flex items-center justify-center flex-shrink-0 font-black text-purple-600">${escapeHtml(getInitials(displayName(p.fullName)))}</div>
         <div class="flex-1 min-w-0">
-          <p class="font-bold text-purple-900 text-sm">${escapeHtml(txt)}</p>
-          <p class="text-xs text-purple-500">אשר/י כדי לפתוח שיחה</p>
+          <p class="font-bold text-purple-900 text-sm truncate">${escapeHtml(displayName(p.fullName))}${p.age ? ', ' + escapeHtml(p.age) : ''}</p>
+          <p class="text-xs text-gray-500 truncate">${line}</p>
         </div>
-        <span class="text-xs bg-purple-600 text-white font-black px-2 py-0.5 rounded-full shrink-0">${n > 9 ? '9+' : n}</span>
+        <div class="flex gap-1.5 shrink-0">${actions}</div>
       </div>`;
+  const section = title => `<div class="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50 border-b border-gray-100">${title}</div>`;
+  const btn = (label, cls, onclick) => `<button onclick="event.stopPropagation(); ${onclick}" class="text-xs font-bold px-2.5 py-1.5 rounded-lg transition ${cls}">${label}</button>`;
+
+  // Message requests — the message itself is shown only after approving (the chat opens with it)
+  if (incomingRequests.length > 0) {
+    html += section('💌 בקשות הודעה');
+    html += incomingRequests.map((r, i) => personRow(r.user, 'רוצה לשלוח לך הודעה',
+      btn('אישור 💬', 'bg-purple-600 text-white hover:bg-purple-700', `respondToRequestFromBell(${i}, true, this)`)
+      + btn('✕', 'bg-white text-gray-400 border border-gray-200 hover:bg-gray-50', `respondToRequestFromBell(${i}, false, this)`),
+      'bg-purple-50 hover:bg-purple-100', `openRequestProfile(${i})`)).join('');
   }
 
-  // Mystery likes — anonymous teaser
-  if (unseenLikes > 0) {
-    const txt = unseenLikes === 1 ? 'מישהו/י עשה לך לייק' : `${unseenLikes} אנשים עשו לך לייק`;
-    html += `
-      <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-50 bg-pink-50 hover:bg-pink-100 cursor-pointer transition"
-        onclick="closeNotifPanel(); switchTab('discover')">
-        <div class="w-10 h-10 rounded-full bg-pink-200 flex items-center justify-center flex-shrink-0 text-xl">💜</div>
-        <div class="flex-1 min-w-0">
-          <p class="font-bold text-pink-800 text-sm">${txt}</p>
-          <p class="text-xs text-pink-500">עשו להם לייק בחזרה כדי ליצור חיבור!</p>
-        </div>
-        <span class="text-xs bg-pink-500 text-white font-black px-2 py-0.5 rounded-full shrink-0">${unseenLikes > 9 ? '9+' : unseenLikes}</span>
-      </div>`;
+  // Likes — who liked me; liking back makes a connection
+  if (_pendingLikers.length > 0) {
+    html += section('💜 עשו לך לייק');
+    html += _pendingLikers.map((p, i) => personRow(p, `📍 ${escapeHtml(p.city || '')}`,
+      btn('💜 בחזרה', 'bg-pink-500 text-white hover:bg-pink-600', `likeBackFromBell(${i}, this)`),
+      'bg-pink-50 hover:bg-pink-100', `openLikerProfile(${i})`)).join('');
   }
 
   // New matches
@@ -274,6 +270,48 @@ function _renderNotifPanel() {
   }
 
   body.innerHTML = html;
+}
+
+// ── Bell actions ──────────────────────────────────────────────────────────────
+async function respondToRequestFromBell(i, accept, btn) {
+  if (accept) closeNotifPanel();          // the chat opens on top
+  await respondToRequest(i, accept, btn); // profiles-requests.js — accept opens the chat with the message
+}
+
+function openRequestProfile(i) {
+  const r = incomingRequests[i];
+  if (!r) return;
+  closeNotifPanel();
+  showProfileModal(r.user, likedEmails.has(r.user.email), me);
+}
+
+function openLikerProfile(i) {
+  const p = _pendingLikers[i];
+  if (!p) return;
+  closeNotifPanel();
+  showProfileModal(p, false, me);
+}
+
+async function likeBackFromBell(i, btnEl) {
+  const p = _pendingLikers[i];
+  if (!p) return;
+  btnEl.disabled = true;
+  try {
+    await saveLike(me.email, p.email);    // they already liked me → this is a match
+    likedEmails.add(p.email);
+    _pendingLikers.splice(i, 1);
+    _pendingLikesCount = _pendingLikers.length;
+    _seenLikesCount    = Math.min(_seenLikesCount, _pendingLikesCount);
+    localStorage.setItem(_seenLikesKey, String(_seenLikesCount));
+    closeNotifPanel();
+    showMatchPopup(me, p);
+    _refreshMatches();
+    if (activeTab === 'matches') loadMatches();
+  } catch (err) {
+    console.error(err);
+    showToast('שגיאה בשליחת הלייק. נסה/י שוב.', 'bg-red-500');
+    btnEl.disabled = false;
+  }
 }
 
 // ── Delete Test Data (run once from console: deleteTestData()) ────────────────

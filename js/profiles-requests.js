@@ -128,7 +128,7 @@ function renderRequests() {
             <div class="flex-1 min-w-0"><p class="font-bold text-gray-900 text-sm">${escapeHtml(name)}${r.user.age ? ', ' + escapeHtml(r.user.age) : ''}</p>
               <p class="text-xs text-gray-400 truncate">${escapeHtml(r.user.city || '')}</p></div>
           </div>
-          <p class="bg-purple-50 rounded-xl px-3 py-2 text-sm text-gray-700 leading-relaxed mb-3">${escapeHtml(r.text)}</p>
+          <p class="bg-purple-50 rounded-xl px-3 py-2 text-sm text-purple-600 leading-relaxed mb-3">💌 רוצה לשלוח לך הודעה — אשר/י כדי לקרוא אותה ולפתוח שיחה</p>
           <div class="flex gap-2">
             <button onclick="respondToRequest(${i}, true, this)" class="flex-1 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-l from-purple-700 to-blue-600 text-white hover:opacity-90 transition">אישור 💬</button>
             <button onclick="respondToRequest(${i}, false, this)" class="flex-1 py-2.5 rounded-xl font-bold text-sm border border-gray-200 text-gray-500 hover:bg-gray-50 transition">לא עכשיו</button>
@@ -137,6 +137,7 @@ function renderRequests() {
       }).join('')}</div>`;
   }
   if (typeof _updateBellBadge === 'function') _updateBellBadge();
+  if (typeof _notifPanelOpen !== 'undefined' && _notifPanelOpen) _renderNotifPanel();
 }
 
 async function respondToRequest(i, accept, btn) {

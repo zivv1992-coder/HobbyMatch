@@ -30,7 +30,7 @@ let eventsLoaded  = false;
 let eventFilter   = 'all';
 
 // ── Create Event — expanded category state ────────────────────────────────────
-let ev_expandedCategories    = new Set();
+let ev_hobbyPicker           = null;   // hobby-picker instance in create-activity modal (same 10 categories as the profile)
 let ev_cityPicker            = null;   // city-picker instance in create-event modal
 
 // ── Edit Profile drawer ───────────────────────────────────────────────────────
@@ -64,6 +64,7 @@ let _matchUnsub      = null;
 // Anonymous "mystery like" — someone liked you but no mutual match yet
 const _seenLikesKey      = me ? `kn_seen_likes_${me.email}` : '';
 let _pendingLikesCount   = 0;  // current one-sided incoming likes count
+let _pendingLikers       = [];  // who liked me and I haven't liked back (shown by name in the bell)
 let _seenLikesCount      = parseInt(localStorage.getItem(_seenLikesKey) || '0', 10);
 
 // ── Discovery section ─────────────────────────────────────────────────────────

@@ -1,287 +1,9 @@
 // ══════════════════════════════════════════════════════════════════════════════
 // profiles-events.js — Full events system: load, render, create, join, parse
 //
-// ATMOSPHERE / VIBE TAGS
-// ─────────────────────
-// ATMOSPHERE_MAP (defined in config.js) maps activity tags → vibe chip options.
-// Used in the Create Event form to let organizers tag the mood/style of an event.
-// To add a new vibe category: edit ATMOSPHERE_MAP in config.js.
+// Activity hobbies are picked with the profile hobby picker (HOBBY_CATEGORIES in config.js).
 // To add new hobby keywords for auto-detection: edit extractHobbyFromText() below.
 // ══════════════════════════════════════════════════════════════════════════════
-
-let ev_selectedActivities = new Set();
-let ev_selectedAtmosphere = new Set();
-let ev_customActivityInput = null;
-
-function evRenderActivityChips() {
-  const container = document.getElementById('ev_activity_tags');
-  if (!container) return;
-  container.innerHTML = '';
-
-  ACTIVITY_CATEGORIES.forEach(cat => {
-    const selectedCount = cat.tags.filter(t => ev_selectedActivities.has(t)).length;
-    const isExpanded    = ev_expandedCategories.has(cat.label);
-
-    const catBtn = document.createElement('button');
-    catBtn.type = 'button';
-    catBtn.dataset.catLabel = cat.label;
-    const badge = selectedCount > 0
-      ? ` <span style="background:#7c3aed;color:#fff;border-radius:999px;padding:1px 7px;font-size:0.65rem;vertical-align:middle;margin-right:2px;">${selectedCount}</span>`
-      : '';
-    catBtn.innerHTML = `${cat.label}${badge}`;
-    catBtn.className = selectedCount > 0
-      ? 'px-3 py-1.5 rounded-full text-xs font-bold border-2 border-purple-500 bg-purple-50 text-purple-800 transition cursor-pointer'
-      : isExpanded
-        ? 'px-3 py-1.5 rounded-full text-xs font-bold border-2 border-purple-400 bg-purple-50 text-purple-700 shadow-sm transition cursor-pointer'
-        : TAG_CHIP_INACTIVE_CLASS + ' cursor-pointer';
-
-    catBtn.onclick = (e) => {
-      e.stopPropagation();
-      if (ev_expandedCategories.has(cat.label)) {
-        ev_expandedCategories.delete(cat.label);
-        _closeActivityPopover();
-        evRenderActivityChips();
-      } else {
-        ev_expandedCategories.clear();
-        ev_expandedCategories.add(cat.label);
-        evRenderActivityChips();
-        const newBtn = document.querySelector(`[data-cat-label="${cat.label}"]`);
-        if (newBtn) _openActivityPopover(cat, newBtn);
-      }
-    };
-    container.appendChild(catBtn);
-  });
-
-  // Show chips for custom (non-category) activities
-  const allCategoryTags = ACTIVITY_CATEGORIES.flatMap(c => c.tags);
-  [...ev_selectedActivities].filter(t => !allCategoryTags.includes(t)).forEach((tag, idx) => {
-    const chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = getTagChipActiveClassByIndex(idx) + ' cursor-pointer';
-    chip.innerHTML = `${escapeHtml(tag)} <span style="margin-right:4px;opacity:0.7;">✕</span>`;
-    chip.onclick = (e) => {
-      e.stopPropagation();
-      ev_selectedActivities.delete(tag);
-      evRenderActivityChips();
-      evRefreshAtmosphereChips();
-    };
-    container.appendChild(chip);
-  });
-
-  const otherBtn = document.createElement('button');
-  otherBtn.type = 'button';
-  otherBtn.className = TAG_CHIP_INACTIVE_CLASS + ' cursor-pointer';
-  otherBtn.innerHTML = '➕ אחר';
-  otherBtn.onclick = (e) => {
-    e.stopPropagation();
-    ev_expandedCategories.clear();
-    _openCustomActivityInput();
-  };
-  container.appendChild(otherBtn);
-}
-
-function _openActivityPopover(cat, anchorBtn) {
-  _closeActivityPopover();
-
-  const popover = document.createElement('div');
-  popover.id = 'evActivityPopover';
-  popover.style.cssText = `
-    position:fixed;z-index:9999;
-    background:#fff;
-    border:1.5px solid #c4b5fd;
-    border-radius:18px;
-    padding:14px 14px 12px;
-    box-shadow:0 12px 40px rgba(109,40,217,0.22),0 2px 8px rgba(0,0,0,0.08);
-    display:flex;flex-wrap:wrap;gap:8px;
-    max-width:300px;min-width:200px;
-    direction:rtl;
-    animation:popoverIn 0.18s cubic-bezier(.34,1.56,.64,1) both;
-  `;
-
-  if (!document.getElementById('_popoverKeyframes')) {
-    const s = document.createElement('style');
-    s.id = '_popoverKeyframes';
-    s.textContent = `@keyframes popoverIn{from{opacity:0;transform:scale(0.88) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}`;
-    document.head.appendChild(s);
-  }
-
-  // header label
-  const hdr = document.createElement('div');
-  hdr.style.cssText = 'width:100%;font-size:0.7rem;font-weight:700;color:#7c3aed;margin-bottom:4px;padding-bottom:6px;border-bottom:1px solid #ede9fe;';
-  hdr.textContent = cat.label;
-  popover.appendChild(hdr);
-
-  cat.tags.forEach((tag, idx) => {
-    const tagBtn = document.createElement('button');
-    tagBtn.type = 'button';
-    tagBtn.textContent = tag;
-    const active = ev_selectedActivities.has(tag);
-    tagBtn.className = active ? getTagChipActiveClassByIndex(idx) : TAG_CHIP_INACTIVE_CLASS;
-    tagBtn.onclick = (e) => {
-      e.stopPropagation();
-      if (ev_selectedActivities.has(tag)) ev_selectedActivities.delete(tag);
-      else ev_selectedActivities.add(tag);
-      ev_expandedCategories.clear();
-      _closeActivityPopover();
-      evRenderActivityChips();
-      evRefreshAtmosphereChips();
-    };
-    popover.appendChild(tagBtn);
-  });
-
-  // tiny stem arrow
-  const stem = document.createElement('div');
-  stem.style.cssText = `
-    position:absolute;bottom:-8px;right:20px;
-    width:14px;height:8px;overflow:hidden;
-  `;
-  stem.innerHTML = `<div style="width:14px;height:14px;background:#fff;border:1.5px solid #c4b5fd;transform:rotate(45deg);margin-top:-8px;border-radius:3px;box-shadow:2px 2px 6px rgba(109,40,217,0.12);"></div>`;
-  popover.appendChild(stem);
-
-  document.body.appendChild(popover);
-
-  // position above the anchor button
-  const rect = anchorBtn.getBoundingClientRect();
-  const pw   = Math.min(300, window.innerWidth - 16);
-  popover.style.width = pw + 'px';
-  const ph = popover.offsetHeight;
-  let top  = rect.top - ph - 12;
-  let left = rect.right - pw;
-
-  // if too high, flip below
-  if (top < 8) { top = rect.bottom + 12; stem.style.bottom = 'auto'; stem.style.top = '-8px'; stem.style.transform = 'rotate(180deg)'; }
-  if (left < 8) left = 8;
-  if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
-
-  popover.style.top  = top  + 'px';
-  popover.style.left = left + 'px';
-
-  setTimeout(() => document.addEventListener('click', _closeActivityPopoverHandler), 0);
-}
-
-function _closeActivityPopoverHandler(e) {
-  const p = document.getElementById('evActivityPopover');
-  if (p && !p.contains(e.target)) {
-    ev_expandedCategories.clear();
-    _closeActivityPopover();
-    evRenderActivityChips();
-  }
-}
-
-function _closeActivityPopover() {
-  const p = document.getElementById('evActivityPopover');
-  if (p) p.remove();
-  document.removeEventListener('click', _closeActivityPopoverHandler);
-}
-
-function _openCustomActivityInput() {
-  _closeActivityPopover();
-  _closeCustomActivityInput();
-
-  const inputDiv = document.createElement('div');
-  inputDiv.id = 'evCustomActivityInput';
-  inputDiv.style.cssText = `
-    position:fixed;z-index:9999;top:50%;left:50%;transform:translate(-50%,-50%);
-    background:#fff;border:1.5px solid #c4b5fd;border-radius:14px;
-    padding:14px;box-shadow:0 8px 32px rgba(109,40,217,0.22);
-    width:76%;max-width:256px;direction:rtl;
-    animation:popoverIn 0.18s cubic-bezier(.34,1.56,.64,1) both;
-  `;
-
-  inputDiv.innerHTML = `
-    <p style="font-size:0.78rem;font-weight:600;color:#374151;margin:0 0 8px;">סוג פעילות מותאם:</p>
-    <input id="customActivityField" type="text" placeholder="למשל: סיור טבע, משחק לוח..."
-      style="width:100%;border:1.5px solid #e5e7eb;border-radius:10px;padding:8px 10px;
-             font-size:0.85rem;font-family:'Heebo',sans-serif;direction:rtl;text-align:right;
-             outline:none;box-sizing:border-box;transition:border-color 0.15s;"
-      onkeydown="if(event.key==='Enter') document.getElementById('customActivityBtn').click()"/>
-    <div style="display:flex;gap:6px;margin-top:10px;">
-      <button id="customActivityBtn" onclick="_addCustomActivity()"
-        style="flex:1;background:#7c3aed;color:#fff;border:none;border-radius:10px;
-               padding:8px;font-size:0.85rem;font-weight:700;cursor:pointer;transition:background 0.15s;"
-        onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='#7c3aed'">
-        הוסף
-      </button>
-      <button onclick="_closeCustomActivityInput()"
-        style="flex:1;background:#f3f4f6;color:#6b7280;border:none;border-radius:10px;
-               padding:8px;font-size:0.85rem;font-weight:700;cursor:pointer;transition:background 0.15s;"
-        onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
-        ביטול
-      </button>
-    </div>
-  `;
-
-  document.body.appendChild(inputDiv);
-  ev_customActivityInput = inputDiv;
-  const field = document.getElementById('customActivityField');
-  field.focus();
-  setTimeout(() => document.addEventListener('click', _closeCustomActivityInputHandler), 0);
-}
-
-function _closeCustomActivityInputHandler(e) {
-  const el = document.getElementById('evCustomActivityInput');
-  if (el && !el.contains(e.target)) {
-    _closeCustomActivityInput();
-  }
-}
-
-function _closeCustomActivityInput() {
-  const el = document.getElementById('evCustomActivityInput');
-  if (el) el.remove();
-  document.removeEventListener('click', _closeCustomActivityInputHandler);
-  ev_customActivityInput = null;
-}
-
-function _addCustomActivity() {
-  const field = document.getElementById('customActivityField');
-  const value = (field?.value || '').trim();
-  if (!value) {
-    alert('אנא הזן סוג פעילות');
-    field?.focus();
-    return;
-  }
-  ev_selectedActivities.add(value);
-  _closeCustomActivityInput();
-  evRenderActivityChips();
-  evRefreshAtmosphereChips();
-}
-
-function evRefreshAtmosphereChips() {
-  const container = document.getElementById('ev_atmosphere_tags');
-  const hint = document.getElementById('ev_atmosphere_hint');
-  if (!container) return;
-
-  const available = mergeAtmosphereOptionsForActivities([...ev_selectedActivities]);
-  [...ev_selectedAtmosphere].forEach(t => {
-    if (!available.includes(t)) ev_selectedAtmosphere.delete(t);
-  });
-
-  if (ev_selectedActivities.size === 0) {
-    container.innerHTML = '';
-    if (hint) {
-      hint.textContent = 'בחרו לפחות סוג פעילות אחד כדי לראות כאן אפשרויות אווירה.';
-      hint.classList.remove('hidden');
-    }
-    return;
-  }
-  if (hint) hint.classList.add('hidden');
-
-  container.innerHTML = '';
-  available.forEach(tag => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.textContent = tag;
-    const idx = available.indexOf(tag);
-    const active = ev_selectedAtmosphere.has(tag);
-    btn.className = active ? getTagChipActiveClassByIndex(idx) : TAG_CHIP_INACTIVE_CLASS;
-    btn.onclick = () => {
-      if (ev_selectedAtmosphere.has(tag)) ev_selectedAtmosphere.delete(tag);
-      else ev_selectedAtmosphere.add(tag);
-      evRefreshAtmosphereChips();
-    };
-    container.appendChild(btn);
-  });
-}
 
 // ── Event Detail Modal ────────────────────────────────────────────────────────
 function openEventDetailModal(eventId) {
@@ -359,17 +81,9 @@ function openEventDetailModal(eventId) {
     : '';
 
 
-  const eventAtmosphereBlock = (ev.atmosphereTags && ev.atmosphereTags.length)
-    ? `<div style="margin-bottom:16px;">
-        <p style="font-size:0.7rem;font-weight:700;color:#9ca3af;margin:0 0 8px;letter-spacing:0.04em;">אווירת מפגש</p>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">${formatColoredTagBadgesHtml(ev.atmosphereTags)}</div>
-      </div>`
-    : '';
-
   const descSectionHtml = `
     <div class="ev-modal-scroll" style="flex:1;overflow-y:auto;padding:20px 24px;scrollbar-width:thin;scrollbar-color:#ddd6fe transparent;" dir="rtl">
       ${linksHtml}
-      ${eventAtmosphereBlock}
       ${ev.description ? `
       <div>
         <p style="font-size:0.7rem;font-weight:700;color:#9ca3af;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em;">תיאור הפעילות</p>
@@ -792,9 +506,6 @@ function renderEventCard(ev) {
     ? `<span class="text-xs bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full font-semibold">הסתיים</span>`
     : '';
 
-  const atmosphereRow = (ev.atmosphereTags && ev.atmosphereTags.length)
-    ? `<div class="flex flex-wrap gap-1.5 items-center">${formatColoredTagBadgesHtml(ev.atmosphereTags)}</div>`
-    : '';
 
   const actionLinksHtml = (ev.actionLinks && ev.actionLinks.length > 0) ? `
     <div class="flex flex-wrap gap-2">
@@ -849,7 +560,6 @@ function renderEventCard(ev) {
           ${(ev.organizerName || ev.creatorName) ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">מארגן</span><span class="text-xs font-bold text-gray-800 leading-tight line-clamp-2">${escapeHtml(eventOrganizerDisplay(ev))}</span></div>` : ''}
         </div>
 
-        ${atmosphereRow ? `<div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">אווירת מפגש</p>${atmosphereRow}</div>` : ''}
 
         ${ev.description ? `<p class="text-sm text-gray-500 leading-relaxed line-clamp-2">${escapeHtml(ev.description)}</p>` : ''}
         ${actionLinksHtml}
@@ -940,7 +650,7 @@ function openCreateEventModal() {
   document.getElementById('ev_form_body').classList.add('hidden');
   document.getElementById('ev_footer').classList.add('hidden');
 
-  ['ev_title','ev_desc','ev_datetime','ev_location','ev_hobbies','ev_organizer_name','ev_organizer_phone','ev_paste_text'].forEach(id => {
+  ['ev_title','ev_desc','ev_datetime','ev_location','ev_organizer_name','ev_organizer_phone','ev_paste_text'].forEach(id => {
     document.getElementById(id).value = '';
   });
   document.getElementById('ev_paste_section').classList.add('hidden');
@@ -949,9 +659,8 @@ function openCreateEventModal() {
   document.getElementById('ev_detected_hobby_wrap').classList.add('hidden');
   document.getElementById('ev_detected_hobby_display').innerHTML = '';
   window._pendingHobbyTag = null;
-  ev_selectedActivities.clear();
-  ev_selectedAtmosphere.clear();
-  ev_expandedCategories.clear();
+  if (!ev_hobbyPicker) ev_hobbyPicker = createHobbyPicker('ev_hobbyPicker');
+  ev_hobbyPicker.setHobbies([]);
   document.getElementById('ev_error').classList.add('hidden');
   const submitBtn = document.getElementById('ev_submitBtn');
   submitBtn.disabled    = false;
@@ -965,8 +674,7 @@ function openCreateEventModal() {
 }
 
 function getSelectedEvHobbies() {
-  const hobbiesText = document.getElementById('ev_hobbies').value.trim();
-  return hobbiesText ? hobbiesText.split(',').map(h => h.trim()).filter(h => h.length > 0) : [];
+  return ev_hobbyPicker ? ev_hobbyPicker.getHobbies() : [];
 }
 
 function closeCreateEventModal() {
@@ -1001,8 +709,6 @@ function selectOrganizerType(type) {
   }
   document.getElementById('ev_form_body').classList.remove('hidden');
   document.getElementById('ev_footer').classList.remove('hidden');
-  evRenderActivityChips();
-  evRefreshAtmosphereChips();
 }
 
 async function handleCreateEvent() {
@@ -1042,8 +748,6 @@ async function handleCreateEvent() {
     const dateTime         = firebase.firestore.Timestamp.fromDate(new Date(dtVal));
     const actionLinks      = window._pendingEventLinks || [];
     const detectedHobbyTag = window._pendingHobbyTag   || null;
-    const atmosphereTags = [...ev_selectedAtmosphere];
-    const eventActivityTags = [...ev_selectedActivities];
     const cityData = CITIES.find(c => c.name === city);
     const place    = { city, latitude: cityData ? cityData.lat : null, longitude: cityData ? cityData.lng : null };
 
@@ -1055,7 +759,6 @@ async function handleCreateEvent() {
       organizerPhone: organizerPhone || me.phone || '',
       actionLinks, detectedHobbyTag,
       interested: [{ email: me.email, name: me.fullName || '', display: formatAttendeeDisplay(me.fullName || me.email) }],
-      atmosphereTags, eventActivityTags,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
@@ -1067,7 +770,6 @@ async function handleCreateEvent() {
       organizerName: organizerName || displayName(me.fullName) || me.email,
       organizerPhone: organizerPhone || me.phone || '',
       actionLinks, detectedHobbyTag, interested: [creatorEntry],
-      atmosphereTags, eventActivityTags
     });
     window._pendingEventLinks = [];
 
@@ -1118,11 +820,7 @@ function openRepeatEvent(eventId) {
     if (ev.organizerPhone) document.getElementById('ev_organizer_phone').value = ev.organizerPhone;
     const hobbies = ev.associatedHobbies && ev.associatedHobbies.length
       ? ev.associatedHobbies : (ev.hobby ? [ev.hobby] : []);
-    if (hobbies.length > 0) document.getElementById('ev_hobbies').value = hobbies.join(', ');
-    ev_selectedActivities = new Set((ev.eventActivityTags || []).filter(a => ACTIVITY_TAGS.includes(a)));
-    ev_selectedAtmosphere = new Set(ev.atmosphereTags || []);
-    evRenderActivityChips();
-    evRefreshAtmosphereChips();
+    ev_hobbyPicker.setHobbies(hobbies.map(stripEmoji).filter(Boolean));
   }, 60);
 }
 

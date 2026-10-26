@@ -27,6 +27,8 @@ test.describe('XSS — user text is shown, never run', () => {
     page.on('pageerror', e => errors.push(e.message));
     await setupFirebaseMock(page, { users: EVIL_USERS, events: EVIL_EVENTS });
     await injectSession(page, MOCK_SESSION);
+    // The first-visit tour pops up after 1.5s and can cover the buttons
+    await page.addInitScript(email => localStorage.setItem('hobbyMatchTourDone_' + email, '1'), MOCK_SESSION.email);
     await page.goto('/profiles.html');
 
     // Activities (home tab): the evil activity renders as text
