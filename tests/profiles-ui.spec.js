@@ -156,12 +156,12 @@ test.describe('Profiles page — guest', () => {
 test.describe('Edit profile', () => {
   test('cards layout; "looking for" replaces the romantic switch and saves both fields', async ({ page }) => {
     await setupFirebaseMock(page, { users: MOCK_FEED_USERS });
-    await injectSession(page, { ...MOCK_SESSION, romantic: true });   // older profile: only the flag
+    await injectSession(page, { ...MOCK_SESSION, romantic: true, wantToTry: ['קרמיקה'] });   // older profile: only the flag
     await page.goto('/profiles.html');
     await page.evaluate(() => openEditDrawer());
 
     const drawer = page.locator('#editDrawer');
-    for (const title of ['📸 תמונות', '✍️ עליי', '💚 התחביבים שלי', '👤 פרטים']) {
+    for (const title of ['📸 תמונות', '✍️ עליי', '💚 התחביבים שלי', '🤔 חושב/ת לנסות', '👤 פרטים']) {
       await expect(drawer).toContainText(title);
     }
     const look = page.locator('#ed_lookingFor');
@@ -175,5 +175,6 @@ test.describe('Edit profile', () => {
     const session = await page.evaluate(() => JSON.parse(localStorage.getItem('hobbyMatchUser')));
     expect(session.lookingFor).toEqual(['friends']);
     expect(session.romantic).toBe(false);
+    expect(session.wantToTry).toEqual(['קרמיקה']);
   });
 });

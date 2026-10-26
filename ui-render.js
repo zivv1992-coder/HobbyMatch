@@ -240,6 +240,12 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
           <p class="text-xs font-bold text-gray-400 uppercase mb-1.5">תחביבים</p>
           <div class="flex flex-wrap gap-2">${hobbyTags}</div>
         </div>
+        ${(user.wantToTry || []).length ? `
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase mb-1.5">🤔 חושב/ת לנסות</p>
+          <div class="flex flex-wrap gap-2">${user.wantToTry.map(h =>
+            `<span class="inline-block bg-amber-50 text-amber-700 text-sm font-bold px-3 py-1 rounded-full">${escapeHtml(h)}</span>`).join('')}</div>
+        </div>` : ''}
 
         <!-- Description -->
         ${user.hobbyDescription ? `

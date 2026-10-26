@@ -35,6 +35,7 @@ let ev_cityPicker            = null;   // city-picker instance in create-event m
 
 // ── Edit Profile drawer ───────────────────────────────────────────────────────
 let ed_lookingFor            = new Set();   // ids from TAHBIVA.LOOKING (friends / partners / romantic)
+let ed_wantToTry             = [];          // "חושב/ת לנסות" hobbies
 let ed_hobbyPicker           = null;   // hobby-picker instance in edit drawer
 let ed_cityPicker            = null;   // city-picker instance in edit drawer
 let ed_savedImages           = [];   // existing URLs from Firestore

@@ -3,7 +3,7 @@ const { setupFirebaseMock, MOCK_FEED_USERS } = require('./helpers');
 
 // A finished Tahbiva draft, as tahbiva.html leaves it before sign-in
 const DONE_DRAFT = {
-  screen: 'ready', hist: [], tot: [1, 0, 0, 1], status: { 'ריצה': 'love', 'יוגה': 'love', 'שחמט': 'love' },
+  screen: 'ready', hist: [], tot: [1, 0, 0, 1], status: { 'ריצה': 'love', 'יוגה': 'love', 'שחמט': 'love', 'קרמיקה': 'try' },
   cats: ['move', 'games'], seeded: true, looking: ['friends', 'romantic'],
   bio: 'אוהב/ת לרוץ בבוקר', age: '29', city: 'תל אביב', phone: '0501234567', done: true,
 };
@@ -90,11 +90,28 @@ test.describe('Tahbiva onboarding (tahbiva.html)', () => {
     expect(session.fullName).toBe('נועה לוי');
     expect(session.hobbies).toEqual(['ריצה', 'יוגה', 'שחמט']);
     expect(session.hobby).toBe('ריצה, יוגה, שחמט');
+    expect(session.wantToTry).toEqual(['קרמיקה']);
     expect(session.lookingFor).toEqual(['friends', 'romantic']);
     expect(session.romantic).toBe(true);
     expect(session.hobbyDescription).toBe('אוהב/ת לרוץ בבוקר');
     expect(session.latitude).not.toBeNull();
     expect(await page.evaluate(() => localStorage.getItem('tahbivaDraft'))).toBeNull();
+  });
+
+
+  test('discover cards: 💚 מעניין אותי · 🤔 חושב/ת לנסות · 🙅 לא', async ({ page }) => {
+    await setupFirebaseMock(page);
+    await setDraft(page, { screen: 'discover', hist: ['profile'], tot: [], status: { 'ריצה': 'love' }, cats: ['move'], disc: null, discIdx: 0 });
+    await page.goto('/tahbiva.html');
+    const slot = page.locator('#discSlot');
+    await expect(slot.locator('button.st')).toHaveText(['💚 מעניין אותי', '🤔 חושב/ת לנסות', '🙅 לא']);
+    await slot.locator('button:has-text("חושב/ת לנסות")').click();
+    await page.waitForTimeout(500);
+    await slot.locator('button:has-text("🙅 לא")').click();
+    await page.waitForTimeout(500);
+    const d = await page.evaluate(() => JSON.parse(localStorage.getItem('tahbivaDraft')));
+    expect(Object.values(d.status).filter(s => s === 'try')).toHaveLength(1);
+    expect(Object.keys(d.status)).toHaveLength(2);   // "לא" leaves nothing behind
   });
 
 });

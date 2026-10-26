@@ -8,7 +8,7 @@
 const MAX_HOBBIES  = HOBBY_PICKER_MAX;           // same cap as the hobby picker
 const NEAR_KM      = 50;                         // "לידך" radius
 const QUICK_CITIES = ['פרדס חנה-כרכור', 'תל אביב', 'חיפה', 'ירושלים', 'באר שבע', 'נתניה'];
-const SAY          = ['ידעתי! 💚', 'איזה טעם טוב 😎', 'נוסף לפרופיל 💚'];
+const SAY          = { love: ['ידעתי! 💚', 'איזה טעם טוב 😎', 'נוסף לפרופיל 💚'], try: ['רשמתי — אולי ננסה ביחד 🤔', 'שווה ניסיון! 🤔'] };
 const DOTS         = ['hi', 'tot', 'interests', 'details', 'where', 'nearby', 'discover', 'profile', 'looking', 'about', 'ready'];
 const ABOUT = [
   { k: 'bio',   e: '✍️', q: 'ספר/י קצת על עצמך', area: true,
@@ -36,6 +36,8 @@ const $   = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const rnd = arr => arr[Math.floor(Math.random() * arr.length)];
 const positives = () => Object.keys(S.status).filter(n => S.status[n] === 'love');
+// "חושב/ת לנסות" — only from the discover cards; its own card in the profile
+const tries = () => Object.keys(S.status).filter(n => S.status[n] === 'try');
 const isOn = n => S.status[n] === 'love';
 // Adds a hobby unless the profile is full; returns false when it couldn't
 function addLove(n) {
@@ -321,23 +323,23 @@ function renderDiscover() {
       <div class="text-7xl mb-3">${h.e}</div>
       <h3 class="text-2xl font-black">${esc(h.n)}</h3>
       <p class="text-[#7c6aa8] font-semibold mt-1">${esc(h.d)}</p></div>`;
-  // Only 💚 or skip — "רוצה לנסות" was confusing
-  const buttons = `<div class="grid grid-cols-2 gap-2 mt-5">
-      <button class="st" style="background:#dcfce7" onclick="rateDisc(true)">💚 הוסף לפרופיל</button>
-      ${isSurprise ? `<button class="st" style="background:#f3efff" onclick="surpriseAgain()">🎁 תפתיעי שוב</button>`
-                   : `<button class="st" style="background:#f3efff" onclick="rateDisc(false)">דלג</button>`}</div>
-    ${isSurprise ? `<button class="link block mx-auto" onclick="rateDisc(false)">דלג</button>` : ''}`;
+  const buttons = `<div class="grid grid-cols-3 gap-2 mt-5">
+      <button class="st" style="background:#dcfce7" onclick="rateDisc('love')">💚 מעניין אותי</button>
+      <button class="st" style="background:#fef3c7" onclick="rateDisc('try')">🤔 חושב/ת לנסות</button>
+      <button class="st" style="background:#f3efff" onclick="rateDisc(null)">🙅 לא</button></div>
+    ${isSurprise ? `<button class="link block mx-auto" onclick="surpriseAgain()">🎁 תפתיעי שוב</button>` : ''}`;
   $('discSlot').innerHTML = card + buttons;
 }
-function rateDisc(love) {
+function rateDisc(st) {
   if (cardLock) return;
   const name = S.disc[S.discIdx];
-  if (love && !addLove(name)) return;
+  if (st === 'love' && !addLove(name)) return;
+  if (st === 'try') S.status[name] = 'try';
   cardLock = true;
-  $('hcard').classList.add(love ? 'fly-love' : 'fly-skip');
+  $('hcard').classList.add(st ? 'fly-love' : 'fly-skip');
   setTimeout(() => {
     S.discIdx++;
-    if (love) say('discSay', rnd(SAY));
+    if (st) say('discSay', rnd(SAY[st]));
     cardLock = false;
     save();
     S.discIdx >= S.disc.length ? setTimeout(() => go('profile'), 400) : renderDiscover();
@@ -367,10 +369,13 @@ function renderProfile() {
   $('profileSay').textContent = !pos.length ? 'עוד ריק פה. גם זו התחלה 🙂'
     : vibes.length === 2 ? `נראה שאת/ה בקטע של ${vibes[0]} ו${vibes[1]} ✨`
     : vibes.length ? `נראה שאת/ה בקטע של ${vibes[0]} ✨` : 'פרופיל מקורי! ✨';
-  chipNames = pos;
+  const tr = tries();
+  chipNames = [...pos, ...tr];
+  const chip = (n, i) => `<span class="chip">${hob(n).e} ${esc(n)}<button class="x" onclick="removeHobby(${i}, this)" aria-label="הסרה">✕</button></span>`;
   $('profileBox').innerHTML = `<div class="tile p-4 mb-3"><div class="font-black mb-2">💚 התחביבים שלי</div>
-      ${pos.length ? pos.map((n, i) => `<span class="chip">${hob(n).e} ${esc(n)}<button class="x" onclick="removeHobby(${i}, this)" aria-label="הסרה">✕</button></span>`).join('')
-                   : '<p class="text-sm text-[#a59bc7]">עוד אין</p>'}</div>
+      ${pos.length ? pos.map(chip).join('') : '<p class="text-sm text-[#a59bc7]">עוד אין</p>'}</div>
+    ${tr.length ? `<div class="tile p-4 mb-3"><div class="font-black mb-2">🤔 חושב/ת לנסות</div>
+      ${tr.map((n, i) => chip(n, pos.length + i)).join('')}</div>` : ''}
     <form onsubmit="addCustom(event)" class="flex gap-2 mt-1">
       <input id="profileAdd" class="pill flex-1 outline-none" maxlength="${HOBBY_PICKER_MAX_LEN}" placeholder="+ הוסף תחביב">
       <button class="pill" style="background:var(--p);color:#fff">הוסף</button></form>`;

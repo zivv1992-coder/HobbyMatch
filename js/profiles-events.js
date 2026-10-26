@@ -664,7 +664,7 @@ function setEventFilter(filter) {
 // ── Match user's hobbies against event hobby ──────────────────────────────────
 function eventMatchesUser(ev) {
   if (!me) return false;
-  const userKeywords = (me.hobby || '').split(',').map(h => stripEmoji(h)).filter(Boolean);
+  const userKeywords = [...(me.hobby || '').split(','), ...(me.wantToTry || [])].map(h => stripEmoji(h)).filter(Boolean);
   const evHobbies    = (ev.associatedHobbies && ev.associatedHobbies.length)
     ? ev.associatedHobbies.map(h => stripEmoji(h))
     : [stripEmoji(ev.hobby || '')].filter(Boolean);

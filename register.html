@@ -697,6 +697,7 @@
       const hobbyImages = await Promise.all(files.slice(1).map((f, i) => uploadHobbyImageIndexed(f, verifiedEmail, i)));
 
       const hobbies  = Object.keys(d.status).filter(n => d.status[n] === 'love').slice(0, HOBBY_PICKER_MAX);
+      const wantToTry = Object.keys(d.status).filter(n => d.status[n] === 'try');
       const looking  = d.looking || [];
       const cityData = CITIES.find(c => c.name === d.city);
       const user = {
@@ -707,6 +708,7 @@
         city:             d.city,
         hobby:            hobbies.join(', '),
         hobbies:          hobbies,
+        wantToTry:        wantToTry,
         hobbyDescription: d.bio || '',
         romantic:         looking.includes('romantic'),
         lookingFor:       looking,

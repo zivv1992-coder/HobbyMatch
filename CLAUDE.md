@@ -45,10 +45,11 @@ hobby-match/
 ### `users/{email_sanitized}`
 Document ID = email with `@` → `_at_` and `.` → `_dot_`
 ```
-{ fullName, email, phone, age, city, hobby, hobbies: string[], hobbyDescription,
+{ fullName, email, phone, age, city, hobby, hobbies: string[], wantToTry: string[], hobbyDescription,
   lookingFor: ('friends'|'partners'|'romantic')[], romantic,
   profilePhotoURL, hobbyImages: string[], hobbyImageUrl, latitude, longitude, createdAt }
 ```
+`wantToTry` = "🤔 חושב/ת לנסות" from Tahbiva's discover cards (own card in profile + edit drawer; also matches activities).
 `lookingFor` = what the user is looking for (Tahbiva + edit drawer). `romantic` = `lookingFor` includes `'romantic'`,
 kept for the ❤️ badge and the discover filter (older profiles have only `romantic`).
 `profilePhotoURL` is shown only to matches; `hobbyImages` are public (`hobbyImageUrl` = first of them).
@@ -158,7 +159,7 @@ Rules live only in the Firebase console (no rules file in the repo) — change t
 
 ## Sign-up Flow (Tahbiva first)
 1. `index.html` "הרשמה" (and the guest sign-up wall) → `tahbiva.html`. No auth yet.
-2. Tahbiva builds a draft in `localStorage[TAHBIVA_DRAFT_KEY]`: hobbies (💚 only — no "want to try"), categories,
+2. Tahbiva builds a draft in `localStorage[TAHBIVA_DRAFT_KEY]`: hobbies (💚 in hobby selection), wantToTry (🤔 from the discover cards only), categories,
    city, lookingFor, bio, age, phone. "This or that" answers pre-mark hobbies. "לידך" shows real nearby users
    with shared hobbies (`displayName` only, no photo).
 3. "שמרו לי את הפרופיל" → `register.html?mode=register&from=tahbiva` → Google or email OTP (below).
