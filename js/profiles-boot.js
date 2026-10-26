@@ -13,7 +13,10 @@ if (me) {
 
 // ── Boot sequence ─────────────────────────────────────────────────────────────
 if (me) {
+  loadEvents();   // "פעילויות" is the home tab
   loadFeed().then(() => {
+    renderAroundMe();
+    loadRequests();
     initNotifications();
     initDiscovery();
     const hasPhotos = (me.hobbyImages && me.hobbyImages.length > 0) || !!me.hobbyImageUrl;
@@ -24,8 +27,9 @@ if (me) {
   db.collection('users').doc(sanitizeEmail(me.email)).update({ lastSeen: new Date() })
     .catch(() => {});
 } else {
-  // Guest: load browse feed and optionally open event deep-link
+  // Guest: activities are personal (by my hobbies + location) — guests start on "מי באזור"
   trackEvent('guest_browse');
+  switchTab('discover');
   loadFeed();
   if (new URLSearchParams(location.search).get('event')) loadEvents();
 }
@@ -57,7 +61,7 @@ document.getElementById('feedbackText').addEventListener('input', function () {
 (function () {
   const hash = window.location.hash;
   if (!hash || !me) return;
-  const map = { '#chat': 'matches', '#discover': 'discover', '#edit': 'discover' };
+  const map = { '#chat': 'matches', '#discover': 'discover', '#activities': 'events', '#edit': 'events' };
   const tab = map[hash];
   if (tab) {
     window.addEventListener('load', () => {

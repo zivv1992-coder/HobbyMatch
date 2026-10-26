@@ -25,12 +25,13 @@ test.describe('Profiles page — UI with session', () => {
   test('renders discover, events, and matches tabs', async ({ page }) => {
     await page.goto('/profiles.html');
     await expect(page.locator('body')).toContainText('מי באזור');
-    await expect(page.locator('body')).toContainText('אירועים');
+    await expect(page.locator('body')).toContainText('פעילויות');
     await expect(page.locator('body')).toContainText('חיבורים');
   });
 
   test('feed renders profile cards after load', async ({ page }) => {
     await page.goto('/profiles.html');
+    await page.click('#tabDiscover');
 
     // Wait for feed grid to become visible
     const grid = page.locator('#feedGrid');
@@ -43,6 +44,7 @@ test.describe('Profiles page — UI with session', () => {
 
   test('card has social-media-post structure: avatar, image area, and heart button', async ({ page }) => {
     await page.goto('/profiles.html');
+    await page.click('#tabDiscover');
 
     const grid = page.locator('#feedGrid');
     await expect(grid).toBeVisible({ timeout: 15000 });
@@ -65,6 +67,7 @@ test.describe('Profiles page — UI with session', () => {
 
   test('like button toggles state on click', async ({ page }) => {
     await page.goto('/profiles.html');
+    await page.click('#tabDiscover');
 
     const grid = page.locator('#feedGrid');
     await expect(grid).toBeVisible({ timeout: 15000 });
@@ -96,6 +99,7 @@ test.describe('Profiles page — UI with session', () => {
 
   test('card displays user name and hobby hashtag', async ({ page }) => {
     await page.goto('/profiles.html');
+    await page.click('#tabDiscover');
 
     const grid = page.locator('#feedGrid');
     await expect(grid).toBeVisible({ timeout: 15000 });
@@ -109,4 +113,68 @@ test.describe('Profiles page — UI with session', () => {
     ).toBeVisible();
   });
 
+
+  test('opens on the activities tab with "מה קורה סביבי"', async ({ page }) => {
+    await page.goto('/profiles.html');
+    await expect(page.locator('#paneEvents')).toBeVisible();
+    await expect(page.locator('#paneDiscover')).toBeHidden();
+    await expect(page.locator('#tabEvents')).toHaveClass(/active/);
+    await expect(page.locator('#paneEvents')).toContainText('מה קורה סביבי');
+    await expect(page.locator('#eventsHint')).toContainText('תל אביב');
+  });
+
+  test('"מי לפגוש" shows nearby people who share a hobby (shortened names)', async ({ page }) => {
+    await page.goto('/profiles.html');
+    const strip = page.locator('#meetStrip');
+    await expect(strip).toContainText('דנה כ', { timeout: 15000 });   // ריצה, same city
+    await expect(strip).not.toContainText('דנה כהן');
+    await expect(strip).not.toContainText('יובל');                   // גיטרה — nothing shared
+  });
+
+  test('new activity asks for a city, defaulting to mine', async ({ page }) => {
+    await page.goto('/profiles.html');
+    await page.click('button:has-text("+ פעילות חדשה")');
+    await expect(page.locator('#createEventOverlay')).toBeVisible();
+    await expect(page.locator('#ev_city')).toHaveValue('תל אביב');
+  });
+
+});
+
+test.describe('Profiles page — guest', () => {
+  test('guest opens on "מי באזור" (activities are personal) without errors', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await setupFirebaseMock(page, { users: MOCK_FEED_USERS });
+    await page.goto('/profiles.html');
+    await expect(page.locator('#paneDiscover')).toBeVisible();
+    await expect(page.locator('#paneEvents')).toBeHidden();
+    await expect(page.locator('#feedGrid [data-email]').first()).toBeVisible({ timeout: 15000 });
+    expect(errors).toEqual([]);
+  });
+});
+
+test.describe('Edit profile', () => {
+  test('cards layout; "looking for" replaces the romantic switch and saves both fields', async ({ page }) => {
+    await setupFirebaseMock(page, { users: MOCK_FEED_USERS });
+    await injectSession(page, { ...MOCK_SESSION, romantic: true, wantToTry: ['קרמיקה'] });   // older profile: only the flag
+    await page.goto('/profiles.html');
+    await page.evaluate(() => openEditDrawer());
+
+    const drawer = page.locator('#editDrawer');
+    for (const title of ['📸 תמונות', '✍️ עליי', '💚 התחביבים שלי', '🤔 חושב/ת לנסות', '👤 פרטים']) {
+      await expect(drawer).toContainText(title);
+    }
+    const look = page.locator('#ed_lookingFor');
+    await expect(look.locator('button.on')).toHaveText(/היכרות רומנטית/);   // derived from romantic: true
+
+    await look.locator('button:has-text("חברים")').click();
+    await look.locator('button:has-text("היכרות רומנטית")').click();
+    await page.click('#ed_saveBtn');
+    await expect(page.locator('#editOverlay')).toBeHidden({ timeout: 10000 });
+
+    const session = await page.evaluate(() => JSON.parse(localStorage.getItem('hobbyMatchUser')));
+    expect(session.lookingFor).toEqual(['friends']);
+    expect(session.romantic).toBe(false);
+    expect(session.wantToTry).toEqual(['קרמיקה']);
+  });
 });

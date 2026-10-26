@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>קונקשן · תחביבה (דמו)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* ── Prototype only: no Firebase, nothing is sent. State lives in localStorage. ── */
+    :root { --p:#4c1d95; --p2:#7c3aed; --soft:#f3efff; --line:#ebe5ff; --bg:#ece8fb; --ink:#2e1065; }
+    * { -webkit-tap-highlight-color: transparent; }
+    body { font-family:'Heebo',sans-serif; background:var(--bg); margin:0; color:var(--ink); }
+    .phone { position:relative; width:100%; max-width:420px; height:100dvh; margin:0 auto; background:#fbfaff;
+             overflow:hidden; display:flex; flex-direction:column; }
+    @media (min-width:480px) {
+      body { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+      .phone { height:min(860px, calc(100dvh - 40px)); border-radius:32px; box-shadow:0 24px 70px #4c1d9526; }
+    }
+    .topbar { height:56px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:0 14px; }
+    .iconbtn { width:38px; height:38px; border-radius:50%; display:grid; place-items:center; font-size:1.2rem; color:var(--p); background:#fff; border:1px solid var(--line); transition:opacity .25s, transform .15s; }
+    .iconbtn:active { transform:scale(.92); }
+    .dot { width:7px; height:7px; border-radius:9px; background:#ddd5f5; transition:all .35s ease; }
+    .dot.on { width:22px; background:var(--p); }
+    #stage { position:relative; flex:1; overflow:hidden; }
+
+    /* Screen transitions — the one polished visual element */
+    .screen { position:absolute; inset:0; overflow-y:auto; overflow-x:hidden; padding:6px 22px 24px; display:flex; flex-direction:column;
+              opacity:0; visibility:hidden; pointer-events:none;
+              transition:opacity .38s ease, transform .38s cubic-bezier(.2,.8,.2,1), visibility 0s .38s; }
+    .screen.active { opacity:1; visibility:visible; pointer-events:auto; transition-delay:0s; }
+
+    .btn { display:block; width:100%; padding:15px; border-radius:18px; font-weight:800; font-size:1.05rem; transition:transform .15s, opacity .2s; }
+    .btn:active { transform:scale(.97); }
+    .btn-p { background:var(--p); color:#fff; }
+    .btn-s { background:#fff; color:var(--p); border:2px solid #e4dcff; }
+    .link { color:#8b7fb0; font-weight:600; font-size:.92rem; padding:10px; }
+    .owl { width:58px; height:58px; border-radius:50%; background:#fde68a; display:grid; place-items:center; font-size:2rem; flex-shrink:0; }
+    .owl.big { width:110px; height:110px; font-size:3.8rem; animation:float 4s ease-in-out infinite; }
+    @keyframes float { 50% { transform:translateY(-8px); } }
+    .bubble { background:#fff; border:1px solid var(--line); border-radius:18px 18px 4px 18px; padding:10px 14px; font-weight:600;
+              box-shadow:0 4px 14px #4c1d950d; transition:opacity .2s; }
+    .tile { background:#fff; border:2px solid var(--line); border-radius:20px; transition:transform .15s, border-color .2s, background .2s; position:relative; }
+    .tile:active { transform:scale(.96); }
+    .tile.on { border-color:var(--p2); background:var(--soft); animation:bump .3s ease; }
+    @keyframes bump { 50% { transform:scale(1.06); } }
+
+    /* Step 1: category list (+ / ✓) · step 2: one focus card per category, tap cycles 💚 → 🚀 → off */
+    .cat-card { width:100%; background:#fff; border:2.5px solid var(--line); border-radius:22px; padding:14px 16px; display:flex; align-items:center; gap:14px;
+                text-align:right; transition:all .2s; }
+    .cat-card:active { transform:scale(.97); }
+    .cat-card.on { border-color:var(--p2); background:var(--soft); }
+    .cat-card .mark { width:28px; height:28px; border-radius:50%; display:grid; place-items:center; background:var(--soft); color:var(--p2); font-weight:900; transition:all .2s; }
+    .cat-card.on .mark { background:var(--p2); color:#fff; }
+    .tile .ok { position:absolute; top:8px; left:8px; width:24px; height:24px; border-radius:50%; background:var(--p2); color:#fff; font-size:.75rem;
+                display:grid; place-items:center; transform:scale(0); transition:transform .2s; }
+    .tile.on .ok { transform:scale(1); }
+    .photo { aspect-ratio:1; border-radius:18px; overflow:hidden; background:var(--soft); border:2px dashed #c4b5fd; display:grid; place-items:center; cursor:pointer; }
+    .photo img { width:100%; height:100%; object-fit:cover; }
+    .pill { padding:8px 12px; border-radius:999px; background:#fff; border:1.5px solid #e4dcff; font-weight:600; font-size:.92rem; transition:all .2s; }
+    .pill:active { transform:scale(.93); }
+    .pill.on { background:var(--p2); color:#fff; border-color:var(--p2); animation:bump .3s ease; }
+    .ice { padding:7px 11px; border-radius:999px; background:var(--soft); font-weight:700; font-size:.85rem; color:var(--p); transition:all .2s; }
+    .ice:active { transform:scale(.93); }
+
+    /* Discovery cards */
+    .hcard { background:#fff; border-radius:28px; box-shadow:0 12px 34px #4c1d9518; padding:28px 20px; text-align:center;
+             transition:transform .3s ease, opacity .3s ease; }
+    .pop { animation:pop .35s ease; }
+    @keyframes pop { from { transform:scale(.9) translateY(12px); opacity:0; } }
+    .fly-love { transform:translateX(-130%) rotate(-14deg); opacity:0; }
+    .fly-no   { transform:translateX(130%) rotate(14deg); opacity:0; }
+    .fly-skip { transform:translateY(60px) scale(.9); opacity:0; }
+    .st { border-radius:16px; padding:12px 6px; font-weight:800; font-size:.95rem; transition:transform .15s; }
+    .st:active { transform:scale(.94); }
+
+    /* Profile chips with ✕ */
+    .chip { display:inline-flex; gap:6px; align-items:center; padding:7px 8px 7px 12px; border-radius:999px; background:#fff; border:1.5px solid #e8e1ff;
+            font-weight:600; font-size:.92rem; margin:3px; transition:opacity .2s, transform .2s; }
+    .chip .x { width:22px; height:22px; border-radius:50%; background:var(--soft); color:#7c6aa8; font-size:.7rem; display:grid; place-items:center; }
+    .chip .x:active { transform:scale(.85); }
+    .chip.gone { opacity:0; transform:scale(.7); }
+    .tag { font-size:.7rem; font-weight:800; color:#a78bfa; background:var(--soft); border-radius:999px; padding:2px 8px; }
+    .tabbar { position:sticky; bottom:0; margin:auto -22px -24px; background:#fffffff2; backdrop-filter:blur(8px); border-top:1px solid var(--line);
+              display:flex; justify-content:space-around; padding:8px 0 12px; }
+    .tabbar button { font-size:.78rem; font-weight:700; color:#a59bc7; display:flex; flex-direction:column; align-items:center; gap:2px; padding:4px 12px; }
+    .tabbar button.on { color:var(--p); }
+    .tabbar span { font-size:1.35rem; }
+    #toast { position:absolute; bottom:96px; left:50%; transform:translate(-50%,20px); opacity:0; background:var(--ink); color:#fff; padding:10px 16px;
+             border-radius:14px; font-weight:600; font-size:.9rem; transition:.3s; pointer-events:none; white-space:nowrap; z-index:50; }
+    #toast.show { opacity:1; transform:translate(-50%,0); }
+    input { font:inherit; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } }
+  </style>
+</head>
+<body>
+<div class="phone">
+  <header class="topbar">
+    <button id="backBtn" class="iconbtn" onclick="back()" aria-label="חזרה">→</button>
+    <div id="dots" class="flex gap-1.5"></div>
+    <span class="w-[38px]"></span>
+  </header>
+
+  <main id="stage">
+
+    <!-- Welcome -->
+    <section class="screen" id="welcome">
+      <div class="flex-1 flex flex-col items-center justify-center text-center gap-3">
+        <div class="text-6xl">🤝</div>
+        <h1 class="text-4xl font-black text-[#4c1d95]">קונקשן</h1>
+        <p class="text-lg text-[#7c6aa8] font-semibold">אותם תחביבים. אנשים אחרים.</p>
+      </div>
+      <button class="btn btn-p mb-3" onclick="go('hi')">יאללה, נתחיל ←</button>
+      <button class="btn btn-s" onclick="toast('בדמו ההתחברות לא פעילה 🙂')">כבר יש לי חשבון</button>
+      <button class="link mx-auto mt-1" onclick="peek()">רק להציץ</button>
+    </section>
+
+    <!-- Hi: who Tahbiva is -->
+    <section class="screen" id="hi">
+      <div class="flex-1 flex flex-col items-center justify-center text-center gap-4">
+        <div class="owl big">🦉</div>
+        <h2 class="text-3xl font-black">היי, אני תחביבה 👋</h2>
+        <p class="text-[#7c6aa8] font-semibold -mt-2">השדכנית של התחביבים בקונקשן</p>
+        <div class="flex flex-col gap-2 w-full text-right mt-2">
+          <div class="tile p-3 flex items-center gap-3"><span class="text-2xl">🎯</span><span class="font-semibold">נגלה ביחד מה מעניין אותך</span></div>
+          <div class="tile p-3 flex items-center gap-3"><span class="text-2xl">✨</span><span class="font-semibold">אציע כמה תחביבים חדשים לנסות</span></div>
+          <div class="tile p-3 flex items-center gap-3"><span class="text-2xl">🤝</span><span class="font-semibold">אחבר אותך לאנשים ולפעילויות שמתאימים לך</span></div>
+        </div>
+        <p class="text-sm text-[#a59bc7] font-semibold">בלי טפסים. מבטיחה 🤞</p>
+      </div>
+      <button class="btn btn-p" onclick="startTot()">יאללה ←</button>
+    </section>
+
+    <!-- This or that -->
+    <section class="screen" id="tot">
+      <div class="flex items-end gap-2 mb-6"><div class="owl">🦉</div><div class="bubble" id="totSay"></div></div>
+      <div id="totBox" class="flex-1 flex flex-col justify-center"></div>
+    </section>
+
+    <!-- Step 1: broad categories -->
+    <section class="screen" id="interests">
+      <div class="flex items-end gap-2 mb-5"><div class="owl">🦉</div><div class="bubble" id="intSay"></div></div>
+      <div id="catGrid" class="flex flex-col gap-2.5"></div>
+      <div class="mt-auto pt-5">
+        <button class="btn btn-p" id="interestsNext" onclick="interestsNext()">המשך ←</button>
+      </div>
+    </section>
+
+    <!-- Step 2: details, only for the chosen categories -->
+    <section class="screen" id="details">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2"><div class="owl" style="width:40px;height:40px;font-size:1.3rem">🦉</div>
+          <div class="text-sm font-bold text-[#7c6aa8]" id="dProgress"></div></div>
+        <button class="text-xs font-bold text-[#7c3aed] bg-[#f3efff] px-3 py-1.5 rounded-full" onclick="changeCats()">שינוי קטגוריות</button>
+      </div>
+      <div id="dCard" class="flex-1 flex flex-col justify-center"></div>
+      <div class="mt-auto pt-4 flex gap-3">
+        <button id="dPrev" class="btn btn-s w-1/3" onclick="back()">→ חזרה</button>
+        <button id="dNext" class="btn btn-p flex-1" onclick="detailsNext()"></button>
+      </div>
+    </section>
+
+    <!-- Where: location early, so nearby people can show right away -->
+    <section class="screen" id="where">
+      <div class="flex items-end gap-2 mb-6"><div class="owl">🦉</div><div class="bubble">איפה את/ה גר/ה? 📍</div></div>
+      <form onsubmit="whereNext(event)" class="flex-1 flex flex-col">
+        <div class="flex flex-col items-center gap-4">
+          <input id="whereIn" class="tile w-full px-4 py-4 text-center text-xl font-bold outline-none focus:border-[#7c3aed]" maxlength="30" placeholder="עיר / יישוב">
+          <div id="whereChips" class="flex flex-wrap justify-center gap-2"></div>
+        </div>
+        <button class="btn btn-p mt-auto">המשך ←</button>
+      </form>
+    </section>
+
+    <!-- Nearby: instant value — 2–3 local matches + a local meetup -->
+    <section class="screen" id="nearby">
+      <div class="flex items-end gap-2 mb-4"><div class="owl">🦉</div><div class="bubble" id="nearSay"></div></div>
+      <div id="nearBox"></div>
+      <div class="mt-auto pt-5"><button class="btn btn-p" onclick="toDiscover()">המשך ←</button></div>
+    </section>
+
+    <!-- Discover new hobbies -->
+    <section class="screen" id="discover">
+      <h2 class="text-2xl font-black">גילוי תחביבים חדשים ✨</h2>
+      <div class="flex items-end gap-2 mt-3 mb-4"><div class="owl">🦉</div><div class="bubble" id="discSay"></div></div>
+      <div id="discSlot" class="flex-1 flex flex-col justify-center"></div>
+    </section>
+
+    <!-- My profile hobbies -->
+    <section class="screen" id="profile">
+      <h2 class="text-2xl font-black">התחביבים שלי</h2>
+      <p class="text-sm text-[#8b7fb0] font-semibold mb-3">ככה זה יופיע בפרופיל שלך</p>
+      <div class="flex items-end gap-2 mb-4"><div class="owl">🦉</div><div class="bubble" id="profileSay"></div></div>
+      <div id="profileBox"></div>
+      <div class="mt-auto pt-5">
+        <button class="btn btn-p" onclick="go('looking')">המשך ←</button>
+        <button class="link block mx-auto" onclick="discoverMore()">לגלות עוד תחביבים</button>
+      </div>
+    </section>
+
+    <!-- Looking for -->
+    <section class="screen" id="looking">
+      <div class="flex items-end gap-2 mb-6"><div class="owl">🦉</div><div class="bubble">ומה את/ה מחפש/ת?</div></div>
+      <div id="lookBox" class="flex flex-col gap-3"></div>
+      <div class="mt-auto pt-5">
+        <button class="btn btn-p" onclick="startAbout()">המשך ←</button>
+        <button class="link block mx-auto" onclick="startAbout()">דלג</button>
+      </div>
+    </section>
+
+    <!-- About me: bio, age, phone — one question at a time -->
+    <section class="screen" id="about">
+      <div class="flex items-end gap-2 mb-6"><div class="owl">🦉</div><div class="bubble" id="aboutSay"></div></div>
+      <form id="aboutForm" onsubmit="aboutNext(event)" class="flex-1 flex flex-col"></form>
+    </section>
+
+    <!-- Ready -->
+    <section class="screen" id="ready">
+      <div class="flex-1 flex flex-col items-center justify-center text-center gap-4">
+        <div class="owl big">🦉</div>
+        <h2 class="text-3xl font-black">מוכנ/ה?</h2>
+        <p class="text-[#7c6aa8] font-semibold" id="readyText"></p>
+      </div>
+      <button class="btn btn-p mb-2" onclick="go('signup')">שמרו לי את הפרופיל ←</button>
+      <button class="link mx-auto" onclick="go('interests')">אני רוצה לחקור עוד קודם</button>
+    </section>
+
+    <!-- Mock sign-up -->
+    <section class="screen" id="signup">
+      <h2 class="text-2xl font-black mt-4 mb-6">עוד רגע וזהו ✨</h2>
+      <form onsubmit="signup(event)" class="flex flex-col gap-3">
+        <input id="suName" class="tile px-4 py-3.5 outline-none focus:border-[#7c3aed]" placeholder="שם פרטי" maxlength="30">
+        <input id="suEmail" class="tile px-4 py-3.5 outline-none focus:border-[#7c3aed]" placeholder="מייל" type="email" dir="ltr" style="text-align:right">
+        <button class="btn btn-p mt-3">יצירת חשבון</button>
+      </form>
+      <p class="text-xs text-[#a59bc7] text-center mt-4">דמו: שום דבר לא נשלח. הבחירות שמורות רק בדפדפן הזה.</p>
+    </section>
+
+    <!-- Photos (after sign-up): me + hobby photos -->
+    <section class="screen" id="photos">
+      <div class="flex items-end gap-2 mb-6"><div class="owl">🦉</div><div class="bubble">תמונות שלך ושל התחביבים 📸</div></div>
+      <div id="photoGrid" class="grid grid-cols-3 gap-2"></div>
+      <p class="text-xs font-bold text-[#a59bc7] mt-2">התמונה הראשונה תופיע בפרופיל</p>
+      <div class="mt-auto pt-5">
+        <button class="btn btn-p mb-2" onclick="photosDone()">המשך ←</button>
+        <button class="btn btn-s" onclick="photosDone()">אעלה תמונות אחר כך</button>
+      </div>
+    </section>
+
+    <!-- Joined -->
+    <section class="screen" id="joined">
+      <div class="flex-1 flex flex-col items-center justify-center text-center gap-4">
+        <div class="text-6xl">🎉</div>
+        <h2 class="text-3xl font-black" id="joinedTitle"></h2>
+        <div class="text-3xl tracking-widest" id="joinedEmojis"></div>
+      </div>
+      <button class="btn btn-p" onclick="go('home', { reset:true })">עולים על זה ←</button>
+    </section>
+
+    <!-- Home (activities first) -->
+    <section class="screen" id="home"></section>
+
+  </main>
+  <div id="toast"></div>
+</div>
+
+<script>
+// ═══ Data ═══════════════════════════════════════════════════════════════════
+// Categories follow "מפת התחביבים של תחביבה" (tahbiva_conversation.txt)
+const CATS = [
+  { id:"move", e:"🏃", n:"תנועה וספורט", vibe:"תנועה", items:[["🚶","הליכה"],["🏃","ריצה"],["🥢","הליכה נורדית"],["🚴","רכיבה על אופניים"],["🏊","שחייה"],["🪩","ריקוד"],["🧘","יוגה"],["🤸","פילאטיס"],["🥋","אומנויות לחימה"],["🧗","טיפוס"],["⚽","ספורט קבוצתי"]] },
+  { id:"nature", e:"🌿", n:"טבע ובעלי חיים", vibe:"להיות בחוץ", items:[["🐦","תצפית ציפורים"],["🌱","גינון"],["🪴","גידול צמחים"],["⛺","קמפינג"],["🔭","אסטרונומיה"],["📷","צילום טבע"],["🌙","טיולי לילה"],["🐕","כלבים"]] },
+  { id:"art", e:"🎨", n:"אמנות ויצירה", vibe:"דברים שעושים עם הידיים", items:[["🖌️","ציור"],["💧","ציור בצבעי מים"],["✏️","רישום"],["🗿","פיסול"],["🏺","קרמיקה"],["✍️","כתיבה"],["📜","כתיבת שירה"],["🎸","נגינה"],["🎤","שירה במקהלה"],["📸","צילום"],["🎬","עריכת וידאו"],["🧵","תפירה"],["🪚","נגרות"],["🖥️","יצירה דיגיטלית"]] },
+  { id:"culture", e:"📚", n:"תרבות ורוח", vibe:"שאלות גדולות", items:[["📖","קריאה"],["📚","מועדון ספר"],["🎞️","קולנוע"],["🎭","תיאטרון"],["🖼️","מוזיאונים"],["🤔","פילוסופיה"],["🧘‍♀️","מדיטציה"],["🏺","היסטוריה"],["🗣️","לימוד שפות"],["🎓","הרצאות"]] },
+  { id:"games", e:"🎲", n:"משחקים ואתגרים", vibe:"משחק וצחוק", items:[["🎲","משחקי קופסה"],["♟️","שחמט"],["🃏","משחקי קלפים"],["🧩","חידות"],["🔐","חדרי בריחה"],["🐉","משחקי תפקידים"],["🎮","משחקי מחשב"],["❓","טריוויה"]] },
+  { id:"food", e:"🍳", n:"אוכל ומטבח", vibe:"אוכל טוב", items:[["🍳","בישול"],["🥐","אפייה"],["🥗","בישול טבעוני"],["🫙","התססה"],["☕","הכנת קפה"],["🍷","טעימות"],["🍢","סיורים קולינריים"],["🥕","גידול ירקות"]] },
+  { id:"people", e:"🤝", n:"חברה וקהילה", vibe:"אנשים ושיחות", items:[["💬","שיחות עומק"],["🍻","מפגשי חברים"],["🧺","פיקניקים"],["🤲","התנדבות"],["🏘️","יוזמות קהילתיות"],["🔄","החלפת ידע"],["👣","סיורים משותפים"]] },
+  { id:"tech", e:"💻", n:"טכנולוגיה ומדע", vibe:"לבנות דברים", items:[["💻","תכנות"],["🤖","רובוטיקה"],["🔌","אלקטרוניקה"],["🧠","בינה מלאכותית"],["🔬","מדע פופולרי"],["🛠️","מייקרים"]] },
+  { id:"craft", e:"🧶", n:"איסוף ומלאכות", vibe:"מלאכות קטנות", items:[["📚","איסוף ספרים"],["💿","תקליטים"],["🕰️","עתיקות"],["✈️","דגמים"],["🔧","תיקונים"],["🪑","שיפוץ רהיטים"],["👜","עבודת עור"],["🦢","אוריגמי"]] },
+  { id:"trips", e:"🧭", n:"טיולים וגילוי", vibe:"לגלות מקומות", items:[["🥾","טיולי יום"],["🏙️","סיורים עירוניים"],["🏛️","מסלולי אדריכלות"],["🚆","נסיעות רכבת"],["🎒","תרמילאות"],["🗺️","גילוי מקומות חדשים"]] },
+];
+// Short humor lines — hobbies that have one can appear as a discovery card
+const LINES = {
+  "ריצה":"בקצב שלך. אף אחד לא סופר.", "הליכה נורדית":"הליכה, אבל עם מקלות ותחושת הישג.", "ריקוד":"מסיבה לאדם אחד היא עדיין מסיבה.",
+  "טיפוס":"חידה שפותרים עם כל הגוף.", "אומנויות לחימה":"בעיקר נגד הספה.",
+  "תצפית ציפורים":"השכנים עם הכנפיים מעניינים ממש.", "אסטרונומיה":"להרים מבט ולהרגיש קטן. בכיף.", "טיולי לילה":"אותו שביל, עולם אחר לגמרי.", "גידול צמחים":"לטפל במשהו קטן ולראות אותו גדל.",
+  "ציור בצבעי מים":"לא צריך כישרון. רק מים, צבע וסמרטוט.", "קרמיקה":"לעשות משהו עם הידיים ולתת לו להיות עקום.", "פיסול":"לגלות מה מסתתר בתוך גוש חימר.", "שירה במקהלה":"לשיר בקול רם ואף אחד לא ישמע שזייפת.", "נגרות":"ריח של עץ ומדף שעומד (כמעט) ישר.",
+  "מועדון ספר":"תירוץ מצוין לקרוא, וגם לדבר על זה.", "פילוסופיה":"שאלות גדולות, קפה קטן.", "מדיטציה":"לעשות כלום, אבל ברצינות.", "לימוד שפות":"להגיד שלום בעוד דרך.",
+  "חדרי בריחה":"60 דקות של ״רגע, אולי זה המפתח?״", "משחקי תפקידים":"להיות קוסם/ת ביום שלישי בערב.", "טריוויה":"סוף סוף שימוש לכל העובדות המיותרות.", "משחקי קופסה":"לגלות מי נהיה תחרותי אחרי 3 דקות.",
+  "התססה":"סבלנות בצנצנת.", "אפייה":"מדע שאפשר לאכול בסוף.", "טעימות":"לגלגל בפה ולהגיד ״יש פה פירות יער״.", "סיורים קולינריים":"לטייל עם המזלג.",
+  "שיחות עומק":"לדלג על ״מה נשמע״ ולהגיע לעניין.", "פיקניקים":"שמיכה, אוכל, אנשים. זהו.", "החלפת ידע":"את/ה מלמד/ת אותי, אני מלמדת אותך.",
+  "רובוטיקה":"לבנות חבר שעושה מה שאומרים לו.", "מייקרים":"אם אפשר לבנות את זה, למה לקנות?",
+  "אוריגמי":"דף אחד, אפס מספריים, ברבור שלם.", "שיפוץ רהיטים":"לכיסא הישן מגיע סיבוב שני.", "תקליטים":"מוזיקה שצריך להפוך באמצע.",
+  "מסלולי אדריכלות":"להסתכל למעלה. יש שם בניינים מטורפים.", "נסיעות רכבת":"הדרך היא חצי מהכיף.",
+};
+// "לא ידעתי שזה תחביב!" — Tahbiva's surprise (always the 4th discovery card)
+const SURPRISE = [["🦜","זיהוי ציפורים לפי קול","שזאם, אבל לציפורים."],["🗺️","ציור מפות דמיוניות","לעולמות שעוד לא קיימים."],["🌸","הכנת בשמים","להמציא ריח שיהיה רק שלך."],["🪁","בניית עפיפונים","מקל, נייר, רוח. וזהו."],["🌕","יומן ירח","לעקוב אחרי הירח כמו אחרי סדרה."],["📻","רדיו חובבים","לדבר עם מישהו ביפן. בלי אינטרנט."],["🍄","ליקוט פטריות","ציד אוצרות ביער (עם מדריך!)."],["🎨","גרפיטי חוקי","קיר גדול, תרסיס, ואישור מהעירייה."]];
+// [emoji, label, categories it leans to, Tahbiva's reply, hobbies it pre-marks]
+const TOT = [
+  { a:["🌅","שקיעה",["nature","people"],"רומנטיקן/ית. רשמתי 📝",["צילום טבע","פיקניקים"]],
+    b:["☀️","זריחה",["move","nature"],"קמים מוקדם? כבוד 🫡",["ריצה","יוגה"]] },
+  { a:["🎢","הרפתקה",["move","trips","games"],"יאללה, לאן יוצאים? 🎒",["טיולי יום","חדרי בריחה"]],
+    b:["🛋️","ערב על הספה",["games","culture","tech"],"ספה זה גם מקום. לא שופטים 🛋️",["משחקי קופסה","קולנוע"]] },
+  { a:["🎨","ליצור משהו",["art","craft","food"],"ידיים יצירתיות! ✋",["ציור","אפייה"]],
+    b:["🧭","לגלות מקום חדש",["trips","nature","culture"],"סקרנות זה הכי 🧭",["סיורים עירוניים","קמפינג"]] },
+  { a:["💬","שיחה עמוקה",["people","culture"],"אוהבת את זה 💜",["שיחות עומק","מועדון ספר"]],
+    b:["😂","משחק מצחיק",["games","people"],"צחוק זה חצי מהעניין 😂",["טריוויה","מפגשי חברים"]] },
+];
+const SAY = ["ידעתי! 💚","איזה טעם טוב 😎","נוסף לפרופיל 💚"];
+const LOOKING = [["🤝","חברים"],["🎯","שותפים לפעילות"],["💜","היכרות רומנטית"]];
+const ABOUT = [
+  { k:"bio",   e:"✍️", q:"ספר/י קצת על עצמך", area:true, ph:"למשל: אוהב/ת לטייל בטבע ולצייר בצבעי מים. בא לי להכיר שותף/ה לציור 🎨" },
+  { k:"age",   e:"🎂", q:"בן/בת כמה את/ה?", in:'type="number" inputmode="numeric" min="18" max="99" placeholder="גיל"' },
+  { k:"phone", e:"📱", q:"ומה המספר שלך?", in:'type="tel" inputmode="tel" dir="ltr" maxlength="13" placeholder="050-0000000"', note:"🔒 לא מוצג בפרופיל. רק מאצ׳ים רואים" },
+];
+const QUICK_CITIES = ["פרדס חנה-כרכור","תל אביב","חיפה","ירושלים","באר שבע","נתניה"];
+// Sample neighbors (prototype only)
+const NEIGHBORS = [["נועה ל",29,"1.2"],["איתי ב",34,"2.5"],["מאיה ש",31,"4"]];
+const DOTS = ["hi","tot","interests","details","where","nearby","discover","profile","looking","about","ready"];
+
+const H = {};
+CATS.forEach(c => c.items.forEach(([e,n]) => H[n] = { e, n, w:c.id, d:LINES[n] || "" }));
+SURPRISE.forEach(([e,n,d]) => H[n] = { e, n, d, w:"surprise" });
+const hob = n => H[n] || { e:"⭐", n, d:"", w:"custom" };
+
+// ═══ State ══════════════════════════════════════════════════════════════════
+const KEY = "tahbivaDraft3";
+const fresh = () => ({ screen:"welcome", hist:[], tot:[], status:{}, cats:[], seeded:false, dTab:0, sent:{}, disc:null, discIdx:0, noTip:false,
+                       looking:[], aboutStep:0, bio:"", age:"", city:"", phone:"", guest:false, name:"", tab:"act" });
+let S;
+try { S = Object.assign(fresh(), JSON.parse(localStorage.getItem(KEY)) || {}); } catch (_) { S = fresh(); }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (_) {} }
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const rnd = arr => arr[Math.floor(Math.random() * arr.length)];
+// What shows on the profile: everything except "לא בשבילי"
+const positives = () => Object.keys(S.status).filter(n => S.status[n] === "love");
+
+let toastT;
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2200); }
+function say(id, text) { const el = $(id); el.style.opacity = 0; setTimeout(() => { el.textContent = text; el.style.opacity = 1; }, 150); }
+
+// ═══ Navigation ═════════════════════════════════════════════════════════════
+const RENDER = { tot:renderTot, interests:renderInterests, details:renderDetails, where:renderWhere, nearby:renderNearby, discover:renderDiscover, profile:renderProfile, looking:renderLooking,
+                 about:renderAbout, ready:renderReady, photos:renderPhotos, joined:renderJoined, home:renderHome };
+
+function show(id, dir) {
+  const from = document.querySelector(".screen.active"), to = $(id);
+  if (from === to) return;
+  // RTL: moving forward, the new screen slides in from the left
+  to.style.transition = "none";
+  to.style.transform = dir ? `translateX(${dir > 0 ? -40 : 40}px)` : "";
+  to.offsetWidth;
+  to.style.transition = "";
+  to.classList.add("active");
+  to.style.transform = "";
+  to.scrollTop = 0;
+  if (from) {
+    from.classList.remove("active");
+    if (dir) from.style.transform = `translateX(${dir > 0 ? 40 : -40}px)`;
+  }
+}
+
+function go(id, { reset = false } = {}) {
+  if (reset) S.hist = [];
+  else if (S.screen !== id) S.hist.push(S.screen);
+  S.screen = id;
+  (RENDER[id] || (() => {}))();
+  show(id, 1);
+  chrome(); save();
+}
+
+function back() {
+  // Inside multi-step screens, "back" first undoes the last step
+  if (S.screen === "tot" && S.tot.length) { S.tot.pop(); renderTot(); save(); return; }
+  if (S.screen === "discover" && S.discIdx > 0) { undoDisc(); return; }
+  if (S.screen === "about" && S.aboutStep > 0) { S.aboutStep--; renderAbout(); save(); return; }
+  if (S.screen === "details" && S.dTab > 0) { S.dTab--; renderDetails(); save(); return; }
+  const prev = S.hist.pop();
+  if (!prev) return;
+  // Re-open the last round/card instead of bouncing straight forward again
+  if (prev === "tot" && S.tot.length >= TOT.length) S.tot.pop();
+  if (prev === "about") S.aboutStep = Math.min(S.aboutStep, ABOUT.length - 1);
+  if (prev === "discover" && S.disc && S.discIdx >= S.disc.length) { S.discIdx--; delete S.status[S.disc[S.discIdx]]; }
+  S.screen = prev;
+  (RENDER[prev] || (() => {}))();
+  show(prev, -1);
+  chrome(); save();
+}
+
+function chrome() {
+  const noBack = ["welcome","home","joined"].includes(S.screen) || !S.hist.length;
+  $("backBtn").style.opacity = noBack ? 0 : 1;
+  $("backBtn").style.pointerEvents = noBack ? "none" : "auto";
+  const i = DOTS.indexOf(S.screen);
+  $("dots").innerHTML = i < 0 ? "" : DOTS.map((_, k) => `<span class="dot ${k === i ? "on" : ""}"></span>`).join("");
+}
+
+function peek() { S.guest = true; go("home", { reset:true }); }
+
+// ═══ This or that ═══════════════════════════════════════════════════════════
+let totLock = false;
+function startTot() { S.tot = []; go("tot"); }
+function renderTot() {
+  const r = S.tot.length;
+  if (r >= TOT.length) { go("interests"); return; }
+  if (r === 0) $("totSay").textContent = "זה או זה? בלי לחשוב יותר מדי 😉";
+  const opt = (o, k) => `<button class="tile w-full p-6 text-center" onclick="pickTot(${k}, this)">
+      <div class="text-5xl mb-2">${o[0]}</div><div class="text-xl font-black">${o[1]}</div></button>`;
+  $("totBox").innerHTML = `<div class="pop flex flex-col gap-3">
+      <div class="text-center text-sm font-bold text-[#a59bc7]">${r + 1} / ${TOT.length}</div>
+      ${opt(TOT[r].a, 0)}<div class="text-center font-black text-[#c4b5fd]">או</div>${opt(TOT[r].b, 1)}</div>`;
+}
+function pickTot(k, el) {
+  if (totLock) return;
+  totLock = true;
+  el.classList.add("on");
+  const round = TOT[S.tot.length];
+  S.tot.push(k);
+  say("totSay", (k ? round.b : round.a)[3]);
+  save();
+  setTimeout(() => {
+    totLock = false;
+    if (S.tot.length < TOT.length) return renderTot();
+    seedFromTot();
+    go("interests");
+  }, 900);
+}
+// The answers pre-mark matching hobbies (and their categories) — everything stays editable
+function seedFromTot() {
+  S.tot.forEach((k, i) => TOT[i][k ? "b" : "a"][4].forEach(n => {
+    if (S.status[n] !== "no") S.status[n] = "love";
+    if (!S.cats.includes(H[n].w)) S.cats.push(H[n].w);
+  }));
+  S.seeded = true;
+  save();
+}
+function worldWeights() {
+  const w = {};
+  S.tot.forEach((k, i) => TOT[i][k ? "b" : "a"][2].forEach(id => w[id] = (w[id] || 0) + 1));
+  return Object.keys(w).sort((a,b) => w[b] - w[a]).slice(0, 3);
+}
+
+// ═══ Step 1: broad categories (multi-select cards) ═══════════════════════════
+// The "זה או זה" answers decide which categories come first
+const catOrder = () => { const top = worldWeights(); return [...top.map(id => CATS.find(c => c.id === id)), ...CATS.filter(c => !top.includes(c.id))]; };
+const catCount = c => c.items.filter(([, n]) => S.status[n] && S.status[n] !== "no").length;
+function renderInterests() {
+  $("intSay").textContent = S.seeded ? "סימנתי לפי מה שבחרת ✨ אפשר לשנות" : "מה מעניין אותך? אפשר לבחור כמה 🎯";
+  $("catGrid").innerHTML = catOrder().map((c, i) => {
+    const on = S.cats.includes(c.id);
+    return `<div style="animation:pop .35s ease ${i * 30}ms backwards">
+      <button class="cat-card ${on ? "on" : ""}" onclick="toggleCat('${c.id}', this)">
+        <span class="text-3xl">${c.e}</span><span class="font-black text-lg flex-1">${c.n}</span><span class="mark">${on ? "✓" : "+"}</span></button></div>`;
+  }).join("");
+  $("interestsNext").style.opacity = S.cats.length ? 1 : .45;
+}
+function toggleCat(id, el) {
+  const on = S.cats.includes(id);
+  S.cats = on ? S.cats.filter(x => x !== id) : [...S.cats, id];
+  // Un-picking a category drops the hobbies marked in it
+  if (on) CATS.find(c => c.id === id).items.forEach(([, n]) => { delete S.status[n]; });
+  el.classList.toggle("on", !on);
+  el.querySelector(".mark").textContent = on ? "+" : "✓";
+  $("interestsNext").style.opacity = S.cats.length ? 1 : .45;
+  save();
+}
+function interestsNext() {
+  if (!S.cats.length) return toast("בחר/י לפחות תחום אחד 🙂");
+  S.dTab = 0;
+  go("details");
+}
+
+// ═══ Step 2: one category at a time, big "זה או זה"-style tiles, tap = 💚 ════
+const chosenCats = () => catOrder().filter(c => S.cats.includes(c.id));
+const isOn = n => S.status[n] && S.status[n] !== "no";
+function renderDetails() {
+  const cats = chosenCats();
+  if (!cats.length) return;
+  S.dTab = Math.min(S.dTab, cats.length - 1);
+  const c = cats[S.dTab], last = S.dTab === cats.length - 1;
+  $("dProgress").textContent = `קטגוריה ${S.dTab + 1} מתוך ${cats.length}`;
+  $("dCard").innerHTML = `<div class="pop">
+      <div class="flex items-center justify-center gap-2 mb-4"><span class="text-3xl">${c.e}</span><h3 class="font-black text-xl">${c.n}</h3></div>
+      <div class="grid grid-cols-2 gap-3">${c.items.map(([e, n], i) =>
+        `<button class="tile p-5 text-center ${isOn(n) ? "on" : ""}" onclick="toggleHobby('${c.id}', ${i}, this)">
+           <span class="ok">✓</span><div class="text-5xl mb-2">${e}</div><div class="font-black leading-tight">${n}</div></button>`).join("")}</div></div>`;
+  $("dPrev").style.visibility = S.dTab ? "visible" : "hidden";
+  $("dNext").textContent = last ? "סיום והצגת מאצ׳ים ←" : "הבא ←";
+}
+function toggleHobby(cid, i, el) {
+  const n = CATS.find(x => x.id === cid).items[i][1], on = isOn(n);
+  if (on) delete S.status[n]; else S.status[n] = "love";
+  el.classList.toggle("on", !on);
+  save();
+}
+function changeCats() { S.dTab = 0; back(); }
+function detailsNext() {
+  if (S.dTab < chosenCats().length - 1) { S.dTab++; renderDetails(); $("details").scrollTop = 0; save(); return; }
+  if (!positives().length) return toast("סמנ/י לפחות תחביב אחד 🙂");
+  go("where");
+}
+
+// ═══ Where + nearby: location early, then instant local matches ════════════
+function renderWhere() {
+  $("whereIn").value = S.city;
+  $("whereChips").innerHTML = QUICK_CITIES.map(c =>
+    `<button type="button" class="pill ${S.city === c ? "on" : ""}" onclick="pickCity('${c}')">${c}</button>`).join("");
+}
+function pickCity(c) { $("whereIn").value = c; whereNext(); }
+function whereNext(e) {
+  if (e) e.preventDefault();
+  const v = $("whereIn").value.trim();
+  if (!v) return toast("איפה זה? 🙂");
+  S.city = v;
+  go("nearby");
+}
+// "שלח הודעה" opens a ready-made message about a shared hobby — edit or just send
+function msgBox(i) {
+  return S.sent[i] ? `<div class="text-sm font-bold text-[#7c3aed]">✓ ההודעה נשלחה</div>`
+                   : `<button class="ice" onclick="openMsg(${i}, this)">💬 שלח הודעה</button>`;
+}
+function suggestMsg(i) {
+  const h = sharedFor(i)[0];
+  return `היי ${NEIGHBORS[i][0].split(" ")[0]}! ראיתי שגם את/ה בקטע של ${h} ${hob(h).e} בא לך להיפגש מתישהו?`;
+}
+function openMsg(i, el) {
+  if (S.guest) return toast("צריך חשבון כדי לשלוח 🙂");
+  el.parentElement.innerHTML = `<form onsubmit="sendMsg(event, ${i})" class="flex flex-col gap-2 pop">
+      <textarea id="msg${i}" rows="2" maxlength="200" class="tile w-full p-3 text-sm font-semibold outline-none resize-none focus:border-[#7c3aed]">${esc(suggestMsg(i))}</textarea>
+      <button class="ice self-start" style="background:var(--p);color:#fff">שלח ←</button></form>`;
+}
+function sendMsg(e, i) {
+  e.preventDefault();
+  if (!$("msg" + i).value.trim()) return;
+  S.sent[i] = true; save();
+  e.target.parentElement.innerHTML = msgBox(i);
+  toast(S.name ? "נשלח 💌" : "יישלח אחרי ההרשמה 💌");
+}
+function personCard(i, shared) {
+  const [nm, age, km] = NEIGHBORS[i];
+  return `<div class="tile p-4 mb-2"><div class="flex items-center gap-3 mb-2">
+      <div class="w-11 h-11 rounded-full bg-[#f3efff] grid place-items-center font-black text-[#7c3aed]">${nm[0]}</div>
+      <div class="flex-1"><div class="font-bold">${nm}, ${age}</div><div class="text-xs text-[#8b7fb0]">📍 ${km} ק״מ ממך</div></div></div>
+    <div class="mb-2">${shared.map(n => `<span class="chip" style="padding-left:12px">${hob(n).e} ${esc(n)}</span>`).join("")}</div>
+    <div>${msgBox(i)}</div></div>`;
+}
+function sharedFor(i) {
+  const pos = positives().length ? positives() : ["פיקניקים","הכנת קפה"];
+  return pos.slice(i % 2, i % 2 + 2);
+}
+function renderNearby() {
+  const top = positives()[0];
+  $("nearSay").textContent = `${NEIGHBORS.length} אנשים ליד ${S.city} שאוהבים מה שאת/ה אוהב/ת 👀`;
+  $("nearBox").innerHTML = `<div class="tile p-4 mb-4"><div class="font-black text-sm text-[#7c3aed] mb-1">התחביבים שסימנת</div>
+      ${positives().map(n => `<span class="chip" style="padding-left:12px">${hob(n).e} ${esc(n)}</span>`).join("")}</div>`
+    + NEIGHBORS.map((_, i) => personCard(i, sharedFor(i))).join("")
+    + (top ? `<div class="font-black mt-4 mb-2">📅 קרוב אלייך</div>` + actCard({ e:hob(top).e, t:`${top} · מפגש פתוח`, m:`שבת · 17:30 · ${S.city}`, p:6 }) : "");
+}
+function toDiscover() { S.disc = null; go("discover"); }
+
+// ═══ Discover: 4 new hobbies (the 4th is Tahbiva's surprise) ═══════════════
+function buildDisc() {
+  const liked = CATS.filter(c => c.items.some(([, n]) => S.status[n] === "love")).map(c => c.id);
+  const pref = [...new Set([...S.cats, ...worldWeights(), ...liked])];
+  const pool = Object.keys(LINES).filter(n => !(n in S.status));
+  const picks = [];
+  for (const w of pref) {
+    const cand = pool.filter(n => H[n].w === w && !picks.includes(n));
+    if (cand.length) picks.push(rnd(cand));
+    if (picks.length === 3) break;
+  }
+  while (picks.length < 3) {
+    const rest = pool.filter(n => !picks.includes(n));
+    if (!rest.length) break;
+    picks.push(rnd(rest));
+  }
+  const s = pickSurprise([]);
+  S.disc = s ? [...picks, s] : picks;
+  S.discIdx = 0;
+}
+function pickSurprise(exclude) {
+  const pool = SURPRISE.map(s => s[1]).filter(n => !(n in S.status) && !exclude.includes(n));
+  return pool.length ? rnd(pool) : null;
+}
+let cardLock = false;
+function renderDiscover() {
+  if (!S.disc) buildDisc();
+  const i = S.discIdx, total = S.disc.length;
+  if (i >= total) { go("profile"); return; }
+  const name = S.disc[i], h = hob(name);
+  const isSurprise = h.w === "surprise";
+  $("discSay").textContent = isSurprise ? "רגע, יש לי רעיון מפתיע בשבילך… 🤭" : i === 0 ? "כמה רעיונות שאולי לא חשבת עליהם" : $("discSay").textContent;
+  const card = `<div class="text-center text-sm font-bold text-[#a59bc7] mb-2">${i + 1} / ${total}</div>
+    <div id="hcard" class="hcard pop ${isSurprise ? "ring-4 ring-amber-200" : ""}">
+      ${isSurprise ? '<div class="tag inline-block mb-3">🎁 תחביבה מפתיעה</div>' : ""}
+      <div class="text-7xl mb-3">${h.e}</div>
+      <h3 class="text-2xl font-black">${esc(h.n)}</h3>
+      <p class="text-[#7c6aa8] font-semibold mt-1">${esc(h.d)}</p></div>`;
+  // Only 💚 or skip — "רוצה לנסות" was confusing
+  const buttons = `<div class="grid grid-cols-2 gap-2 mt-5">
+         <button class="st" style="background:#dcfce7" onclick="rateDisc('love')">💚 הוסף לפרופיל</button>
+         ${isSurprise ? `<button class="st" style="background:#f3efff" onclick="surpriseAgain()">🎁 תפתיעי שוב</button>`
+                      : `<button class="st" style="background:#f3efff" onclick="rateDisc(null)">דלג</button>`}</div>
+       ${isSurprise ? `<button class="link block mx-auto" onclick="rateDisc(null)">דלג</button>` : ""}`;
+  $("discSlot").innerHTML = card + buttons;
+}
+function rateDisc(st) {
+  if (cardLock) return;
+  cardLock = true;
+  const name = S.disc[S.discIdx];
+  $("hcard").classList.add("fly-" + (st || "skip"));
+  setTimeout(() => {
+    if (st) S.status[name] = st;
+    S.discIdx++;
+    if (st) say("discSay", rnd(SAY));
+    cardLock = false;
+    save();
+    S.discIdx >= S.disc.length ? setTimeout(() => go("profile"), 400) : renderDiscover();
+  }, 260);
+}
+function undoDisc() {
+  S.discIdx--;
+  delete S.status[S.disc[S.discIdx]];
+  say("discSay", "חוזרים אחורה ↩️");
+  renderDiscover(); save();
+}
+function surpriseAgain() {
+  const next = pickSurprise([S.disc[S.discIdx]]);
+  if (!next) return toast("נגמרו לי ההפתעות 😅");
+  S.disc[S.discIdx] = next;
+  renderDiscover(); save();
+}
+function discoverMore() { S.disc = null; go("discover"); }
+
+// ═══ Profile hobbies (editable, ✕ to remove) ═══════════════════════════════
+let chipNames = [];
+function chipX(n) {
+  chipNames.push(n);
+  const h = hob(n);
+  return `<span class="chip">${h.e} ${esc(n)}<button class="x" onclick="removeHobby(${chipNames.length - 1}, this)" aria-label="הסרה">✕</button></span>`;
+}
+function hobbyEditor(inputId) {
+  chipNames = [];
+  const pos = positives();
+  return `<div class="tile p-4 mb-3"><div class="font-black mb-2">💚 התחביבים שלי</div>
+      ${pos.length ? pos.map(chipX).join("") : '<p class="text-sm text-[#a59bc7]">עוד אין</p>'}</div>`
+    + `<form onsubmit="addCustom(event, '${inputId}')" class="flex gap-2 mt-1">
+         <input id="${inputId}" class="pill flex-1 outline-none" maxlength="30" placeholder="+ הוסף תחביב">
+         <button class="pill" style="background:var(--p);color:#fff">הוסף</button></form>`;
+}
+function renderProfile() {
+  const pos = positives();
+  const byCat = {};
+  pos.forEach(n => { const w = hob(n).w; byCat[w] = (byCat[w] || 0) + 1; });
+  const vibes = Object.keys(byCat).filter(w => CATS.some(c => c.id === w)).sort((a,b) => byCat[b] - byCat[a])
+                      .slice(0, 2).map(id => CATS.find(c => c.id === id).vibe);
+  $("profileSay").textContent = !pos.length ? "עוד ריק פה. גם זו התחלה 🙂"
+    : vibes.length === 2 ? `נראה שאת/ה בקטע של ${vibes[0]} ו${vibes[1]} ✨`
+    : vibes.length ? `נראה שאת/ה בקטע של ${vibes[0]} ✨` : "פרופיל מקורי! ✨";
+  $("profileBox").innerHTML = hobbyEditor("profileAdd");
+}
+function removeHobby(i, btn) {
+  btn.parentElement.classList.add("gone");
+  setTimeout(() => { delete S.status[chipNames[i]]; save(); (RENDER[S.screen] || (() => {}))(); }, 200);
+}
+function addCustom(e, inputId) {
+  e.preventDefault();
+  const v = $(inputId).value.trim();
+  if (!v) return;
+  S.status[v] = "love";
+  save();
+  toast("נוסף לפרופיל 💚");
+  (RENDER[S.screen] || (() => {}))();
+}
+
+// ═══ Sample content (prototype only) ═══════════════════════════════════════
+function sampleActs(n) {
+  const base = (positives().length ? positives() : ["פיקניקים","משחקי קופסה","הליכה"]).map(hob);
+  const T = ["מפגש למתחילים","יוצאים יחד","ערב פתוח"], when = ["יום ג׳ · 19:00","שישי · 08:00","שבת · 17:30","יום ה׳ · 20:00","יום א׳ · 18:30"];
+  return base.slice(0, n).map((h, i) => ({ e:h.e, t:`${h.n} · ${T[i % 3]}`, m:when[i % 5] + (S.city ? ` · ${S.city}` : ""), p:[4,7,3,9,5][i % 5] }));
+}
+function actCard(a) {
+  return `<div class="tile p-3 mb-2 flex items-center gap-3">
+    <div class="text-3xl w-12 h-12 rounded-2xl bg-[#f3efff] grid place-items-center">${a.e}</div>
+    <div class="flex-1 min-w-0"><div class="font-bold truncate">${esc(a.t)}</div><div class="text-xs text-[#8b7fb0]">${a.m} · ${a.p} מגיעים</div></div>
+    <button class="st px-3 py-2 text-sm" style="background:#f3efff" onclick="joinAct()">מצטרף/ת</button></div>`;
+}
+function joinAct() {
+  if (S.guest) { toast("צריך חשבון כדי להצטרף 🙂"); setTimeout(() => go(positives().length ? "ready" : "hi"), 700); }
+  else toast("הצטרפת! (דמו) 🎉");
+}
+
+// ═══ Looking for / ready / signup / joined ═════════════════════════════════
+function renderLooking() {
+  $("lookBox").innerHTML = LOOKING.map(([e, l], i) => `
+    <button class="tile p-5 flex items-center gap-4 text-right ${S.looking.includes(i) ? "on" : ""}" onclick="toggleLook(${i}, this)">
+      <span class="text-4xl">${e}</span><span class="text-lg font-black">${l}</span></button>`).join("");
+}
+function toggleLook(i, el) {
+  S.looking = S.looking.includes(i) ? S.looking.filter(x => x !== i) : [...S.looking, i];
+  el.classList.toggle("on", S.looking.includes(i));
+  save();
+}
+function startAbout() { S.aboutStep = 0; go("about"); }
+function renderAbout() {
+  const i = S.aboutStep;
+  if (i >= ABOUT.length) { go("ready"); return; }
+  const a = ABOUT[i];
+  $("aboutSay").textContent = a.q;
+  $("aboutForm").innerHTML = `<div class="pop flex flex-col items-center gap-4">
+      <div class="text-sm font-bold text-[#a59bc7]">${i + 1} / ${ABOUT.length}</div>
+      <div class="text-6xl">${a.e}</div>
+      ${a.area
+        ? `<textarea id="aboutIn" class="tile w-full p-4 text-base font-semibold outline-none resize-none focus:border-[#7c3aed]" rows="5" maxlength="300"
+             placeholder="${a.ph}">${esc(S[a.k] || "")}</textarea>`
+        : `<input id="aboutIn" class="tile w-full px-4 py-4 text-center text-xl font-bold outline-none focus:border-[#7c3aed]" ${a.in} value="${esc(S[a.k] || "")}">`}
+      ${a.note ? `<p class="text-sm font-semibold text-[#8b7fb0]">${a.note}</p>` : ""}
+    </div>
+    <button class="btn btn-p mt-auto">המשך ←</button>`;
+  setTimeout(() => $("aboutIn") && $("aboutIn").focus({ preventScroll:true }), 400);
+}
+function aboutNext(e) {
+  e.preventDefault();
+  const a = ABOUT[S.aboutStep], v = $("aboutIn").value.trim();
+  if (a.k === "age" && !(+v >= 18 && +v <= 99)) return toast("גיל בין 18 ל-99 🙂");
+  if (a.k === "phone" && !/^0\d{8,9}$/.test(v.replace(/[\s-]/g, ""))) return toast("המספר נראה לא תקין");
+  S[a.k] = v; S.aboutStep++; save();
+  renderAbout();
+}
+function renderReady() {
+  const n = positives().length;
+  $("readyText").textContent = n ? `יש ${n} תחביבים בפרופיל שלך. בוא/י נמצא אנשים שאוהבים אותם.` : "בוא/י נמצא אנשים שאוהבים מה שאת/ה אוהב/ת.";
+}
+function signup(e) {
+  e.preventDefault();
+  const name = $("suName").value.trim(), mail = $("suEmail").value.trim();
+  if (!name) return toast("איך קוראים לך? 🙂");
+  if (!/^\S+@\S+\.\S+$/.test(mail)) return toast("המייל נראה לא תקין");
+  S.name = name; S.guest = false;
+  go("photos", { reset:true });
+}
+
+// Photos live in memory only (object URLs) — a reload clears them. The real app uploads to Storage.
+// One gallery for me + my hobbies; the first photo is the profile picture
+let PHOTOS = [];
+const MAX_PHOTOS = 6;
+const photoTile = u => `<div class="photo" style="border-style:solid"><img src="${u}" alt=""></div>`;
+function renderPhotos() {
+  $("photoGrid").innerHTML = PHOTOS.map(photoTile).join("")
+    + (PHOTOS.length < MAX_PHOTOS ? `<label class="photo"><span class="text-3xl text-[#a78bfa]">+</span>
+         <input type="file" accept="image/*" multiple class="hidden" onchange="addPhotos(this)"></label>` : "");
+}
+function addPhotos(input) {
+  const urls = [...input.files].filter(f => f.type.startsWith("image/")).map(f => URL.createObjectURL(f));
+  PHOTOS = [...PHOTOS, ...urls].slice(0, MAX_PHOTOS);
+  renderPhotos();
+}
+// From sign-up → celebrate; from the profile tab → back to it
+function photosDone() { S.hist.length ? back() : go("joined", { reset:true }); }
+function renderJoined() {
+  $("joinedTitle").textContent = `כיף שהצטרפת, ${S.name}!`;
+  $("joinedEmojis").textContent = positives().slice(0, 5).map(n => hob(n).e).join(" ");
+}
+
+// ═══ Home: activities first ════════════════════════════════════════════════
+function renderHome() {
+  const banner = S.guest ? `<button class="w-full text-right tile p-3 mb-4 flex items-center gap-3" style="background:#fef9c3;border-color:#fde68a" onclick="go('hi')">
+      <div class="owl" style="width:44px;height:44px;font-size:1.4rem">🦉</div>
+      <div class="font-bold text-sm flex-1">רוצה שזה יתאים לך? 2 דקות עם תחביבה ←</div></button>` : "";
+  let body = "";
+  if (S.tab === "act") {
+    body = `<div class="flex items-center gap-2 mb-3"><h2 class="text-xl font-black">פעילויות בשבילך</h2><span class="tag">לדוגמה</span></div>`
+         + sampleActs(5).map(actCard).join("");
+  } else if (S.tab === "ppl") {
+    body = `<div class="flex items-center gap-2 mb-3"><h2 class="text-xl font-black">${S.city ? `לידך ב${esc(S.city)}` : "אנשים עם תחביבים משותפים"}</h2><span class="tag">לדוגמה</span></div>`
+         + NEIGHBORS.map((_, i) => personCard(i, sharedFor(i))).join("");
+  } else {
+    body = `<div class="flex items-center gap-3 mb-4">
+              <div class="w-14 h-14 rounded-full bg-[#f3efff] grid place-items-center text-2xl font-black text-[#7c3aed] overflow-hidden">${PHOTOS.length
+                ? `<img src="${PHOTOS[0]}" alt="" class="w-full h-full object-cover">` : esc((S.name || "?")[0])}</div>
+              <div><div class="text-xl font-black">${esc(S.name || "אורח/ת")}</div><div class="text-sm text-[#8b7fb0]">${esc([S.age, S.city].filter(Boolean).join(" · "))}</div></div></div>`
+         + (S.bio || S.looking.length ? `<div class="tile p-4 mb-3"><div class="font-black mb-1">✍️ עליי</div>
+              ${S.bio ? `<p class="text-[#5b4b8a] font-semibold mb-2" style="white-space:pre-line">${esc(S.bio)}</p>` : ""}
+              ${S.looking.length ? `<div class="text-sm text-[#8b7fb0] font-bold">מחפש/ת: ${S.looking.map(i => LOOKING[i].join(" ")).join(" · ")}</div>` : ""}</div>` : "")
+         + `<div class="tile p-4 mb-3"><div class="flex items-center justify-between mb-2"><div class="font-black">📸 תמונות</div>
+              <button class="tag" onclick="go('photos')">+ הוספה</button></div>
+              ${PHOTOS.length ? `<div class="grid grid-cols-3 gap-2">${PHOTOS.map(photoTile).join("")}</div>`
+                                  : '<p class="text-sm text-[#a59bc7]">עוד אין</p>'}</div>`
+         + hobbyEditor("homeAdd");
+  }
+  const tab = (k, e, l) => `<button class="${S.tab === k ? "on" : ""}" onclick="setTab('${k}')"><span>${e}</span>${l}</button>`;
+  $("home").innerHTML = `
+    <div class="flex items-center justify-between mb-4">
+      <div class="text-2xl font-black text-[#4c1d95]">🤝 קונקשן</div>
+      <button class="iconbtn" onclick="restart()" aria-label="להתחיל מחדש" title="להתחיל את הדמו מחדש">↺</button></div>
+    ${banner}<div class="pop">${body}</div>
+    <nav class="tabbar">${tab("act","📅","פעילויות")}${tab("ppl","👥","אנשים")}${tab("mine","👤","הפרופיל שלי")}</nav>`;
+}
+function setTab(k) { S.tab = k; renderHome(); save(); }
+function restart() { S = fresh(); save(); go("welcome", { reset:true }); toast("הדמו התחיל מחדש"); }
+
+// ═══ Boot: restore where the visitor left off ═══════════════════════════════
+(RENDER[S.screen] || (() => {}))();
+show(S.screen, 0);
+chrome();
+</script>
+</body>
+</html>

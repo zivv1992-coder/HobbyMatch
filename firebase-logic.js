@@ -78,9 +78,12 @@ async function saveProfileToFirestore(userObj) {
     city:             userObj.city,
     hobby:            userObj.hobby,
     hobbies:          userObj.hobbies || [],
+    wantToTry:        userObj.wantToTry || [],
     hobbyDescription: userObj.hobbyDescription,
     romantic:         userObj.romantic,
     hobbyImageUrl:    userObj.hobbyImageUrl,
+    hobbyImages:      userObj.hobbyImages || [],
+    lookingFor:       userObj.lookingFor || [],
     profilePhotoURL:  userObj.profilePhotoURL || '',
     latitude:         userObj.latitude,
     longitude:        userObj.longitude,
@@ -127,6 +130,50 @@ async function checkMatch(fromEmail, toEmail) {
   return doc.exists;
 }
 
+// ─── Message requests (write to someone before there's a match) ─────────────
+// message_requests/{from}_{to}: { from, to, text, status: 'pending'|'accepted'|'declined', createdAt }
+
+function messageRequestId(fromEmail, toEmail) {
+  return `${sanitizeEmail(fromEmail)}_${sanitizeEmail(toEmail)}`;
+}
+
+async function getMessageRequest(fromEmail, toEmail) {
+  const doc = await db.collection('message_requests').doc(messageRequestId(fromEmail, toEmail)).get();
+  return doc.exists ? doc.data() : null;
+}
+
+async function sendMessageRequest(fromEmail, toEmail, text) {
+  await db.collection('message_requests').doc(messageRequestId(fromEmail, toEmail)).set({
+    from:      fromEmail,
+    to:        toEmail,
+    text:      text,
+    status:    'pending',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+// Filtered client-side by status, so no composite index is needed
+async function fetchIncomingRequests(myEmail) {
+  const snap = await db.collection('message_requests').where('to', '==', myEmail).get();
+  return snap.docs.map(d => d.data()).filter(r => r.status === 'pending');
+}
+
+// Accept = the existing match (likes both ways) + the request becomes the first chat message
+async function acceptMessageRequest(req) {
+  await Promise.all([saveLike(req.from, req.to), saveLike(req.to, req.from)]);
+  const chatId = [sanitizeEmail(req.from), sanitizeEmail(req.to)].sort().join('__'); // same as _getChatId (profiles-chat.js)
+  await db.collection('chats').doc(chatId).collection('messages').add({
+    from:   req.from,
+    text:   req.text,
+    sentAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  await db.collection('message_requests').doc(messageRequestId(req.from, req.to)).update({ status: 'accepted' });
+}
+
+async function declineMessageRequest(req) {
+  await db.collection('message_requests').doc(messageRequestId(req.from, req.to)).update({ status: 'declined' });
+}
+
 async function fetchMatches(myEmail) {
   // Get everyone I liked
   const likedSnap = await db.collection('likes')
@@ -162,6 +209,8 @@ async function updateProfileInFirestore(userObj) {
     hobbies:          userObj.hobbies || [],
     hobbyDescription: userObj.hobbyDescription,
     romantic:         userObj.romantic,
+    lookingFor:       userObj.lookingFor || [],
+    wantToTry:        userObj.wantToTry || [],
     hobbyImages:      images,
     hobbyImageUrl:    images[0] || '',
     latitude:         userObj.latitude,

@@ -170,7 +170,10 @@ function renderCard(user, isLiked, myUser, isMatch) {
 
       <!-- Actions & Caption -->
       <div class="px-4 pt-3 pb-4 flex flex-col gap-2">
-        ${likeBtn}
+        <div class="flex items-center justify-between gap-2">
+          ${likeBtn}
+          ${!isGuest && !isMatch ? messageButtonHtml(user.email, 'px-3 py-1.5') : ''}
+        </div>
         ${user.hobbyDescription ? `<p class="text-gray-600 text-sm leading-relaxed line-clamp-2">${escapeHtml(user.hobbyDescription)}</p>` : ''}
         ${user.interests ? `<p class="text-gray-400 text-xs leading-relaxed line-clamp-1">✨ ${escapeHtml(user.interests)}</p>` : ''}
         ${romanticBadge}
@@ -237,6 +240,12 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
           <p class="text-xs font-bold text-gray-400 uppercase mb-1.5">תחביבים</p>
           <div class="flex flex-wrap gap-2">${hobbyTags}</div>
         </div>
+        ${(user.wantToTry || []).length ? `
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase mb-1.5">🤔 חושב/ת לנסות</p>
+          <div class="flex flex-wrap gap-2">${user.wantToTry.map(h =>
+            `<span class="inline-block bg-amber-50 text-amber-700 text-sm font-bold px-3 py-1 rounded-full">${escapeHtml(h)}</span>`).join('')}</div>
+        </div>` : ''}
 
         <!-- Description -->
         ${user.hobbyDescription ? `
@@ -276,7 +285,7 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
             class="w-full py-2.5 rounded-xl font-bold text-sm border border-red-200 text-red-500 bg-red-50 hover:bg-red-100 transition">
             💔 ביטול מאצ'
           </button>
-        </div>` : myUser ? `<button
+        </div>` : myUser ? `${messageButtonHtml(user.email, 'w-full py-3 mb-2')}<button
           id="modalLikeBtn"
           class="w-full py-3 rounded-xl font-bold text-sm transition ${likedClass}"
           onclick="handleModalLike('${user.email}', '${user.fullName}', this)"
@@ -538,11 +547,11 @@ function showGuestSignupWall() {
       <h3 class="font-black text-gray-800 text-lg mb-2">הצטרף לקהילה!</h3>
       <p class="text-gray-500 text-sm mb-5">עליך להירשם או להתחבר כדי להתחבר עם חברי הקהילה ולשלוח הודעות.</p>
       <div class="flex flex-col gap-2">
-        <a href="register.html"
+        <a href="tahbiva.html"
           class="block w-full py-3 bg-gradient-to-l from-purple-700 to-blue-600 text-white font-bold rounded-xl hover:opacity-90 transition text-sm">
           הרשמה
         </a>
-        <a href="register.html"
+        <a href="register.html?mode=login"
           class="block w-full py-3 border border-purple-200 text-purple-700 font-bold rounded-xl hover:bg-purple-50 transition text-sm">
           כניסה
         </a>

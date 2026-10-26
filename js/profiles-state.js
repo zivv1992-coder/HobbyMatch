@@ -10,7 +10,7 @@ const me = getSession(); // null for guests with ?event= deep-link
 // ── Discover feed ─────────────────────────────────────────────────────────────
 let allUsers         = [];
 let likedEmails      = new Set();
-let activeTab        = 'discover';
+let activeTab        = 'events';   // "פעילויות" is the home tab
 let radiusKm         = 50;
 let _romanticFilterOn = false;
 
@@ -20,6 +20,10 @@ let _lazyFiltered = [];
 let _lazyShown    = 0;
 let _lazyObserver = null;
 
+// ── Message requests ──────────────────────────────────────────────────────────
+let incomingRequests = [];          // pending requests sent to me
+let sentRequestEmails = new Set();  // people I've written to this session
+
 // ── Events ────────────────────────────────────────────────────────────────────
 let allEventsData = [];
 let eventsLoaded  = false;
@@ -27,9 +31,11 @@ let eventFilter   = 'all';
 
 // ── Create Event — expanded category state ────────────────────────────────────
 let ev_expandedCategories    = new Set();
+let ev_cityPicker            = null;   // city-picker instance in create-event modal
 
 // ── Edit Profile drawer ───────────────────────────────────────────────────────
-let ed_isRomantic            = false;
+let ed_lookingFor            = new Set();   // ids from TAHBIVA.LOOKING (friends / partners / romantic)
+let ed_wantToTry             = [];          // "חושב/ת לנסות" hobbies
 let ed_hobbyPicker           = null;   // hobby-picker instance in edit drawer
 let ed_cityPicker            = null;   // city-picker instance in edit drawer
 let ed_savedImages           = [];   // existing URLs from Firestore

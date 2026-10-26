@@ -3,7 +3,7 @@
 // Handles: asset caching, offline fallback, push notifications
 // ══════════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'connection-v6';
+const CACHE_NAME = 'connection-v8';
 const OFFLINE_URL = '/offline.html';
 
 const PRECACHE_ASSETS = [
@@ -11,6 +11,7 @@ const PRECACHE_ASSETS = [
   '/index.html',
   '/profiles.html',
   '/register.html',
+  '/tahbiva.html',
   '/offline.html',
   '/manifest.json',
   '/config.js',
@@ -26,8 +27,10 @@ const PRECACHE_ASSETS = [
   '/js/profiles-matches.js',
   '/js/profiles-events.js',
   '/js/profiles-chat.js',
+  '/js/profiles-requests.js',
   '/js/profiles-notifications.js',
   '/js/profiles-edit-profile.js',
+  '/js/tahbiva.js',
   '/js/hobby-picker.js',
   '/js/analytics.js',
 ];
