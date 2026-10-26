@@ -192,3 +192,41 @@ test.describe('Create activity', () => {
     await expect(modal).not.toContainText('סוג פעילות');
   });
 });
+
+test.describe('Photos — one public gallery', () => {
+  const PHOTO_USER = {
+    fullName: 'רוני אבן', email: 'roni@example.com', age: 33, city: 'תל אביב', hobby: 'ריצה', hobbies: ['ריצה'],
+    profilePhotoURL: 'https://example.com/me.jpg', hobbyImages: ['https://example.com/run.jpg'],
+    latitude: 32.0853, longitude: 34.7818,
+  };
+
+  test('profile photo is shown to everyone (avatar + first in the carousel)', async ({ page }) => {
+    await setupFirebaseMock(page, { users: [PHOTO_USER] });
+    await injectSession(page, MOCK_SESSION);           // not matched with רוני
+    await page.addInitScript(e => localStorage.setItem('hobbyMatchTourDone_' + e, '1'), MOCK_SESSION.email);
+    await page.goto('/profiles.html');
+    await page.click('#tabDiscover');
+    const card = page.locator('#feedGrid [data-email="roni@example.com"]');
+    await expect(card.locator('img[src="https://example.com/me.jpg"]').first()).toBeAttached({ timeout: 15000 });
+    const slides = card.locator('[data-slides] img');
+    await expect(slides).toHaveCount(2);
+    await expect(slides.first()).toHaveAttribute('src', 'https://example.com/me.jpg');
+  });
+
+  test('edit drawer: one gallery, older profile photo first and marked "ראשית"', async ({ page }) => {
+    await setupFirebaseMock(page, { users: MOCK_FEED_USERS });
+    await injectSession(page, { ...MOCK_SESSION, profilePhotoURL: 'https://example.com/me.jpg', hobbyImages: ['https://example.com/run.jpg'] });
+    await page.goto('/profiles.html');
+    await page.evaluate(() => openEditDrawer());
+    const gallery = page.locator('#ed_gallery');
+    await expect(gallery.locator('img')).toHaveCount(2);
+    await expect(gallery.locator('img').first()).toHaveAttribute('src', 'https://example.com/me.jpg');
+    await expect(gallery).toContainText('ראשית');
+    await expect(page.locator('#editDrawer')).not.toContainText('רק מי שיש איתו קונקשן רואה</p>');
+    await page.click('#ed_saveBtn');
+    await expect(page.locator('#editOverlay')).toBeHidden({ timeout: 10000 });
+    const s = await page.evaluate(() => JSON.parse(localStorage.getItem('hobbyMatchUser')));
+    expect(s.hobbyImages).toEqual(['https://example.com/me.jpg', 'https://example.com/run.jpg']);
+    expect(s.profilePhotoURL).toBe('https://example.com/me.jpg');
+  });
+});

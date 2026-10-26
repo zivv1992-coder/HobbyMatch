@@ -622,28 +622,9 @@
 
       <!-- 📸 Photos -->
       <section class="ed-card">
-        <h3 class="ed-card-title">📸 תמונות</h3>
-        <div class="flex items-center gap-3">
-          <div class="relative shrink-0">
-            <div id="ed_profilePhotoWrap"
-              class="w-20 h-20 rounded-full bg-purple-50 border-4 border-purple-200 flex items-center justify-center overflow-hidden shadow">
-              <svg viewBox="0 0 24 24" fill="#a78bfa" xmlns="http://www.w3.org/2000/svg" style="width:55%;height:55%;">
-                <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-3.314 0-10 1.657-10 5v2h20v-2c0-3.343-6.686-5-10-5z"/>
-              </svg>
-            </div>
-            <label for="ed_profile_photo"
-              class="absolute bottom-0 left-0 w-6 h-6 bg-purple-700 text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-purple-800 transition shadow text-xs">
-              ✏️
-            </label>
-            <input id="ed_profile_photo" type="file" accept="image/*" class="hidden" onchange="ed_previewProfilePhoto(this)"/>
-          </div>
-          <div>
-            <p class="text-xs font-semibold text-gray-600">תמונה אישית</p>
-            <p class="text-xs text-gray-400 leading-snug">🔒 רק מי שיש איתו קונקשן רואה</p>
-          </div>
-        </div>
+        <h3 class="ed-card-title">📸 תמונות שלך ושל התחביבים</h3>
         <div>
-          <p class="text-xs font-semibold text-gray-600 mb-1">תמונות מהתחביבים</p>
+          <p class="text-xs text-gray-400 mb-1.5">הראשונה מופיעה כתמונת הפרופיל. כל התמונות גלויות לכולם.</p>
           <div id="ed_gallery" class="flex flex-wrap gap-2"></div>
           <label class="mt-2 flex items-center justify-center gap-1 cursor-pointer text-sm font-bold text-purple-700 border-2 border-dashed border-purple-300 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition w-full">
             + הוסף תמונה

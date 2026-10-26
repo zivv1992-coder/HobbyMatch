@@ -1,7 +1,7 @@
 // ══════════════════════════════════════════════════════════════════════════════
 // profiles-edit-profile.js — Edit Profile drawer (open, save, gallery, photo)
 // State lives in profiles-state.js: ed_lookingFor, ed_savedImages,
-//   ed_newFiles, ed_profilePhotoFile
+//   ed_newFiles
 // ══════════════════════════════════════════════════════════════════════════════
 
 function openEditDrawer() {
@@ -16,19 +16,8 @@ function openEditDrawer() {
   ed_hobbyPicker.setHobbies(getUserHobbies(user));
   document.getElementById('ed_desc').value      = user.hobbyDescription || '';
   document.getElementById('ed_email').value = user.email    || '';
-  // Profile photo
-  ed_profilePhotoFile = null;
-  document.getElementById('ed_profile_photo').value = '';
-  const ppWrap = document.getElementById('ed_profilePhotoWrap');
-  if (user.profilePhotoURL) {
-    ppWrap.innerHTML = `<img src="${user.profilePhotoURL}" class="w-full h-full object-cover cursor-zoom-in" onclick="openImageLightbox(this.src)"/>`;
-  } else {
-    ppWrap.innerHTML = `<svg viewBox="0 0 24 24" fill="#a78bfa" xmlns="http://www.w3.org/2000/svg" style="width:55%;height:55%;"><path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-3.314 0-10 1.657-10 5v2h20v-2c0-3.343-6.686-5-10-5z"/></svg>`;
-  }
-  // Images
-  ed_savedImages = user.hobbyImages && user.hobbyImages.length
-    ? [...user.hobbyImages]
-    : (user.hobbyImageUrl ? [user.hobbyImageUrl] : []);
+  // One gallery: an older separate profile photo joins it as the first photo
+  ed_savedImages = userPhotos(user);
   ed_newFiles = [];
   ed_renderGallery();
   // What I'm looking for — older profiles only have the `romantic` flag
@@ -55,9 +44,7 @@ function closeEditDrawer() {
     document.getElementById('editOverlay').classList.add('hidden');
   }, 220);
   document.getElementById('ed_image').value = '';
-  document.getElementById('ed_profile_photo').value = '';
   ed_newFiles = [];
-  ed_profilePhotoFile = null;
 }
 
 // Enlarge a gallery thumbnail; arrows page through the whole gallery (saved + new)
@@ -70,11 +57,14 @@ function ed_renderGallery() {
   const gallery = document.getElementById('ed_gallery');
   const total   = ed_savedImages.length + ed_newFiles.length;
 
+  // The first photo is the profile photo
+  const MAIN = '<span class="absolute top-0.5 right-0.5 text-[10px] font-bold bg-purple-600 text-white px-1 rounded">ראשית</span>';
   let html = '';
   ed_savedImages.forEach((url, i) => {
     html += `
       <div class="relative w-20 h-20 shrink-0">
         <img src="${escapeHtml(safeUrl(url))}" class="w-full h-full rounded-xl object-cover cursor-zoom-in border-2 border-purple-200" onclick="ed_openGalleryImage(this)"/>
+        ${i === 0 ? MAIN : ''}
         <button onclick="ed_removeSaved(${i})"
           class="absolute -top-1.5 -left-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center leading-none hover:bg-red-600">✕</button>
       </div>`;
@@ -85,6 +75,7 @@ function ed_renderGallery() {
       <div class="relative w-20 h-20 shrink-0">
         <img src="${url}" class="w-full h-full rounded-xl object-cover cursor-zoom-in border-2 border-blue-200 opacity-80" onclick="ed_openGalleryImage(this)"/>
         <span class="absolute bottom-0.5 right-0.5 text-xs bg-blue-500 text-white px-1 rounded">חדשה</span>
+        ${!ed_savedImages.length && i === 0 ? MAIN : ''}
         <button onclick="ed_removeNew(${i})"
           class="absolute -top-1.5 -left-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center leading-none hover:bg-red-600">✕</button>
       </div>`;
@@ -111,18 +102,6 @@ function ed_removeSaved(index) {
 function ed_removeNew(index) {
   ed_newFiles.splice(index, 1);
   ed_renderGallery();
-}
-
-function ed_previewProfilePhoto(input) {
-  const file = input.files[0];
-  if (!file) return;
-  ed_profilePhotoFile = file;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const wrap = document.getElementById('ed_profilePhotoWrap');
-    wrap.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover cursor-zoom-in" onclick="openImageLightbox(this.src)"/>`;
-  };
-  reader.readAsDataURL(file);
 }
 
 function ed_renderTagChips(containerId, tags, selectedSet) {
@@ -222,11 +201,8 @@ async function handleSaveProfile() {
     );
     const hobbyImages = [...ed_savedImages, ...uploadedUrls];
 
-    // Upload new profile photo if chosen
-    let profilePhotoUrl = current.profilePhotoURL || '';
-    if (ed_profilePhotoFile) {
-      profilePhotoUrl = await uploadProfilePhoto(ed_profilePhotoFile, current.email);
-    }
+    // The first photo is the profile photo
+    const profilePhotoUrl = hobbyImages[0] || '';
 
     const cityData = CITIES.find(c => c.name === city);
     const updated = {
