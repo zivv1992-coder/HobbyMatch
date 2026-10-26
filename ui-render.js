@@ -4,6 +4,17 @@ function escapeHtml(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+// A value inside a '…' JS string within onclick="…": JS-escape first, then HTML-escape for the attribute
+function jsArg(s) {
+  return escapeHtml(String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
+}
+
+// Only web / phone / mail links reach href or src — blocks javascript: and data: URLs
+function safeUrl(u) {
+  const s = String(u || '').trim();
+  return /^(https?:|tel:|mailto:)/i.test(s) ? s : '#';
+}
+
 // ─── Profile Card ─────────────────────────────────────────────────────────────
 
 const HEART_FILLED = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/></svg>`;
@@ -131,7 +142,7 @@ function renderCard(user, isLiked, myUser, isMatch) {
          onclick="event.stopPropagation(); showGuestSignupWall()"
        >${HEART_OUTLINE}<span class="like-label text-sm font-semibold">לייק</span></button>`
     : `<button class="${heartBtnClass}"
-         onclick="event.stopPropagation(); handleLike('${escapeHtml(user.email)}', '${escapeHtml(user.fullName)}', this)"
+         onclick="event.stopPropagation(); handleLike('${jsArg(user.email)}', '${jsArg(user.fullName)}', this)"
          data-liked="${isLiked}"
        >${isLiked ? HEART_FILLED : HEART_OUTLINE}<span class="like-label text-sm font-semibold">${isLiked ? 'ביטול לייק' : 'לייק'}</span></button>`;
 
@@ -272,7 +283,7 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
         </button>` : myUser && isMatched ? `
         <div class="flex flex-col gap-2">
           <div class="flex gap-2">
-            <button onclick="openChat('${user.email.replace(/'/g,"\\'")}', '${displayName(user.fullName).replace(/'/g,"\\'")}'); document.getElementById('profileModal').remove()"
+            <button onclick="openChat('${jsArg(user.email)}', '${jsArg(displayName(user.fullName))}'); document.getElementById('profileModal').remove()"
               class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold text-sm border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 transition">
               💬 צ'אט
             </button>
@@ -281,14 +292,14 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
               📱 ווצאפ
             </a>` : ''}
           </div>
-          <button onclick="handleUnmatch('${user.email.replace(/'/g,"\\'")}', this)"
+          <button onclick="handleUnmatch('${jsArg(user.email)}', this)"
             class="w-full py-2.5 rounded-xl font-bold text-sm border border-red-200 text-red-500 bg-red-50 hover:bg-red-100 transition">
             💔 ביטול מאצ'
           </button>
         </div>` : myUser ? `${messageButtonHtml(user.email, 'w-full py-3 mb-2')}<button
           id="modalLikeBtn"
           class="w-full py-3 rounded-xl font-bold text-sm transition ${likedClass}"
-          onclick="handleModalLike('${user.email}', '${user.fullName}', this)"
+          onclick="handleModalLike('${jsArg(user.email)}', '${jsArg(user.fullName)}', this)"
           data-liked="${isLiked}"
         >${likedText}</button>` : ''}
 
@@ -333,7 +344,7 @@ function showReportModal(reportedEmail, reportedName, reporterEmail, reporterNam
       </div>
       <p id="reportError" class="hidden text-xs text-red-500 mb-2"></p>
       <button id="reportSubmitBtn"
-        onclick="submitReportFromModal('${reportedEmail}', '${reporterEmail}', '${reporterName}', this)"
+        onclick="submitReportFromModal('${jsArg(reportedEmail)}', '${jsArg(reporterEmail)}', '${jsArg(reporterName)}', this)"
         class="w-full py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold text-sm rounded-xl transition">
         שלח דיווח
       </button>
@@ -395,8 +406,8 @@ function renderMatchCard(user, myUser) {
        </a>`
     : ``;
 
-  const safeEmail = (user.email || '').replace(/'/g, "\\'");
-  const safeName  = displayName(user.fullName).replace(/'/g, "\\'");
+  const safeEmail = jsArg(user.email);
+  const safeName  = jsArg(displayName(user.fullName));
   const userJson   = JSON.stringify(user).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const myUserJson = JSON.stringify(myUser || null).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   return `
@@ -455,7 +466,7 @@ function showMatchPopup(myUser, matchedUser) {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.523 5.83L.057 23.57a.5.5 0 0 0 .611.611l5.74-1.466A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.944 9.944 0 0 1-5.073-1.386l-.363-.215-3.761.961.977-3.762-.232-.375A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
         שלח הודעה בווצאפ
       </a>
-      <button onclick="document.getElementById('matchPopup').remove(); openChat('${matchedUser.email}', '${displayName(matchedUser.fullName).replace(/'/g, "\\'")}')"
+      <button onclick="document.getElementById('matchPopup').remove(); openChat('${jsArg(matchedUser.email)}', '${jsArg(displayName(matchedUser.fullName))}')"
         class="flex items-center justify-center gap-2 w-full font-bold py-3 rounded-xl mb-3 transition"
         style="background:#f5f3ff;color:#6d28d9;border:1.5px solid #ddd6fe;">
         💬 שלח הודעה בצ'אט

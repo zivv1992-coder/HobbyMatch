@@ -605,7 +605,7 @@
               ${profilePhotoHtml}
               <div>
                 <p class="font-bold text-gray-800 leading-tight">${escapeHtml(u.fullName || '—')}</p>
-                <p class="text-xs text-gray-400">${u.age ? u.age + ' שנים' : ''}</p>
+                <p class="text-xs text-gray-400">${u.age ? escapeHtml(u.age) + ' שנים' : ''}</p>
               </div>
             </div>
           </td>
@@ -688,7 +688,7 @@
         <p class="text-sm text-gray-500">${escapeHtml(u.email || '')}</p>
       </div>
       <div class="grid grid-cols-2 gap-2 text-sm mb-4">
-        <div class="bg-gray-50 rounded-xl p-3"><span class="text-gray-400 text-xs block">גיל</span><span class="font-bold">${u.age || '—'}</span></div>
+        <div class="bg-gray-50 rounded-xl p-3"><span class="text-gray-400 text-xs block">גיל</span><span class="font-bold">${escapeHtml(u.age || '—')}</span></div>
         <div class="bg-gray-50 rounded-xl p-3"><span class="text-gray-400 text-xs block">עיר</span><span class="font-bold">${escapeHtml(u.city || '—')}</span></div>
         <div class="bg-gray-50 rounded-xl p-3"><span class="text-gray-400 text-xs block">טלפון</span><span class="font-bold">${escapeHtml(u.phone || '—')}</span></div>
         <div class="bg-gray-50 rounded-xl p-3"><span class="text-gray-400 text-xs block">תחביב</span><span class="font-bold">${escapeHtml(u.hobby || '—')}</span></div>

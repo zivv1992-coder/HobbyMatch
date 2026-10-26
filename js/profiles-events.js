@@ -58,7 +58,7 @@ function evRenderActivityChips() {
     const chip = document.createElement('button');
     chip.type = 'button';
     chip.className = getTagChipActiveClassByIndex(idx) + ' cursor-pointer';
-    chip.innerHTML = `${tag} <span style="margin-right:4px;opacity:0.7;">✕</span>`;
+    chip.innerHTML = `${escapeHtml(tag)} <span style="margin-right:4px;opacity:0.7;">✕</span>`;
     chip.onclick = (e) => {
       e.stopPropagation();
       ev_selectedActivities.delete(tag);
@@ -303,7 +303,7 @@ function openEventDetailModal(eventId) {
   const contactFooterHtml = `
     <div style="padding:16px 24px 20px;border-top:1.5px solid #ede9fe;flex-shrink:0;" dir="rtl">
       ${orgName ? `<p style="font-size:0.8rem;color:#6b7280;text-align:center;margin:0 0 12px;">
-        יוזם/ת הפעילות: <strong style="color:#5b21b6;">${orgName}</strong></p>` : ''}
+        יוזם/ת הפעילות: <strong style="color:#5b21b6;">${escapeHtml(orgName)}</strong></p>` : ''}
       ${waValid
         ? `<a href="https://wa.me/${waNum}" target="_blank" rel="noopener noreferrer"
             style="display:flex;align-items:center;justify-content:center;gap:8px;
@@ -329,10 +329,10 @@ function openEventDetailModal(eventId) {
             : 'background:#f9fafb;color:#374151;border-color:#e5e7eb;';
           const icon = link.type.includes('whatsapp') ? '💬'
             : link.type === 'maps' ? '📍' : link.type === 'waze' ? '🚗' : '🔗';
-          return `<a href="${link.url}" target="_blank" rel="noopener noreferrer"
+          return `<a href="${escapeHtml(safeUrl(link.url))}" target="_blank" rel="noopener noreferrer"
             style="display:inline-flex;align-items:center;gap:6px;font-size:0.8rem;font-weight:700;
                    padding:6px 14px;border-radius:10px;border:1px solid;${s}text-decoration:none;">
-            ${icon} ${link.label}</a>`;
+            ${icon} ${escapeHtml(link.label)}</a>`;
         }).join('')}
       </div>` : '';
 
@@ -405,7 +405,7 @@ function openEventDetailModal(eventId) {
       <div style="display:flex;align-items:flex-start;justify-content:space-between;
                   padding:20px 24px 16px;border-bottom:1.5px solid #ede9fe;flex-shrink:0;" dir="rtl">
         <div style="flex:1;padding-left:14px;">
-          <h2 style="font-size:1.25rem;font-weight:900;color:#3b0764;line-height:1.3;margin:0 0 8px;">${ev.title || ''}</h2>
+          <h2 style="font-size:1.25rem;font-weight:900;color:#3b0764;line-height:1.3;margin:0 0 8px;">${escapeHtml(ev.title || '')}</h2>
           ${ev.detectedHobbyTag
             ? `<span style="display:inline-flex;align-items:center;font-size:0.72rem;font-weight:600;
                             color:#6d28d9;border:1px solid #7c3aed;border-radius:999px;
@@ -450,7 +450,7 @@ function openEventDetailModal(eventId) {
           ? (me
             ? `<div style="display:flex;align-items:center;gap:10px;font-size:0.9rem;color:#374151;">
                  <span>📍</span>
-                 <span style="font-weight:500;flex:1;">${ev.location}</span>
+                 <span style="font-weight:500;flex:1;">${escapeHtml(ev.location)}</span>
                  <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}"
                     target="_blank" rel="noopener noreferrer"
                     style="display:inline-flex;align-items:center;gap:5px;font-size:0.75rem;font-weight:700;
@@ -462,7 +462,7 @@ function openEventDetailModal(eventId) {
                </div>`
             : `<div style="display:flex;align-items:center;gap:10px;font-size:0.85rem;color:#6b7280;">
                  <span>📍</span>
-                 <span style="font-weight:500;">${ev.location}</span>
+                 <span style="font-weight:500;">${escapeHtml(ev.location)}</span>
                  <span style="font-size:0.72rem;color:#9ca3af;background:#f3f4f6;padding:2px 8px;border-radius:999px;white-space:nowrap;">מיקום כללי</span>
                </div>`)
           : ''}
@@ -775,7 +775,7 @@ function renderEventCard(ev) {
       ? `<a href="https://wa.me/${waNum}" target="_blank" rel="noopener noreferrer" dir="rtl"
             class="flex items-center justify-center gap-2 w-full bg-[#25D366] text-white font-bold text-sm py-2.5 rounded-2xl hover:bg-[#1ebe5d] transition">
            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.523 5.83L.057 23.57a.5.5 0 0 0 .611.611l5.74-1.466A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.944 9.944 0 0 1-5.073-1.386l-.363-.215-3.761.961.977-3.762-.232-.375A9.944 9.944 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-           שלח הודעה ליוצר${ev.creatorName ? ' — ' + ev.creatorName : ''} בוואטסאפ
+           שלח הודעה ליוצר${ev.creatorName ? ' — ' + escapeHtml(ev.creatorName) : ''} בוואטסאפ
          </a>`
       : `<p class="text-center text-xs text-gray-400 py-1">🙋 הצטרפת! ניתן לפנות ליוצר דרך הפרופיל שלו.</p>`;
     waSection = `<div>${waLink}</div>`;
@@ -783,7 +783,7 @@ function renderEventCard(ev) {
 
   const hobbyTags = ((ev.associatedHobbies && ev.associatedHobbies.length)
     ? ev.associatedHobbies : [ev.hobby || '🎯 כללי']
-  ).map(h => `<span class="text-xs font-bold bg-violet-100 text-violet-700 px-2.5 py-1 rounded-full">${h}</span>`).join('');
+  ).map(h => `<span class="text-xs font-bold bg-violet-100 text-violet-700 px-2.5 py-1 rounded-full">${escapeHtml(h)}</span>`).join('');
 
   const matchBadge = isMatch
     ? `<span class="text-xs font-bold bg-amber-50 text-amber-600 border border-amber-200 px-2.5 py-1 rounded-full match-badge">✨ מתאים לך</span>`
@@ -806,9 +806,9 @@ function renderEventCard(ev) {
           : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100';
         const icon = link.type === 'whatsapp_group' || link.type === 'whatsapp' ? '💬'
           : link.type === 'maps' ? '📍' : link.type === 'waze' ? '🚗' : '🔗';
-        return `<a href="${link.url}" target="_blank" rel="noopener noreferrer"
+        return `<a href="${escapeHtml(safeUrl(link.url))}" target="_blank" rel="noopener noreferrer"
           class="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition ${styles}">
-          ${icon} ${link.label}
+          ${icon} ${escapeHtml(link.label)}
         </a>`;
       }).join('')}
     </div>` : '';
@@ -820,14 +820,14 @@ function renderEventCard(ev) {
 
       ${ev.imageUrl ? `
       <div class="relative w-full h-44 overflow-hidden">
-        <img src="${ev.imageUrl}" class="w-full h-full object-cover" alt="${ev.title || ''}"/>
+        <img src="${escapeHtml(safeUrl(ev.imageUrl))}" class="w-full h-full object-cover" alt="${escapeHtml(ev.title || '')}"/>
         <div class="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent"></div>
         <div class="absolute bottom-3 right-4 flex flex-wrap gap-1.5 items-center">${hobbyTags}${matchBadge}${pastBadge}</div>
       </div>` : `
       <div class="relative w-full h-28 overflow-hidden" style="background:linear-gradient(135deg,#4c1d95 0%,#2563eb 100%);">
         <div class="absolute inset-0 opacity-20" style="background-image:radial-gradient(circle at 20% 50%,#fff 1px,transparent 1px),radial-gradient(circle at 80% 20%,#fff 1px,transparent 1px);background-size:30px 30px;"></div>
         <div class="absolute inset-0 flex flex-col justify-end p-4">
-          <h3 class="font-black text-white text-lg leading-snug line-clamp-2 drop-shadow">${ev.title || ''}</h3>
+          <h3 class="font-black text-white text-lg leading-snug line-clamp-2 drop-shadow">${escapeHtml(ev.title || '')}</h3>
         </div>
         <div class="absolute top-3 left-3 flex flex-wrap gap-1.5 items-center">${matchBadge}${pastBadge}</div>
       </div>`}
@@ -836,7 +836,7 @@ function renderEventCard(ev) {
         ${!ev.imageUrl ? `<div class="flex flex-wrap gap-1.5 items-center">${hobbyTags}</div>` : `<div class="flex flex-wrap gap-1.5 items-center">${hobbyTags}${matchBadge}${pastBadge}</div>`}
 
         <div>
-          ${ev.imageUrl ? `<h3 class="font-black text-purple-900 text-lg leading-snug">${ev.title || ''}</h3>` : ''}
+          ${ev.imageUrl ? `<h3 class="font-black text-purple-900 text-lg leading-snug">${escapeHtml(ev.title || '')}</h3>` : ''}
           ${ev.detectedHobbyTag ? `
           <span style="display:inline-flex;align-items:center;font-size:0.72rem;font-weight:600;color:#6d28d9;border:1px solid #7c3aed;border-radius:999px;padding:2px 10px;background:transparent;margin-top:4px;">
             ${formatHobbyTag(ev.detectedHobbyTag)}
@@ -845,13 +845,13 @@ function renderEventCard(ev) {
 
         <div class="grid grid-cols-3 gap-2">
           ${dateStr ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">מתי</span><span class="text-xs font-bold text-gray-800 leading-tight">${dateStr}</span>${timeStr ? `<span class="text-xs font-semibold text-violet-600">${timeStr}</span>` : ''}</div>` : ''}
-          ${ev.location ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">איפה</span><span class="text-xs font-bold text-gray-800 leading-tight line-clamp-2">${ev.location}${eventKmLabel(ev)}</span></div>` : ''}
+          ${ev.location ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">איפה</span><span class="text-xs font-bold text-gray-800 leading-tight line-clamp-2">${escapeHtml(ev.location)}${eventKmLabel(ev)}</span></div>` : ''}
           ${(ev.organizerName || ev.creatorName) ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">מארגן</span><span class="text-xs font-bold text-gray-800 leading-tight line-clamp-2">${escapeHtml(eventOrganizerDisplay(ev))}</span></div>` : ''}
         </div>
 
         ${atmosphereRow ? `<div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">אווירת מפגש</p>${atmosphereRow}</div>` : ''}
 
-        ${ev.description ? `<p class="text-sm text-gray-500 leading-relaxed line-clamp-2">${ev.description}</p>` : ''}
+        ${ev.description ? `<p class="text-sm text-gray-500 leading-relaxed line-clamp-2">${escapeHtml(ev.description)}</p>` : ''}
         ${actionLinksHtml}
 
         <div class="flex items-center justify-between pt-3 border-t border-gray-50 flex-wrap gap-3">
@@ -882,7 +882,7 @@ function renderEventCard(ev) {
 
         ${isPast && iAmIn ? `
         <button onclick="openPostEventModal('${ev.id}', this)"
-          data-ev-title="${(ev.title||'').replace(/"/g,'&quot;')}"
+          data-ev-title="${escapeHtml(ev.title || '')}"
           class="w-full text-sm font-semibold text-gray-400 border border-dashed border-gray-200 py-2.5 rounded-2xl hover:bg-gray-50 hover:text-purple-600 hover:border-purple-200 transition">
           🙌 שתף את החוויה שלך מהפעילות הזו
         </button>` : ''}
@@ -1028,7 +1028,7 @@ async function handleCreateEvent() {
   if (!btn._dedupeConfirmed) {
     const dup = findDuplicateEvent(title, dtVal, location);
     if (dup) {
-      errEl.innerHTML = `⚠️ פעילות דומה כבר קיימת: <strong>"${dup.title}"</strong>. לחץ שוב לפרסום בכל זאת.`;
+      errEl.innerHTML = `⚠️ פעילות דומה כבר קיימת: <strong>"${escapeHtml(dup.title)}"</strong>. לחץ שוב לפרסום בכל זאת.`;
       errEl.classList.remove('hidden');
       btn._dedupeConfirmed = true;
       return;
@@ -1424,7 +1424,7 @@ function handleParseText() {
     linksList.innerHTML = parsed.links.map(link => {
       const icon = link.type === 'whatsapp_group' || link.type === 'whatsapp' ? '💬'
         : link.type === 'maps' ? '📍' : link.type === 'waze' ? '🚗' : '🔗';
-      return `<span class="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-purple-100 text-purple-700">${icon} ${link.label}</span>`;
+      return `<span class="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-purple-100 text-purple-700">${icon} ${escapeHtml(link.label)}</span>`;
     }).join('');
     linksPreview.classList.remove('hidden');
   }

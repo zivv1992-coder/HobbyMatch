@@ -9,7 +9,7 @@ const REQUEST_MAX_LEN = 300;
 // Button used on people cards and in the profile modal
 function messageButtonHtml(email, cls = '') {
   const sent = sentRequestEmails.has(email);
-  return `<button data-msg-email="${escapeHtml(email)}" data-cls="${cls}" ${sent ? 'disabled' : `onclick="event.stopPropagation(); openMessageComposer('${email.replace(/'/g, "\\'")}')"`}
+  return `<button data-msg-email="${escapeHtml(email)}" data-cls="${cls}" ${sent ? 'disabled' : `onclick="event.stopPropagation(); openMessageComposer('${jsArg(email)}')"`}
     class="${cls} inline-flex items-center justify-center gap-1.5 font-bold text-sm rounded-xl transition ${sent
       ? 'text-purple-400 bg-purple-50 cursor-default'
       : 'text-purple-700 bg-purple-50 hover:bg-purple-100'}">${sent ? '✓ ההודעה נשלחה' : '💬 שלח הודעה'}</button>`;
@@ -59,7 +59,7 @@ async function openMessageComposer(email) {
       <textarea id="mc_text" rows="4" maxlength="${REQUEST_MAX_LEN}"
         class="w-full border border-purple-200 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:border-purple-400">${escapeHtml(_suggestMessage(user))}</textarea>
       <p class="text-xs text-gray-400 mt-1.5 leading-relaxed">ההודעה תגיע כבקשה. אם ${escapeHtml(name)} י/תאשר — תיפתח שיחה ביניכם.</p>
-      <button id="mc_send" onclick="sendMessageFromComposer('${email.replace(/'/g, "\\'")}')"
+      <button id="mc_send" onclick="sendMessageFromComposer('${jsArg(email)}')"
         class="w-full mt-3 bg-gradient-to-l from-purple-700 to-blue-600 text-white font-bold py-3 rounded-xl hover:opacity-90 transition">
         שלח ←
       </button>

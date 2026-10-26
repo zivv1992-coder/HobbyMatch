@@ -243,8 +243,8 @@ function _renderNotifPanel() {
           onclick="closeNotifPanel(); switchTab('matches')">
           ${imgHtml}
           <div class="flex-1 min-w-0">
-            <p class="font-bold text-purple-900 text-sm truncate">${escapeHtml(displayName(p.fullName || p.name))}, ${p.age || ''}</p>
-            <p class="text-xs text-gray-400 truncate">📍 ${p.city || ''} · 🎯 ${p.hobby || ''}</p>
+            <p class="font-bold text-purple-900 text-sm truncate">${escapeHtml(displayName(p.fullName || p.name))}, ${escapeHtml(p.age || '')}</p>
+            <p class="text-xs text-gray-400 truncate">📍 ${escapeHtml(p.city || '')} · 🎯 ${escapeHtml(p.hobby || '')}</p>
           </div>
           <span class="text-xs bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full shrink-0">חיבור! 🤝</span>
         </div>`;
@@ -255,8 +255,8 @@ function _renderNotifPanel() {
   if (unreadChats.length > 0) {
     html += `<div class="px-4 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50 border-b border-gray-100 ${unseenMatches.length > 0 ? 'border-t' : ''}">הודעות שלא נקראו</div>`;
     html += unreadChats.map(({ user: p, count }) => {
-      const safeEmail = (p.email || '').replace(/'/g, "\\'");
-      const safeName  = displayName(p.fullName).replace(/'/g, "\\'");
+      const safeEmail = jsArg(p.email);
+      const safeName  = jsArg(displayName(p.fullName));
       const imgHtml = p.profilePhotoURL || p.hobbyImageUrl
         ? `<img src="${p.profilePhotoURL || p.hobbyImageUrl}" class="w-10 h-10 rounded-full object-cover border-2 border-blue-100 flex-shrink-0" loading="lazy"/>`
         : `<div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 text-lg">💬</div>`;
