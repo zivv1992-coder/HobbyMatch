@@ -4,8 +4,7 @@
 
 ## 🔴 דחוף — פרטיות ואבטחה
 
-### 0. להוסיף חוק Firestore ל-`message_requests` (2026-10-26)
-- בלי זה "💬 שלח הודעה" ייכשל באתר החי. Firebase console → Firestore → Rules → להוסיף את הבלוק מ-CLAUDE.md → Publish.
+### ~~0. חוק Firestore ל-`message_requests`~~ — פורסם 2026-10-26 (`firestore.rules`).
 
 ### 1. מספרי טלפון ופרטים אישיים חשופים לכל אחד
 - חוקי Firestore מאפשרים `read: if true` על `users` — כל אחד עם מפתח ה-API (שגלוי בקוד) יכול לשלוף את כל

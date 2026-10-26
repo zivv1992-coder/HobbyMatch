@@ -96,51 +96,10 @@ Chat ID = sorted **sanitized** emails joined with `__` (`_getChatId` in profiles
 ---
 
 ## Firestore Security Rules
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read: if true;
-      allow write: if true;
-    }
-    match /likes/{likeId} {
-      allow read, write: if true;
-    }
-    match /chats/{chatId}/messages/{messageId} {
-      allow read, write: if true;
-    }
-    match /events/{eventId} {
-      allow read, write: if true;
-    }
-    match /message_requests/{docId} {
-      allow read, write: if true;
-    }
-    match /feedback/{docId} {
-      allow read, write: if true;
-    }
-    match /reports/{docId} {
-      allow read: if request.auth != null && request.auth.token.email == 'zivv1992@gmail.com';
-      allow write: if true;
-    }
-    match /event_reviews/{docId} {
-      allow create: if true;
-      allow read: if request.auth != null && request.auth.token.email == 'zivv1992@gmail.com';
-    }
-    match /analytics_events/{docId} {
-      allow create: if true;
-      allow read: if request.auth != null && request.auth.token.email == 'zivv1992@gmail.com';
-    }
-    match /admin_verify/{docId} {
-      allow read, write: if request.auth != null && request.auth.token.email == 'zivv1992@gmail.com';
-    }
-  }
-}
-```
-
----
-
-Rules live only in the Firebase console (no rules file in the repo) — change them there.
+Source of truth: **`firestore.rules`** (repo root) = what is published in the Firebase console
+(Firestore → Rules). Edit the file, then copy it into the console and Publish — copying from a chat/terminal
+wraps long lines and breaks strings. Most collections are still `if true` (see docs/BACKLOG.md #1–2);
+`message_requests` allows create(pending) + status-only update, no delete. Published 2026-10-26.
 
 ---
 
