@@ -18,10 +18,10 @@ test.describe('Landing page (index.html)', () => {
     await expect(page.locator('body')).toContainText('🤝');
   });
 
-  test('register button links to register.html?mode=register', async ({ page }) => {
+  test('register button starts sign-up with Tahbiva', async ({ page }) => {
     await page.goto('/index.html');
     const regBtn = page.locator('a', { hasText: 'הרשמה' }).first();
-    await expect(regBtn).toHaveAttribute('href', 'register.html?mode=register');
+    await expect(regBtn).toHaveAttribute('href', 'tahbiva.html');
   });
 
   test('login button links to register.html?mode=login', async ({ page }) => {

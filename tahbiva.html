@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>קונקשן — היכרות עם תחביבה</title>
+  <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+  <script defer src="/_vercel/insights/script.js"></script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤝</text></svg>">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4c1d95">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100..900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="firebase-logic.js"></script>
+  <script src="js/profiles-utils.js"></script>
+  <script src="js/hobby-picker.js"></script>
+  <script src="js/city-picker.js"></script>
+  <script src="js/analytics.js"></script>
+  <style>
+    :root { --p:#4c1d95; --p2:#7c3aed; --soft:#f3efff; --line:#ebe5ff; --bg:#ece8fb; --ink:#2e1065; }
+    * { -webkit-tap-highlight-color: transparent; }
+    body { font-family:'Heebo',sans-serif; background:var(--bg); margin:0; color:var(--ink); }
+    .phone { position:relative; width:100%; max-width:420px; height:100dvh; margin:0 auto; background:#fbfaff; overflow:hidden; display:flex; flex-direction:column; }
+    @media (min-width:480px) {
+      body { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+      .phone { height:min(860px, calc(100dvh - 40px)); border-radius:32px; box-shadow:0 24px 70px #4c1d9526; }
+    }
+    .topbar { height:56px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:0 14px; }
+    .iconbtn { width:38px; height:38px; border-radius:50%; display:grid; place-items:center; font-size:1.2rem; color:var(--p); background:#fff; border:1px solid var(--line); transition:transform .15s; }
+    .iconbtn:active { transform:scale(.92); }
+    .dot { width:7px; height:7px; border-radius:9px; background:#ddd5f5; transition:all .35s ease; }
+    .dot.on { width:22px; background:var(--p); }
+    #stage { position:relative; flex:1; overflow:hidden; }
+
+    /* Screen transitions — the one polished visual element */
+    .screen { position:absolute; inset:0; overflow-y:auto; overflow-x:hidden; padding:6px 22px 24px; display:flex; flex-direction:column;
+              opacity:0; visibility:hidden; pointer-events:none;
+              transition:opacity .38s ease, transform .38s cubic-bezier(.2,.8,.2,1), visibility 0s .38s; }
+    .screen.active { opacity:1; visibility:visible; pointer-events:auto; transition-delay:0s; }
+
+    .btn { display:block; width:100%; padding:15px; border-radius:18px; font-weight:800; font-size:1.05rem; transition:transform .15s, opacity .2s; }
+    .btn:active { transform:scale(.97); }
+    .btn-p { background:var(--p); color:#fff; }
+    .btn-s { background:#fff; color:var(--p); border:2px solid #e4dcff; }
+    .link { color:#8b7fb0; font-weight:600; font-size:.92rem; padding:10px; }
+    .owl { width:58px; height:58px; border-radius:50%; background:#fde68a; display:grid; place-items:center; font-size:2rem; flex-shrink:0; }
+    .owl.big { width:110px; height:110px; font-size:3.8rem; animation:float 4s ease-in-out infinite; }
+    @keyframes float { 50% { transform:translateY(-8px); } }
+    .bubble { background:#fff; border:1px solid var(--line); border-radius:18px 18px 4px 18px; padding:10px 14px; font-weight:600; box-shadow:0 4px 14px #4c1d950d; transition:opacity .2s; }
+    .tile { background:#fff; border:2px solid var(--line); border-radius:20px; transition:transform .15s, border-color .2s, background .2s; position:relative; }
+    .tile:active { transform:scale(.96); }
+    .tile.on { border-color:var(--p2); background:var(--soft); animation:bump .3s ease; }
+    @keyframes bump { 50% { transform:scale(1.06); } }
+    .tile .ok { position:absolute; top:8px; left:8px; width:24px; height:24px; border-radius:50%; background:var(--p2); color:#fff; font-size:.75rem;
+                display:grid; place-items:center; transform:scale(0); transition:transform .2s; }
+    .tile.on .ok { transform:scale(1); }
+
+    /* Step 1: category list (+ / ✓) */
+    .cat-card { width:100%; background:#fff; border:2.5px solid var(--line); border-radius:22px; padding:14px 16px; display:flex; align-items:center; gap:14px; text-align:right; transition:all .2s; }
+    .cat-card:active { transform:scale(.97); }
+    .cat-card.on { border-color:var(--p2); background:var(--soft); }
+    .cat-card .mark { width:28px; height:28px; border-radius:50%; display:grid; place-items:center; background:var(--soft); color:var(--p2); font-weight:900; transition:all .2s; }
+    .cat-card.on .mark { background:var(--p2); color:#fff; }
+
+    .pill { padding:8px 12px; border-radius:999px; background:#fff; border:1.5px solid #e4dcff; font-weight:600; font-size:.92rem; transition:all .2s; }
+    .pill:active { transform:scale(.93); }
+    .pill.on { background:var(--p2); color:#fff; border-color:var(--p2); animation:bump .3s ease; }
+
+    /* Discovery cards */
+    .hcard { background:#fff; border-radius:28px; box-shadow:0 12px 34px #4c1d9518; padding:28px 20px; text-align:center; transition:transform .3s ease, opacity .3s ease; }
+    .pop { animation:pop .35s ease; }
+    @keyframes pop { from { transform:scale(.9) translateY(12px); opacity:0; } }
+    .fly-love { transform:translateX(-130%) rotate(-14deg); opacity:0; }
+    .fly-skip { transform:translateY(60px) scale(.9); opacity:0; }
+    .st { border-radius:16px; padding:12px 6px; font-weight:800; font-size:.95rem; transition:transform .15s; }
+    .st:active { transform:scale(.94); }
+
+    .chip { display:inline-flex; gap:6px; align-items:center; padding:7px 8px 7px 12px; border-radius:999px; background:#fff; border:1.5px solid #e8e1ff; font-weight:600; font-size:.92rem; margin:3px; transition:opacity .2s, transform .2s; }
+    .chip .x { width:22px; height:22px; border-radius:50%; background:var(--soft); color:#7c6aa8; font-size:.7rem; display:grid; place-items:center; }
+    .chip.gone { opacity:0; transform:scale(.7); }
+    .tag { font-size:.7rem; font-weight:800; color:#a78bfa; background:var(--soft); border-radius:999px; padding:2px 8px; }
+    .ice { padding:7px 11px; border-radius:999px; background:var(--soft); font-weight:700; font-size:.85rem; color:var(--p); }
+    .field { width:100%; padding:16px; border-radius:20px; border:2px solid var(--line); background:#fff; text-align:center; font-size:1.2rem; font-weight:700; outline:none; }
+    .field:focus { border-color:var(--p2); }
+    #toast { position:absolute; bottom:40px; left:50%; transform:translate(-50%,20px); opacity:0; background:var(--ink); color:#fff; padding:10px 16px;
+             border-radius:14px; font-weight:600; font-size:.9rem; transition:.3s; pointer-events:none; white-space:nowrap; z-index:50; }
+    #toast.show { opacity:1; transform:translate(-50%,0); }
+    input, textarea { font:inherit; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } }
+  </style>
+</head>
+<body>
+<div class="phone">
+  <header class="topbar">
+    <button id="backBtn" class="iconbtn" onclick="back()" aria-label="חזרה">→</button>
+    <div id="dots" class="flex gap-1.5"></div>
+    <span class="w-[38px]"></span>
+  </header>
+
+  <main id="stage">
+
+    <!-- Hi: who Tahbiva is -->
+    <section class="screen" id="hi">
+      <div class="flex-1 flex flex-col items-center justify-center text-center gap-4">
+        <div class="owl big">🦉</div>
+        <h2 class="text-3xl font-black">היי, אני תחביבה 👋</h2>
+        <p class="text-[#7c6aa8] font-semibold -mt-2">השדכנית של התחביבים בקונקשן</p>
+        <div class="flex flex-col gap-2 w-full text-right mt-2">
+          <div class="tile p-3 flex items-center gap-3"><span class="text-2xl">🎯</span><span class="font-semibold">נגלה ביחד מה מעניין אותך</span></div>
+          <div class="tile p-3 flex items-center gap-3"><span class="text-2xl">📍</span><span class="font-semibold">אראה לך מי ומה קורה לידך</span></div>
+          <div class="tile p-3 flex items-center gap-3"><span class="text-2xl">🤝</span><span class="font-semibold">אחבר אותך לאנשים ולפעילויות</span></div>
+        </div>
+        <p class="text-sm text-[#a59bc7] font-semibold">בלי טפסים. מבטיחה 🤞</p>
+      </div>
+      <button class="btn btn-p" onclick="startTot()">יאללה ←</button>
+      <a href="register.html?mode=login" class="link mx-auto">כבר יש לי חשבון</a>
+    </section>
+
+    <!-- This or that -->
+    <section class="screen" id="tot">
+      <div class="flex items-end gap-2 mb-6"><div class="owl">🦉</div><div class="bubble" id="totSay"></div></div>
+      <div id="totBox" class="flex-1 flex flex-col justify-center"></div>
+    </section>
+
+    <!-- Step 1: broad categories -->
+    <section class="screen" id="interests">
+      <div class="flex items-end gap-2 mb-5"><div class="owl">🦉</div><div class="bubble" id="intSay"></div></div>
+      <div id="catGrid" class="flex flex-col gap-2.5"></div>
+      <div class="mt-auto pt-5"><button class="btn btn-p" id="interestsNext" onclick="interestsNext()">המשך ←</button></div>
+    </section>
+
+    <!-- Step 2: one chosen category at a time -->
+    <section class="screen" id="details">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2"><div class="owl" style="width:40px;height:40px;font-size:1.3rem">🦉</div>
+          <div class="text-sm font-bold text-[#7c6aa8]" id="dProgress"></div></div>
+        <button class="text-xs font-bold text-[#7c3aed] bg-[#f3efff] px-3 py-1.5 rounded-full" onclick="changeCats()">שינוי קטגוריות</button>
+      </div>
+      <div id="dCard" class="flex-1 flex flex-col justify-center"></div>
+      <div class="mt-auto pt-4 flex gap-3">
+        <button id="dPrev" class="btn btn-s w-1/3" onclick="back()">→ חזרה</button>
+        <button id="dNext" class="btn btn-p flex-1" onclick="detailsNext()"></button>
+      </div>
+    </section>
+
+    <!-- Where: location early, so nearby people can show right away -->
+    <section class="screen" id="where">
+      <div class="flex items-end gap-2 mb-6"><div class="owl">🦉</div><div class="bubble">איפה את/ה גר/ה? 📍</div></div>
+      <div class="flex flex-col items-center gap-4">
+        <input type="hidden" id="whereCity">
+        <div id="whereChips" class="flex flex-wrap justify-center gap-2"></div>
+      </div>
+      <div class="mt-auto pt-5"><button class="btn btn-p" onclick="whereNext()">המשך ←</button></div>
+    </section>
+
+    <!-- Nearby: instant value — real people with shared hobbies + one activity -->
+    <section class="screen" id="nearby">
+      <div class="flex items-end gap-2 mb-4"><div class="owl">🦉</div><div class="bubble" id="nearSay"></div></div>
+      <div id="nearBox"></div>
+      <div class="mt-auto pt-5"><button class="btn btn-p" onclick="toDiscover()">המשך ←</button></div>
+    </section>
+
+    <!-- Discover new hobbies -->
+    <section class="screen" id="discover">
+      <h2 class="text-2xl font-black">גילוי תחביבים חדשים ✨</h2>
+      <div class="flex items-end gap-2 mt-3 mb-4"><div class="owl">🦉</div><div class="bubble" id="discSay"></div></div>
+      <div id="discSlot" class="flex-1 flex flex-col justify-center"></div>
+    </section>
+
+    <!-- My hobbies (editable) -->
+    <section class="screen" id="profile">
+      <h2 class="text-2xl font-black">התחביבים שלי</h2>
+      <p class="text-sm text-[#8b7fb0] font-semibold mb-3">ככה זה יופיע בפרופיל שלך</p>
+      <div class="flex items-end gap-2 mb-4"><div class="owl">🦉</div><div class="bubble" id="profileSay"></div></div>
+      <div id="profileBox"></div>
+      <div class="mt-auto pt-5">
+        <button class="btn btn-p" onclick="go('looking')">המשך ←</button>
+        <button class="link block mx-auto" onclick="discoverMore()">לגלות עוד תחביבים</button>
+      </div>
+    </section>
+
+    <!-- Looking for -->
+    <section class="screen" id="looking">
+      <div class="flex items-end gap-2 mb-6"><div class="owl">🦉</div><div class="bubble">ומה את/ה מחפש/ת?</div></div>
+      <div id="lookBox" class="flex flex-col gap-3"></div>
+      <div class="mt-auto pt-5">
+        <button class="btn btn-p" onclick="startAbout()">המשך ←</button>
+        <button class="link block mx-auto" onclick="startAbout()">דלג</button>
+      </div>
+    </section>
+
+    <!-- About me: bio, age, phone — one question at a time -->
+    <section class="screen" id="about">
+      <div class="flex items-end gap-2 mb-6"><div class="owl">🦉</div><div class="bubble" id="aboutSay"></div></div>
+      <form id="aboutForm" onsubmit="aboutNext(event)" class="flex-1 flex flex-col"></form>
+    </section>
+
+    <!-- Ready → sign-up -->
+    <section class="screen" id="ready">
+      <div class="flex-1 flex flex-col items-center justify-center text-center gap-4">
+        <div class="owl big">🦉</div>
+        <h2 class="text-3xl font-black">מוכנ/ה?</h2>
+        <p class="text-[#7c6aa8] font-semibold" id="readyText"></p>
+      </div>
+      <button class="btn btn-p mb-2" onclick="finish()">שמרו לי את הפרופיל ←</button>
+      <button class="link mx-auto" onclick="go('interests')">אני רוצה לחקור עוד קודם</button>
+    </section>
+
+  </main>
+  <div id="toast"></div>
+</div>
+
+<script src="js/tahbiva.js"></script>
+</body>
+</html>

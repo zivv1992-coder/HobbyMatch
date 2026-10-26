@@ -303,7 +303,7 @@ function openEventDetailModal(eventId) {
   const contactFooterHtml = `
     <div style="padding:16px 24px 20px;border-top:1.5px solid #ede9fe;flex-shrink:0;" dir="rtl">
       ${orgName ? `<p style="font-size:0.8rem;color:#6b7280;text-align:center;margin:0 0 12px;">
-        יוזם האירוע: <strong style="color:#5b21b6;">${orgName}</strong></p>` : ''}
+        יוזם/ת הפעילות: <strong style="color:#5b21b6;">${orgName}</strong></p>` : ''}
       ${waValid
         ? `<a href="https://wa.me/${waNum}" target="_blank" rel="noopener noreferrer"
             style="display:flex;align-items:center;justify-content:center;gap:8px;
@@ -372,7 +372,7 @@ function openEventDetailModal(eventId) {
       ${eventAtmosphereBlock}
       ${ev.description ? `
       <div>
-        <p style="font-size:0.7rem;font-weight:700;color:#9ca3af;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em;">תיאור האירוע</p>
+        <p style="font-size:0.7rem;font-weight:700;color:#9ca3af;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em;">תיאור הפעילות</p>
         <div style="font-size:0.93rem;color:#374151;line-height:1.85;">${linkifyText(ev.description)}</div>
       </div>` : ''}
     </div>`;
@@ -457,7 +457,7 @@ function openEventDetailModal(eventId) {
                            padding:5px 12px;border-radius:999px;background:#eff6ff;color:#1d4ed8;
                            border:1px solid #bfdbfe;text-decoration:none;white-space:nowrap;flex-shrink:0;"
                     onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'">
-                   🗺️ נווט לאירוע
+                   🗺️ נווט לפעילות
                  </a>
                </div>`
             : `<div style="display:flex;align-items:center;gap:10px;font-size:0.85rem;color:#6b7280;">
@@ -481,7 +481,7 @@ function openEventDetailModal(eventId) {
                        font-family:'Heebo',sans-serif;font-size:1.05rem;font-weight:800;
                        padding:16px;border-radius:16px;text-decoration:none;
                        box-shadow:0 4px 22px rgba(124,58,237,0.28);">
-               <span style="font-size:1.2rem;">🔑</span> כנס להצטרפות לאירוע
+               <span style="font-size:1.2rem;">🔑</span> כנס להצטרפות לפעילות
              </a>
            </div>`
 
@@ -491,7 +491,7 @@ function openEventDetailModal(eventId) {
            <div style="padding:12px 24px;border-top:1px solid #f3f4f6;flex-shrink:0;" dir="rtl">
              <div style="display:inline-flex;align-items:center;gap:6px;background:#f0fdf4;border:1px solid #bbf7d0;
                          border-radius:999px;padding:5px 14px;font-size:0.8rem;font-weight:700;color:#16a34a;">
-               ✓ כבר הצטרפת לאירוע
+               ✓ כבר הצטרפת לפעילות
              </div>
            </div>
            ${contactFooterHtml}`
@@ -510,7 +510,7 @@ function openEventDetailModal(eventId) {
                       transition:opacity 0.15s,transform 0.1s;"
                onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'"
                onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
-               <span style="font-size:1.35rem;">🙋</span> אני מתעניין באירוע
+               <span style="font-size:1.35rem;">🙋</span> אני מתעניין/ת בפעילות
              </button>
            </div>
            <div id="evDetailsReveal" style="display:none;flex-direction:column;flex-shrink:0;opacity:0;transform:translateY(-6px);transition:opacity 0.38s ease,transform 0.38s ease;">
@@ -555,12 +555,12 @@ async function handleModalInterest(eventId, btn) {
       }));
     }
 
-    showToast('הצטרפת לאירוע! 🎉', 'bg-purple-600');
+    showToast('הצטרפת לפעילות! 🎉', 'bg-purple-600');
   } catch (err) {
     showToast('שגיאה. נסה שוב.', 'bg-red-600');
     console.error(err);
     btn.disabled = false;
-    btn.innerHTML = '<span style="font-size:1.35rem;">🙋</span> אני מתעניין באירוע';
+    btn.innerHTML = '<span style="font-size:1.35rem;">🙋</span> אני מתעניין/ת בפעילות';
   }
 }
 
@@ -570,17 +570,60 @@ function closeEventDetailModal() {
 }
 
 async function handleDeleteEvent(eventId) {
-  if (!confirm('למחוק את האירוע?')) return;
+  if (!confirm('למחוק את הפעילות?')) return;
   try {
     await db.collection('events').doc(eventId).delete();
     allEventsData = allEventsData.filter(e => e.id !== eventId);
     closeEventDetailModal();
     renderEventsGrid();
-    showToast('האירוע נמחק', 'bg-gray-600');
+    showToast('הפעילות נמחקה', 'bg-gray-600');
   } catch (e) {
     showToast('שגיאה במחיקה', 'bg-red-500');
     console.error(e);
   }
+}
+
+// ── Location: activities near me ──────────────────────────────────────────────
+const EVENTS_RADIUS_KM = 50;
+// km from me, or null when I or the activity (older ones have no city) lack coordinates
+function eventKm(ev) {
+  if (!me?.latitude || ev.latitude == null) return null;
+  return distanceKm(me.latitude, me.longitude, ev.latitude, ev.longitude);
+}
+function eventKmLabel(ev) {
+  const km = eventKm(ev);
+  return km == null ? '' : ` · ${km < 1 ? 'ממש לידך' : Math.round(km) + ' ק״מ'}`;
+}
+
+// ── "מי לפגוש": nearby people who share my hobbies (full list in "מי באזור") ──
+let _meetPeople = [];
+function renderAroundMe() {
+  const box = document.getElementById('aroundMe');
+  if (!me || !box) return;
+  const mine = getUserHobbies(me);
+  _meetPeople = allUsers
+    .map(u => ({
+      u,
+      shared: getUserHobbies(u).filter(h => mine.includes(h)),
+      km: me.latitude && u.latitude != null ? distanceKm(me.latitude, me.longitude, u.latitude, u.longitude) : Infinity
+    }))
+    .filter(x => x.shared.length && x.km <= EVENTS_RADIUS_KM)
+    .sort((a, b) => b.shared.length - a.shared.length || a.km - b.km)
+    .slice(0, 3);
+  box.classList.toggle('hidden', !_meetPeople.length);
+  document.getElementById('meetStrip').innerHTML = _meetPeople.map(({ u, shared, km }, i) => {
+    const name = displayName(u.fullName);
+    return `<button onclick="openMeet(${i})" class="shrink-0 w-36 bg-white rounded-2xl border border-gray-100 shadow-sm p-3 text-center hover:border-purple-200 transition">
+      <div class="w-12 h-12 mx-auto rounded-full bg-purple-50 grid place-items-center font-black text-purple-600">${escapeHtml(getInitials(name))}</div>
+      <p class="font-bold text-sm mt-1.5 truncate">${escapeHtml(name)}${u.age ? ', ' + escapeHtml(u.age) : ''}</p>
+      <p class="text-[11px] text-gray-400">📍 ${km < 1 ? 'ממש לידך' : Math.round(km) + ' ק״מ'}</p>
+      <p class="text-[11px] text-purple-600 font-semibold truncate mt-1">${HOBBY_EMOJI[shared[0]] || '💚'} ${escapeHtml(shared[0])}${shared.length > 1 ? ' +' + (shared.length - 1) : ''}</p>
+    </button>`;
+  }).join('');
+}
+function openMeet(i) {
+  const { u } = _meetPeople[i];
+  showProfileModal(u, likedEmails.has(u.email), me);
 }
 
 // ── Load events ───────────────────────────────────────────────────────────────
@@ -605,7 +648,7 @@ async function loadEvents() {
       if (_target) openEventDetailModal(_deepLink);
     }
   } catch (err) {
-    loadEl.innerHTML = '<p class="text-red-400 font-semibold">שגיאה בטעינת האירועים. רענן את הדף.</p>';
+    loadEl.innerHTML = '<p class="text-red-400 font-semibold">שגיאה בטעינת הפעילויות. רענן את הדף.</p>';
     console.error(err);
   }
 }
@@ -638,6 +681,14 @@ function renderEventsGrid() {
     (ev.interested || []).some(i => (i.email || i) === me?.email)
   );
 
+  // Near me: activities with a city must be in range; older ones without a city still show
+  events = events.filter(ev => {
+    const km = eventKm(ev);
+    return km == null || km <= EVENTS_RADIUS_KM || (ev.interested || []).some(i => (i.email || i) === me?.email);
+  });
+  const hint = document.getElementById('eventsHint');
+  if (hint) hint.textContent = me?.city ? `פעילויות בתחביבים שלך, עד ${EVENTS_RADIUS_KM} ק״מ מ${me.city}` : '';
+
   if (eventFilter === 'mine') {
     events = events.filter(ev =>
       ev.createdBy === me?.email ||
@@ -656,13 +707,13 @@ function renderEventsGrid() {
 
   if (events.length === 0) {
     if (eventFilter === 'mine') {
-      gridEl.innerHTML = `<div class="text-center py-16 text-gray-400"><div class="text-5xl mb-4">📋</div><p class="text-lg font-semibold">עדיין לא הצטרפת לאירועים</p><p class="text-sm mt-2">מצא אירוע מעניין ולחץ "הצטרף לאירוע"!</p></div>`;
+      gridEl.innerHTML = `<div class="text-center py-16 text-gray-400"><div class="text-5xl mb-4">📋</div><p class="text-lg font-semibold">עדיין לא הצטרפת לפעילויות</p><p class="text-sm mt-2">מצא/י פעילות מעניינת ולחץ/י "הצטרף/י לפעילות"!</p></div>`;
     } else {
       gridEl.innerHTML = `
         <div class="text-center py-16 text-gray-400">
           <div class="text-5xl mb-4">🔍</div>
-          <p class="text-lg font-semibold mb-2">אין כרגע אירועים בתחביבים שלך</p>
-          <p class="text-sm leading-relaxed mb-5">אולי זה זמן טוב לגלות תחביב חדש?<br/>עדכן את הפרופיל שלך עם תחביבים נוספים כדי לראות יותר אירועים.</p>
+          <p class="text-lg font-semibold mb-2">אין כרגע פעילויות בתחביבים שלך</p>
+          <p class="text-sm leading-relaxed mb-5">אולי זה זמן טוב לגלות תחביב חדש?<br/>עדכן את הפרופיל שלך עם תחביבים נוספים כדי לראות יותר פעילויות.</p>
           <div class="flex flex-col sm:flex-row gap-2 justify-center">
             <button onclick="openEditDrawer()" class="text-sm font-bold text-blue-700 border border-blue-200 px-4 py-2 rounded-xl hover:bg-blue-50 transition">✏️ עדכן את התחביבים שלי</button>
           </div>
@@ -794,7 +845,7 @@ function renderEventCard(ev) {
 
         <div class="grid grid-cols-3 gap-2">
           ${dateStr ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">מתי</span><span class="text-xs font-bold text-gray-800 leading-tight">${dateStr}</span>${timeStr ? `<span class="text-xs font-semibold text-violet-600">${timeStr}</span>` : ''}</div>` : ''}
-          ${ev.location ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">איפה</span><span class="text-xs font-bold text-gray-800 leading-tight line-clamp-2">${ev.location}</span></div>` : ''}
+          ${ev.location ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">איפה</span><span class="text-xs font-bold text-gray-800 leading-tight line-clamp-2">${ev.location}${eventKmLabel(ev)}</span></div>` : ''}
           ${(ev.organizerName || ev.creatorName) ? `<div class="bg-violet-50 rounded-2xl p-3 flex flex-col gap-0.5"><span class="text-[10px] font-bold text-violet-400 uppercase tracking-wide">מארגן</span><span class="text-xs font-bold text-gray-800 leading-tight line-clamp-2">${escapeHtml(eventOrganizerDisplay(ev))}</span></div>` : ''}
         </div>
 
@@ -806,7 +857,7 @@ function renderEventCard(ev) {
         <div class="flex items-center justify-between pt-3 border-t border-gray-50 flex-wrap gap-3">
           <div class="flex items-center gap-2 flex-wrap">${circlesHtml}</div>
           <div class="flex items-center gap-2">
-            <button onclick="shareEvent('${ev.id}')" title="שתף אירוע"
+            <button onclick="shareEvent('${ev.id}')" title="שתף פעילות"
               class="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-200 bg-gray-50 hover:bg-purple-50 hover:border-purple-300 transition text-gray-500 hover:text-purple-700">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
@@ -833,7 +884,7 @@ function renderEventCard(ev) {
         <button onclick="openPostEventModal('${ev.id}', this)"
           data-ev-title="${(ev.title||'').replace(/"/g,'&quot;')}"
           class="w-full text-sm font-semibold text-gray-400 border border-dashed border-gray-200 py-2.5 rounded-2xl hover:bg-gray-50 hover:text-purple-600 hover:border-purple-200 transition">
-          🙌 שתף את החוויה שלך מהאירוע הזה
+          🙌 שתף את החוויה שלך מהפעילות הזו
         </button>` : ''}
 
         ${waSection}
@@ -867,7 +918,7 @@ async function handleInterest(eventId, btn) {
     showToast('שגיאה. נסה שוב.', 'bg-red-600');
     console.error(err);
     btn.disabled = false;
-    btn.textContent = wasIn ? '✓ הצטרפת · לחץ לביטול' : 'הצטרף לאירוע 🙋';
+    btn.textContent = wasIn ? '✓ הצטרפת · לחץ לביטול' : 'הצטרף/י לפעילות 🙋';
   }
 }
 
@@ -904,9 +955,11 @@ function openCreateEventModal() {
   document.getElementById('ev_error').classList.add('hidden');
   const submitBtn = document.getElementById('ev_submitBtn');
   submitBtn.disabled    = false;
-  submitBtn.textContent = 'צור אירוע';
+  submitBtn.textContent = 'צור פעילות';
   submitBtn._dedupeConfirmed = false;
   window._pendingEventLinks = [];
+  if (!ev_cityPicker) ev_cityPicker = createCityPicker('ev_city', 'drawer-input');
+  ev_cityPicker.setCity(me.city || '');
 
   document.getElementById('createEventOverlay').classList.remove('hidden');
 }
@@ -961,11 +1014,12 @@ async function handleCreateEvent() {
   const desc              = document.getElementById('ev_desc').value.trim();
   const dtVal             = document.getElementById('ev_datetime').value;
   const location          = document.getElementById('ev_location').value.trim();
+  const city              = document.getElementById('ev_city').value;
   const associatedHobbies = getSelectedEvHobbies();
   const organizerName     = document.getElementById('ev_organizer_name').value.trim();
   const organizerPhone    = document.getElementById('ev_organizer_phone').value.trim();
 
-  if (!title || !desc || !dtVal || !location || associatedHobbies.length === 0) {
+  if (!title || !desc || !dtVal || !location || !city || associatedHobbies.length === 0) {
     errEl.textContent = 'אנא מלא את כל שדות החובה (*)';
     errEl.classList.remove('hidden');
     return;
@@ -974,7 +1028,7 @@ async function handleCreateEvent() {
   if (!btn._dedupeConfirmed) {
     const dup = findDuplicateEvent(title, dtVal, location);
     if (dup) {
-      errEl.innerHTML = `⚠️ אירוע דומה כבר קיים: <strong>"${dup.title}"</strong>. לחץ שוב לפרסום בכל זאת.`;
+      errEl.innerHTML = `⚠️ פעילות דומה כבר קיימת: <strong>"${dup.title}"</strong>. לחץ שוב לפרסום בכל זאת.`;
       errEl.classList.remove('hidden');
       btn._dedupeConfirmed = true;
       return;
@@ -990,9 +1044,11 @@ async function handleCreateEvent() {
     const detectedHobbyTag = window._pendingHobbyTag   || null;
     const atmosphereTags = [...ev_selectedAtmosphere];
     const eventActivityTags = [...ev_selectedActivities];
+    const cityData = CITIES.find(c => c.name === city);
+    const place    = { city, latitude: cityData ? cityData.lat : null, longitude: cityData ? cityData.lng : null };
 
     const docRef           = await db.collection('events').add({
-      title, description: desc, dateTime, location, associatedHobbies,
+      title, description: desc, dateTime, location, ...place, associatedHobbies,
       hobby: associatedHobbies[0],
       createdBy: me.email, creatorName: me.fullName || me.email, creatorPhone: me.phone || '',
       organizerName: organizerName || displayName(me.fullName) || me.email,
@@ -1005,7 +1061,7 @@ async function handleCreateEvent() {
 
     const creatorEntry = { email: me.email, name: me.fullName || '', display: formatAttendeeDisplay(me.fullName || me.email) };
     allEventsData.push({
-      id: docRef.id, title, description: desc, dateTime, location, associatedHobbies,
+      id: docRef.id, title, description: desc, dateTime, location, ...place, associatedHobbies,
       hobby: associatedHobbies[0], createdBy: me.email,
       creatorName: me.fullName || me.email, creatorPhone: me.phone || '',
       organizerName: organizerName || displayName(me.fullName) || me.email,
@@ -1017,14 +1073,14 @@ async function handleCreateEvent() {
 
     closeCreateEventModal();
     renderEventsGrid();
-    showToast('האירוע נוצר בהצלחה! 🎉');
+    showToast('הפעילות נוצרה בהצלחה! 🎉');
   } catch (err) {
-    errEl.textContent = 'שגיאה ביצירת האירוע. נסה שוב.';
+    errEl.textContent = 'שגיאה ביצירת הפעילות. נסה שוב.';
     errEl.classList.remove('hidden');
     console.error(err);
   } finally {
     btn.disabled    = false;
-    btn.textContent = 'צור אירוע';
+    btn.textContent = 'צור פעילות';
   }
 }
 
@@ -1085,7 +1141,7 @@ function openPostEventModal(eventId, btn) {
         <h3 class="text-base font-black text-purple-900">🙌 ${evTitle || 'שתף חוויה'}</h3>
         <button onclick="document.getElementById('postEventOverlay').remove()" class="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
       </div>
-      <textarea id="postEventText" rows="4" maxlength="500" placeholder="איך היה האירוע? שתף את הקהילה!"
+      <textarea id="postEventText" rows="4" maxlength="500" placeholder="איך היה? שתף/י את הקהילה!"
         class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm resize-none focus:outline-none focus:border-purple-400 transition"
         style="direction:rtl; text-align:right; font-family:'Heebo',sans-serif;"></textarea>
       <div id="postEventError" class="hidden text-red-500 text-sm mt-2"></div>
@@ -1228,7 +1284,7 @@ function shareEvent(eventId) {
   const evDate = ev.dateTime ? (ev.dateTime.toDate ? ev.dateTime.toDate() : new Date(ev.dateTime)) : null;
   const dateStr = evDate ? evDate.toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'long' }) : '';
   const lines = [
-    `🎯 ${ev.title || 'אירוע'}`,
+    `🎯 ${ev.title || 'פעילות'}`,
     dateStr ? `📅 ${dateStr}` : '',
     ev.location ? `📍 ${ev.location}` : '',
     '',
@@ -1236,7 +1292,7 @@ function shareEvent(eventId) {
   ].filter(Boolean).join('\n');
 
   if (navigator.share) {
-    navigator.share({ title: ev.title || 'אירוע', text: lines }).catch(() => {});
+    navigator.share({ title: ev.title || 'פעילות', text: lines }).catch(() => {});
   } else {
     navigator.clipboard.writeText(lines).then(() => alert('הפרטים הועתקו ללוח!')).catch(() => {});
   }

@@ -14,7 +14,7 @@ function switchTab(tab) {
     btn.classList.toggle('active',       tab === p);
     btn.classList.toggle('text-gray-500', tab !== p);
   });
-  if (tab === 'matches') loadMatches();
+  if (tab === 'matches') { loadMatches(); loadRequests(); }
   if (tab === 'events')  loadEvents();
 }
 

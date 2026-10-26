@@ -7,8 +7,8 @@ test.describe('Register page (register.html)', () => {
     await setupFirebaseMock(page);
   });
 
-  test('shows email input on load (register mode)', async ({ page }) => {
-    await page.goto('/register.html?mode=register');
+  test('shows email input on load (login title)', async ({ page }) => {
+    await page.goto('/register.html?mode=login');
     await expect(page.locator('#emailInput')).toBeVisible();
     await expect(page.locator('#step1')).toHaveClass(/active/);
   });
@@ -19,7 +19,7 @@ test.describe('Register page (register.html)', () => {
   });
 
   test('shows error when submitting empty email', async ({ page }) => {
-    await page.goto('/register.html?mode=register');
+    await page.goto('/register.html?mode=login');
     await page.click('#sendOtpBtn');
     const errEl = page.locator('#step1Error');
     await expect(errEl).not.toHaveClass(/hidden/);
@@ -35,7 +35,7 @@ test.describe('Register page (register.html)', () => {
       await dialog.accept();
     });
 
-    await page.goto('/register.html?mode=register');
+    await page.goto('/register.html?mode=login');
     await page.fill('#emailInput', 'test@example.com');
     await page.click('#sendOtpBtn');
 
@@ -47,7 +47,7 @@ test.describe('Register page (register.html)', () => {
   test('shows error on wrong OTP', async ({ page }) => {
     page.on('dialog', dialog => dialog.accept()); // dismiss dev-mode alert
 
-    await page.goto('/register.html?mode=register');
+    await page.goto('/register.html?mode=login');
     await page.fill('#emailInput', 'test@example.com');
     await page.click('#sendOtpBtn');
 

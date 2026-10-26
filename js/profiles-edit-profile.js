@@ -1,6 +1,6 @@
 // ══════════════════════════════════════════════════════════════════════════════
 // profiles-edit-profile.js — Edit Profile drawer (open, save, gallery, photo)
-// State lives in profiles-state.js: ed_isRomantic, ed_savedImages,
+// State lives in profiles-state.js: ed_lookingFor, ed_savedImages,
 //   ed_newFiles, ed_profilePhotoFile
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -31,9 +31,9 @@ function openEditDrawer() {
     : (user.hobbyImageUrl ? [user.hobbyImageUrl] : []);
   ed_newFiles = [];
   ed_renderGallery();
-  // Romantic toggle
-  ed_isRomantic = !!user.romantic;
-  ed_applyToggle();
+  // What I'm looking for — older profiles only have the `romantic` flag
+  ed_lookingFor = new Set(Array.isArray(user.lookingFor) ? user.lookingFor : (user.romantic ? ['romantic'] : []));
+  ed_renderLookingFor();
   // Show
   document.getElementById('ed_error').classList.add('hidden');
   document.getElementById('ed_image').value = '';
@@ -141,25 +141,15 @@ function ed_renderTagChips(containerId, tags, selectedSet) {
   });
 }
 
-function ed_toggleRomantic() {
-  ed_isRomantic = !ed_isRomantic;
-  ed_applyToggle();
+function ed_renderLookingFor() {
+  document.getElementById('ed_lookingFor').innerHTML = TAHBIVA.LOOKING.map(l =>
+    `<button type="button" class="ed-look ${ed_lookingFor.has(l.id) ? 'on' : ''}" onclick="ed_toggleLooking('${l.id}')">${l.e} ${l.label}</button>`
+  ).join('');
 }
 
-function ed_applyToggle() {
-  const track = document.getElementById('ed_romanticToggle');
-  const thumb = document.getElementById('ed_toggleThumb');
-  track.setAttribute('aria-checked', String(ed_isRomantic));
-  if (ed_isRomantic) {
-    track.style.background = 'linear-gradient(to left, #7c3aed, #2563eb)';
-    thumb.style.right = 'auto';
-    thumb.style.left  = '2px';
-  } else {
-    track.style.background = '';
-    track.classList.add('bg-gray-300');
-    thumb.style.left  = 'auto';
-    thumb.style.right = '2px';
-  }
+function ed_toggleLooking(id) {
+  if (ed_lookingFor.has(id)) ed_lookingFor.delete(id); else ed_lookingFor.add(id);
+  ed_renderLookingFor();
 }
 
 async function handleSaveProfile() {
@@ -225,7 +215,8 @@ async function handleSaveProfile() {
       hobbies:          hobbies,
       hobbyDescription: desc,
       interests:        interests,
-      romantic:         ed_isRomantic,
+      lookingFor:       [...ed_lookingFor],
+      romantic:         ed_lookingFor.has('romantic'),   // kept for the badge + discover filter
       hobbyImages:      hobbyImages,
       hobbyImageUrl:    hobbyImages[0] || '',
       profilePhotoURL:  profilePhotoUrl,

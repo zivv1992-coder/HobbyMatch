@@ -137,7 +137,7 @@ function _updateBellBadge() {
   const unseenMatches   = _currentMatches.filter(p => !_seenMatchEmails.has(p.email)).length;
   const totalUnreadChat = Object.values(_unreadCounts).reduce((sum, n) => sum + n, 0);
   const unseenLikes     = Math.max(0, _pendingLikesCount - _seenLikesCount);
-  const total = unseenMatches + totalUnreadChat + unseenLikes;
+  const total = unseenMatches + totalUnreadChat + unseenLikes + incomingRequests.length;
   const badge = document.getElementById('bellBadge');
   if (total > 0) {
     badge.textContent = total > 9 ? '9+' : String(total);
@@ -193,12 +193,28 @@ function _renderNotifPanel() {
   const unreadChats   = _getUnreadChats();
   const unseenLikes   = Math.max(0, _pendingLikesCount - _seenLikesCount);
 
-  if (unseenMatches.length === 0 && unreadChats.length === 0 && unseenLikes === 0) {
+  if (unseenMatches.length === 0 && unreadChats.length === 0 && unseenLikes === 0 && incomingRequests.length === 0) {
     body.innerHTML = `<p class="text-center text-gray-400 py-8 text-sm">אין התראות חדשות 🎯<br/><button onclick="closeNotifPanel(); switchTab('matches')" class="mt-2 text-purple-600 font-semibold text-xs underline">ראה את כל החיבורים</button></p>`;
     return;
   }
 
   let html = '';
+
+  // Message requests from people I'm not matched with yet
+  if (incomingRequests.length > 0) {
+    const n   = incomingRequests.length;
+    const txt = n === 1 ? `${displayName(incomingRequests[0].user.fullName)} שלח/ה לך הודעה` : `${n} אנשים שלחו לך הודעה`;
+    html += `
+      <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-50 bg-purple-50 hover:bg-purple-100 cursor-pointer transition"
+        onclick="closeNotifPanel(); switchTab('matches')">
+        <div class="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center flex-shrink-0 text-xl">💌</div>
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-purple-900 text-sm">${escapeHtml(txt)}</p>
+          <p class="text-xs text-purple-500">אשר/י כדי לפתוח שיחה</p>
+        </div>
+        <span class="text-xs bg-purple-600 text-white font-black px-2 py-0.5 rounded-full shrink-0">${n > 9 ? '9+' : n}</span>
+      </div>`;
+  }
 
   // Mystery likes — anonymous teaser
   if (unseenLikes > 0) {

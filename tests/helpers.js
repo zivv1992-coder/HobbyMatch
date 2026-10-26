@@ -50,7 +50,7 @@ const MOCK_FEED_USERS = [
 // Blocks real Firebase/EmailJS CDN scripts and injects lightweight mocks.
 // Call this before page.goto().
 
-async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [] } = {}) {
+async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [], requests = [] } = {}) {
   // Block Firebase SDK CDN — empty JS prevents overwriting our mock
   await page.route(/gstatic\.com\/firebasejs/, route =>
     route.fulfill({ contentType: 'text/javascript', body: '// firebase mocked' })
@@ -61,7 +61,7 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
   );
 
   // Inject window.firebase + window.emailjs before any page script runs
-  await page.addInitScript(({ users, likedEmails, likes }) => {
+  await page.addInitScript(({ users, likedEmails, likes, requests }) => {
     // EmailJS stub
     window.emailjs = {
       init: () => {},
@@ -81,6 +81,7 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
         let data;
         if (collectionName === 'users') data = users;
         else if (collectionName === 'likes') data = likes;
+        else if (collectionName === 'message_requests') data = requests;
         else data = [];
         return filterFn ? data.filter(filterFn) : data;
       };
@@ -91,6 +92,7 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
           return true;
         }),
         orderBy: () => self,
+        onSnapshot: (cb) => { cb({ docs: [], empty: true, size: 0 }); return () => {}; },
         limit: () => self,
         get: () => {
           const docs = getAll();
@@ -114,6 +116,7 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
             set: () => Promise.resolve(),
             update: () => Promise.resolve(),
             delete: () => Promise.resolve(),
+            collection: (sub) => makeCollection(sub),
           };
         },
         add: () => Promise.resolve({ id: 'new-mock-id' }),
@@ -143,7 +146,7 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
         }),
       }),
     };
-  }, { users, likedEmails, likes });
+  }, { users, likedEmails, likes, requests });
 }
 
 // ─── Set localStorage session before page load ────────────────────────────────
