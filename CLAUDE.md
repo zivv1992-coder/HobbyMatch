@@ -52,7 +52,9 @@ Document ID = email with `@` → `_at_` and `.` → `_dot_`
 `wantToTry` = "🤔 חושב/ת לנסות" from Tahbiva's discover cards (own card in profile + edit drawer; also matches activities).
 `lookingFor` = what the user is looking for (Tahbiva + edit drawer). `romantic` = `lookingFor` includes `'romantic'`,
 kept for the ❤️ badge and the discover filter (older profiles have only `romantic`).
-`profilePhotoURL` is shown only to matches; `hobbyImages` are public (`hobbyImageUrl` = first of them).
+Photos are **one public gallery** (since 2026-10-26): `hobbyImages` = all photos (me + hobbies), `profilePhotoURL` =
+`hobbyImageUrl` = the first one. Read them with `userPhotos(user)` (ui-render.js), which also folds in an older separate
+`profilePhotoURL`. Only the phone is hidden until a match.
 `hobbies` = source of truth (array). `hobby` = same list joined with `', '`, kept for existing consumers
 (cards, filters, events, admin). Read with `getUserHobbies(user)` — falls back to splitting legacy `hobby`.
 
@@ -168,6 +170,8 @@ Template variables: `{{otp_code}}`, `{{email}}`
 - Every async op (Firebase, EmailJS, uploads) must have `try-catch` with Hebrew error message
 - `config.js` = config/data only · `auth.js` = auth/session only · `firebase-logic.js` = Firestore/Storage only
 - Static Web App — no server-side code, compatible with GitHub Pages / Netlify / cPanel
+- `sw.js` serves files **cache-first** → bump `CACHE_NAME` on every release that changes HTML/JS, or installed users keep old code
+- Other users' text in HTML → `escapeHtml()`; inside an `onclick="…('…')"` string → `jsArg()`; in href/src → `safeUrl()` (ui-render.js)
 
 ---
 

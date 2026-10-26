@@ -189,7 +189,7 @@
         </div>
         <div class="text-center">
           <p class="text-sm font-semibold text-gray-700">תמונה אישית</p>
-          <p class="text-xs text-gray-400 leading-snug mt-0.5">תוצג רק למי שיש לך איתו/ה התאמה הדדית</p>
+          <p class="text-xs text-gray-400 leading-snug mt-0.5">מופיעה בפרופיל שלך</p>
         </div>
       </div>
 
@@ -257,7 +257,7 @@
       <input id="privacyConsent" type="checkbox"
         class="mt-0.5 w-4 h-4 accent-purple-700 shrink-0 cursor-pointer"/>
       <span class="text-xs text-gray-500 leading-relaxed">
-        אני מסכים/ה שהפרטים שמילאתי (שם, גיל, עיר, תחביב ותמונות התחביב) יוצגו למשתמשים אחרים לצורך יצירת חיבורים. תמונת הפרופיל ומספר הטלפון נשמרים אך לא מוצגים — יועברו רק למי שיש איתך התאמה הדדית. המידע לא יועבר לגורמים חיצוניים ומשמש אך ורק לתפעול הפלטפורמה. קראתי את <a href="privacy.html" target="_blank" class="text-purple-700 underline font-bold">מדיניות הפרטיות</a> ואני מודע/ת לזכותי למחוק את פרופילי בכל עת.
+        אני מסכים/ה שהפרטים שמילאתי (שם, גיל, עיר, תחביבים ותמונות — שלי ושל התחביבים) יוצגו למשתמשים אחרים לצורך יצירת חיבורים. מספר הטלפון נשמר אך לא מוצג — יועבר רק למי שיש איתך התאמה הדדית. המידע לא יועבר לגורמים חיצוניים ומשמש אך ורק לתפעול הפלטפורמה. קראתי את <a href="privacy.html" target="_blank" class="text-purple-700 underline font-bold">מדיניות הפרטיות</a> ואני מודע/ת לזכותי למחוק את פרופילי בכל עת.
       </span>
     </label>
 
@@ -289,14 +289,14 @@
       <div>
         <label class="block text-sm font-semibold text-gray-700 mb-1">📸 תמונות שלך ושל התחביבים</label>
         <div id="t_photos" class="grid grid-cols-3 gap-2"></div>
-        <p class="text-xs text-gray-400 leading-snug mt-1.5">הראשונה — תמונת פרופיל (רק מי שיש איתו קונקשן רואה). השאר — תמונות תחביבים.</p>
+        <p class="text-xs text-gray-400 leading-snug mt-1.5">הראשונה מופיעה כתמונת הפרופיל. כל התמונות גלויות לכולם.</p>
       </div>
     </div>
 
     <label class="flex items-start gap-3 mt-5 cursor-pointer">
       <input id="t_consent" type="checkbox" class="mt-0.5 w-4 h-4 accent-purple-700 shrink-0 cursor-pointer"/>
       <span class="text-xs text-gray-500 leading-relaxed">
-        אני מסכים/ה שהפרטים שמילאתי (שם, גיל, עיר, תחביב ותמונות התחביב) יוצגו למשתמשים אחרים לצורך יצירת חיבורים. תמונת הפרופיל ומספר הטלפון נשמרים אך לא מוצגים — יועברו רק למי שיש איתך התאמה הדדית. המידע לא יועבר לגורמים חיצוניים ומשמש אך ורק לתפעול הפלטפורמה. קראתי את <a href="privacy.html" target="_blank" class="text-purple-700 underline font-bold">מדיניות הפרטיות</a> ואני מודע/ת לזכותי למחוק את פרופילי בכל עת.
+        אני מסכים/ה שהפרטים שמילאתי (שם, גיל, עיר, תחביבים ותמונות — שלי ושל התחביבים) יוצגו למשתמשים אחרים לצורך יצירת חיבורים. מספר הטלפון נשמר אך לא מוצג — יועבר רק למי שיש איתך התאמה הדדית. המידע לא יועבר לגורמים חיצוניים ומשמש אך ורק לתפעול הפלטפורמה. קראתי את <a href="privacy.html" target="_blank" class="text-purple-700 underline font-bold">מדיניות הפרטיות</a> ואני מודע/ת לזכותי למחוק את פרופילי בכל עת.
       </span>
     </label>
 
@@ -653,7 +653,7 @@
   }
 
   // ── Step 4: Finish after Tahbiva ──────────────────────────────────────────
-  // One gallery: first photo → profile photo (matches only), the rest → hobby images
+  // One public gallery: the first photo is also the profile photo
   const T_MAX_PHOTOS = 6;
   let tFiles = [];
   function renderTPhotos() {
@@ -693,8 +693,8 @@
 
     try {
       const files = skipPhotos ? [] : tFiles;
-      const profilePhotoURL = files[0] ? await uploadProfilePhoto(files[0], verifiedEmail) : '';
-      const hobbyImages = await Promise.all(files.slice(1).map((f, i) => uploadHobbyImageIndexed(f, verifiedEmail, i)));
+      const hobbyImages = await Promise.all(files.map((f, i) => uploadHobbyImageIndexed(f, verifiedEmail, i)));
+      const profilePhotoURL = hobbyImages[0] || '';
 
       const hobbies  = Object.keys(d.status).filter(n => d.status[n] === 'love').slice(0, HOBBY_PICKER_MAX);
       const wantToTry = Object.keys(d.status).filter(n => d.status[n] === 'try');

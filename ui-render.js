@@ -20,12 +20,18 @@ function safeUrl(u) {
 const HEART_FILLED = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"><path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/></svg>`;
 const HEART_OUTLINE = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>`;
 
+// All of a user's photos, public: the profile photo first, then hobby photos
+function userPhotos(user) {
+  const imgs = (user.hobbyImages && user.hobbyImages.length)
+    ? user.hobbyImages
+    : (user.hobbyImageUrl ? [user.hobbyImageUrl] : []);
+  return user.profilePhotoURL && !imgs.includes(user.profilePhotoURL) ? [user.profilePhotoURL, ...imgs] : [...imgs];
+}
+
 // ─── Carousel helpers ─────────────────────────────────────────────────────────
 
 function buildCarouselHtml(user) {
-  const images = (user.hobbyImages && user.hobbyImages.length)
-    ? user.hobbyImages
-    : (user.hobbyImageUrl ? [user.hobbyImageUrl] : []);
+  const images = userPhotos(user);
 
   if (images.length === 0) {
     return `<div class="aspect-[4/3] bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center text-6xl">🎯</div>`;
@@ -33,7 +39,7 @@ function buildCarouselHtml(user) {
 
   const slidesHtml = images.map((url, i) => {
     const safeUrl = escapeHtml(url);
-    return `<img src="${safeUrl}" alt="תמונת תחביב" class="w-full h-full flex-none object-contain bg-gray-50 border border-gray-200 cursor-zoom-in" onclick="event.stopPropagation();openImageLightbox([...this.parentNode.children].map(im => im.src), ${i})"/>`;
+    return `<img src="${safeUrl}" alt="" class="w-full h-full flex-none object-contain bg-gray-50 border border-gray-200 cursor-zoom-in" onclick="event.stopPropagation();openImageLightbox([...this.parentNode.children].map(im => im.src), ${i})"/>`;
   }).join('');
 
   const multi = images.length > 1;
@@ -127,10 +133,11 @@ function renderCard(user, isLiked, myUser, isMatch) {
   // Everyone (guests included) sees first name + last initial
   const shownName = escapeHtml(displayName(user.fullName));
 
-  // Avatar: show profile photo only for matched users
+  // Avatar: the first photo (photos are public)
   const initials = shownName[0]?.toUpperCase() || '?';
-  const avatarHtml = (isMatch && user.profilePhotoURL)
-    ? `<img src="${escapeHtml(user.profilePhotoURL)}" class="w-10 h-10 rounded-full object-cover ring-2 ring-purple-100 shrink-0" alt=""/>`
+  const mainPhoto = userPhotos(user)[0];
+  const avatarHtml = mainPhoto
+    ? `<img src="${escapeHtml(mainPhoto)}" class="w-10 h-10 rounded-full object-cover ring-2 ring-purple-100 shrink-0" alt=""/>`
     : `<div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-black text-base ring-2 ring-purple-100 shrink-0">${initials}</div>`;
 
   // Like button — gated for guests
