@@ -698,6 +698,7 @@
 
       const hobbies  = Object.keys(d.status).filter(n => d.status[n] === 'love').slice(0, HOBBY_PICKER_MAX);
       const wantToTry = Object.keys(d.status).filter(n => d.status[n] === 'try');
+      const notForMe  = Object.keys(d.status).filter(n => d.status[n] === 'no');
       const looking  = d.looking || [];
       const cityData = CITIES.find(c => c.name === d.city);
       const user = {
@@ -709,6 +710,9 @@
         hobby:            hobbies.join(', '),
         hobbies:          hobbies,
         wantToTry:        wantToTry,
+        notForMe:         notForMe,
+        partnerTypes:     d.partners || [],
+        totAnswers:       d.tot || [],
         hobbyDescription: d.bio || '',
         romantic:         looking.includes('romantic'),
         lookingFor:       looking,

@@ -22,17 +22,17 @@ hobby-match/
 ├── firebase-logic.js       ← CRUD: profiles, likes, image uploads
 ├── ui-render.js            ← Profile card rendering + My Matches tab
 └── js/
-    ├── tahbiva.js               ← Tahbiva flow: this-or-that → categories → hobby tiles → city → nearby → … → ready
+    ├── tahbiva.js               ← Tahbiva flow: this-or-that → categories → hobbies → looking for → partners → discover → my hobbies → city → nearby → about → ready
     ├── profiles-boot.js         ← App init, session check, tab routing (members open on פעילויות, guests on מי באזור)
     ├── profiles-state.js        ← Shared state (me, allProfiles, allEventsData…)
     ├── profiles-utils.js        ← Helpers: sanitizeEmail, formatWhatsApp, distance…
     ├── profiles-ui.js           ← Discover feed, filters, profile cards
     ├── profiles-matches.js      ← My Matches tab, like/unmatch logic
-    ├── profiles-events.js       ← פעילויות tab: "מה קורה סביבי", "מי לפגוש" strip, 50 km filter, create (with city), join/leave
+    ├── profiles-events.js       ← פעילויות tab: "מה קורה סביבי" (activities only), 50 km filter, create (with city), join/leave
     ├── profiles-chat.js         ← Real-time chat between matched users
     ├── profiles-requests.js     ← "💬 שלח הודעה" to non-matches + "בקשות" in קונקשנז' (accept → match + chat)
     ├── profiles-notifications.js← FCM push notifications, bell badge, panel
-    ├── profiles-edit-profile.js ← Edit profile drawer in cards: photos, about + looking-for, hobbies, details
+    ├── profiles-edit-profile.js ← "הפרופיל שלי" drawer in cards: photos, about, looking-for, partners (edit/remove/add), hobbies (compact picker), want to try, details
     ├── analytics.js             ← Anonymous sign-up funnel tracking (trackEvent) → admin "משפך הרשמה"
     ├── city-picker.js           ← Searchable city field (type a letter → matching cities, א-ב order)
     └── hobby-picker.js          ← Category bubbles → sub-hobby pills + custom hobbies (register + edit), HOBBY_CATEGORIES in config.js
@@ -46,10 +46,14 @@ hobby-match/
 Document ID = email with `@` → `_at_` and `.` → `_dot_`
 ```
 { fullName, email, phone, age, city, hobby, hobbies: string[], wantToTry: string[], hobbyDescription,
-  lookingFor: ('friends'|'partners'|'romantic')[], romantic,
+  lookingFor: ('friends'|'partners'|'romantic')[], romantic, partnerTypes: string[], notForMe: string[], totAnswers: number[],
   profilePhotoURL, hobbyImages: string[], hobbyImageUrl, latitude, longitude, createdAt }
 ```
-`wantToTry` = "🤔 חושב/ת לנסות" from Tahbiva's discover cards (own card in profile + edit drawer; also matches activities).
+`wantToTry` = "🌱 רוצה לנסות" (Tahbiva discover card "🤔 רוצה לנסות", ⇄ in Tahbiva's my-hobbies, typed in the edit drawer; also matches activities).
+`partnerTypes` = "🤝 מחפש/ת שותפים ל…": `TAHBIVA.PARTNERS` ids (shown by their `short` label) + the user's own
+free text from the edit drawer. Read with `partnerLabels(user)` (ui-render.js) — free text is other users' text → escape.
+`notForMe` = discover cards marked "🙅 לא בשבילי" (never shown). `totAnswers` = "this or that" picks — preference only.
+Phone is **required** (Tahbiva + edit drawer); older profiles may lack it, so WhatsApp buttons only show with a valid number.
 `lookingFor` = what the user is looking for (Tahbiva + edit drawer). `romantic` = `lookingFor` includes `'romantic'`,
 kept for the ❤️ badge and the discover filter (older profiles have only `romantic`).
 Photos are **one public gallery** (since 2026-10-26): `hobbyImages` = all photos (me + hobbies), `profilePhotoURL` =
@@ -120,9 +124,12 @@ wraps long lines and breaks strings. Most collections are still `if true` (see d
 
 ## Sign-up Flow (Tahbiva first)
 1. `index.html` "הרשמה" (and the guest sign-up wall) → `tahbiva.html`. No auth yet.
-2. Tahbiva builds a draft in `localStorage[TAHBIVA_DRAFT_KEY]`: hobbies (💚 in hobby selection), wantToTry (🤔 from the discover cards only), categories,
-   city, lookingFor, bio, age, phone. "This or that" answers pre-mark hobbies. "לידך" shows real nearby users
-   with shared hobbies (`displayName` only, no photo).
+2. Tahbiva (spec: `תחביבה חדש.txt`, texts: `docs/tahbiva-texts.md`) builds a draft in `localStorage[TAHBIVA_DRAFT_KEY]`
+   (`tahbivaDraft2` since 2026-10-30). Order: hi → 3× this-or-that → categories (7) → hobby tiles → looking for → hobby
+   partners (4) → **one** discover card (💚 / 🤔 רוצה לנסות / 🙅 לא בשבילי) → my hobbies (💚 · 🌱 · 🤝, ⇄ moves) → city
+   (quick picks = cities with most users) → nearby → bio / age / phone (one per screen) → ready.
+   **"This or that" never adds hobbies** — it only reorders categories and suggestions ("Tahbiva suggests, the user chooses").
+   "לידך" shows real users within 50 km by shared hobbies, shared want-to-try and shared partners (`displayName` only, no photo).
 3. "שמרו לי את הפרופיל" → `register.html?mode=register&from=tahbiva` → Google or email OTP (below).
 4. New user + finished draft → **step4**: name, one photo gallery (first = profile photo, rest = hobbyImages,
    "אעלה תמונות אחר כך"), privacy consent → `saveProfileToFirestore` → draft cleared → `profiles.html?new=1`.

@@ -79,6 +79,9 @@ async function saveProfileToFirestore(userObj) {
     hobby:            userObj.hobby,
     hobbies:          userObj.hobbies || [],
     wantToTry:        userObj.wantToTry || [],
+    notForMe:         userObj.notForMe || [],       // discover cards marked "לא בשבילי" (never shown)
+    partnerTypes:     userObj.partnerTypes || [],   // TAHBIVA.PARTNERS ids
+    totAnswers:       userObj.totAnswers || [],     // "this or that" picks — preference only
     hobbyDescription: userObj.hobbyDescription,
     romantic:         userObj.romantic,
     hobbyImageUrl:    userObj.hobbyImageUrl,
@@ -211,6 +214,7 @@ async function updateProfileInFirestore(userObj) {
     romantic:         userObj.romantic,
     lookingFor:       userObj.lookingFor || [],
     wantToTry:        userObj.wantToTry || [],
+    partnerTypes:     userObj.partnerTypes || [],
     hobbyImages:      images,
     hobbyImageUrl:    images[0] || '',
     latitude:         userObj.latitude,

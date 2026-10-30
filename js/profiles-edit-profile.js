@@ -12,10 +12,11 @@ function openEditDrawer() {
   document.getElementById('ed_phone').value = (user.phone || '').replace(/\D/g, '');
   document.getElementById('ed_age').value   = user.age      || '';
   ed_cityPicker.setCity(user.city);
-  if (!ed_hobbyPicker) ed_hobbyPicker = createHobbyPicker('ed_hobbyPicker');
+  if (!ed_hobbyPicker) ed_hobbyPicker = createHobbyPicker('ed_hobbyPicker', [], { compact: true });
   ed_hobbyPicker.setHobbies(getUserHobbies(user));
   document.getElementById('ed_desc').value      = user.hobbyDescription || '';
   document.getElementById('ed_email').value = user.email    || '';
+  document.getElementById('ed_identity').textContent = [user.fullName, user.email].filter(Boolean).join(' · ');
   // One gallery: an older separate profile photo joins it as the first photo
   ed_savedImages = userPhotos(user);
   ed_newFiles = [];
@@ -25,6 +26,8 @@ function openEditDrawer() {
   ed_renderLookingFor();
   ed_wantToTry = [...(user.wantToTry || [])];
   ed_renderWantToTry();
+  ed_partnerTypes = new Set(user.partnerTypes || []);
+  ed_renderPartnerTypes();
   // Show
   document.getElementById('ed_error').classList.add('hidden');
   document.getElementById('ed_image').value = '';
@@ -155,6 +158,55 @@ function ed_toggleLooking(id) {
   ed_renderLookingFor();
 }
 
+// partnerTypes = TAHBIVA.PARTNERS ids + the user's own free-text wishes.
+// Chosen ones: tap the text to edit it, ✕ to remove. Unchosen presets show as "+" suggestions.
+const ed_partnerPreset = t => TAHBIVA.PARTNERS.find(p => p.id === t);
+function ed_renderPartnerTypes() {
+  const chosen = [...ed_partnerTypes];
+  document.getElementById('ed_partnerTypes').innerHTML = chosen.length
+    ? chosen.map((t, i) => {
+        const p = ed_partnerPreset(t);
+        return `<span class="ed-look on inline-flex items-center gap-1.5">
+          <button type="button" onclick="ed_editPartner(${i})" title="עריכה">${p ? p.e : '🤝'} ${escapeHtml(p ? p.short : t)}</button>
+          <button type="button" onclick="ed_removePartner(${i})" class="w-5 h-5 rounded-full bg-white/25 text-xs" aria-label="הסרה">✕</button></span>`;
+      }).join('')
+    : '<p class="text-sm text-gray-400">עוד אין</p>';
+  document.getElementById('ed_partnerSuggest').innerHTML = TAHBIVA.PARTNERS.filter(p => !ed_partnerTypes.has(p.id)).map(p =>
+    `<button type="button" class="ed-look" onclick="ed_togglePartner('${p.id}')">+ ${p.e} ${p.short}</button>`
+  ).join('');
+}
+
+function ed_togglePartner(id) {
+  if (ed_partnerTypes.has(id)) ed_partnerTypes.delete(id); else ed_partnerTypes.add(id);
+  ed_renderPartnerTypes();
+}
+
+function ed_removePartner(i) {
+  ed_partnerTypes.delete([...ed_partnerTypes][i]);
+  ed_renderPartnerTypes();
+}
+
+// Edit = move the text into the field; "הוסף" puts it back as typed
+function ed_editPartner(i) {
+  const t = [...ed_partnerTypes][i], p = ed_partnerPreset(t);
+  ed_partnerTypes.delete(t);
+  const input = document.getElementById('ed_partnerInput');
+  input.value = p ? p.short : t;
+  ed_renderPartnerTypes();
+  input.focus();
+}
+
+function ed_addPartner(e) {
+  e.preventDefault();
+  const input = document.getElementById('ed_partnerInput');
+  const v = input.value.replace(/\s+/g, ' ').trim();
+  // Typing a preset's text selects the preset itself
+  const p = TAHBIVA.PARTNERS.find(x => x.short === v);
+  if (v) ed_partnerTypes.add(p ? p.id : v);
+  input.value = '';
+  ed_renderPartnerTypes();
+}
+
 async function handleSaveProfile() {
   const errEl   = document.getElementById('ed_error');
   const saveBtn = document.getElementById('ed_saveBtn');
@@ -217,7 +269,8 @@ async function handleSaveProfile() {
       interests:        interests,
       lookingFor:       [...ed_lookingFor],
       wantToTry:        [...ed_wantToTry],
-      romantic:         ed_lookingFor.has('romantic'),   // kept for the badge + discover filter
+      partnerTypes:     [...ed_partnerTypes],
+      romantic:        ed_lookingFor.has('romantic'),   // kept for the badge + discover filter
       hobbyImages:      hobbyImages,
       hobbyImageUrl:    hobbyImages[0] || '',
       profilePhotoURL:  profilePhotoUrl,

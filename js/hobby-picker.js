@@ -7,6 +7,7 @@
 //   const picker = createHobbyPicker('containerId', ['ריצה', 'צילום']);
 //   picker.getHobbies()          → ['ריצה', 'צילום']
 //   picker.setHobbies([...])
+//   createHobbyPicker('id', [], { compact: true }) → chosen hobbies first; categories open on "+ הוספת תחביב"
 // ══════════════════════════════════════════════════════════════════════════════
 
 const HOBBY_PICKER_MAX     = 15;
@@ -68,11 +69,12 @@ function hp_injectStyles() {
   document.head.appendChild(style);
 }
 
-function createHobbyPicker(containerId, initial = []) {
+function createHobbyPicker(containerId, initial = [], { compact = false } = {}) {
   hp_injectStyles();
   const root = document.getElementById(containerId);
   let selected = [];
   let openCat  = -1;
+  let adding   = !compact;   // compact: the category grid stays closed until asked for
 
   function catCount(cat) {
     return cat.items.filter(i => selected.includes(i)).length;
@@ -121,6 +123,26 @@ function createHobbyPicker(containerId, initial = []) {
       : '<span class="text-xs text-gray-400">עדיין לא נבחרו תחביבים — בחר/י קטגוריה למעלה</span>';
 
     const inputVal = root.querySelector('.hp-input')?.value || '';
+    if (compact) {
+      root.innerHTML = `
+      <div class="space-y-3">
+        <div class="flex flex-wrap gap-2">${selected.length ? selected.map(h => `<span class="hp-tag">${hp_escape(h)}<button type="button" data-remove="${hp_escape(h)}" aria-label="הסר ${hp_escape(h)}">✕</button></span>`).join('') : '<span class="text-xs text-gray-400">עוד אין</span>'}</div>
+        ${adding ? `
+        <div class="grid grid-cols-2 gap-2">${cats}</div>
+        ${subs}
+        <div class="flex gap-2">
+          <input type="text" class="hp-input flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+            maxlength="${HOBBY_PICKER_MAX_LEN}" placeholder="תחביב שלא ברשימה?"/>
+          <button type="button" class="hp-add bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-xl px-4 transition">הוסף</button>
+        </div>
+        <button type="button" class="hp-toggle text-xs font-bold text-purple-600">סגירה ↑</button>` :
+        '<button type="button" class="hp-toggle text-sm font-bold text-purple-700">+ הוספת תחביב</button>'}
+        <p class="hp-error hidden text-xs text-red-500"></p>
+      </div>`;
+      const inp = root.querySelector('.hp-input');
+      if (inp) inp.value = inputVal;
+      return;
+    }
     root.innerHTML = `
       <div class="space-y-3">
         <div class="grid grid-cols-2 gap-2">${cats}</div>
@@ -166,6 +188,10 @@ function createHobbyPicker(containerId, initial = []) {
     } else if (rm) {
       remove(rm.dataset.remove);
       render();
+    } else if (e.target.closest('.hp-toggle')) {
+      adding = !adding;
+      openCat = -1;
+      render();
     } else if (e.target.closest('.hp-add')) {
       addCustom();
     }
@@ -181,6 +207,7 @@ function createHobbyPicker(containerId, initial = []) {
   function setHobbies(list) {
     selected = [];
     openCat  = -1;
+    adding   = !compact;
     (list || []).forEach(add);
     render();
   }

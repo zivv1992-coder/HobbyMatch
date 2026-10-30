@@ -15,7 +15,6 @@ if (me) {
 if (me) {
   loadEvents();   // "פעילויות" is the home tab
   loadFeed().then(() => {
-    renderAroundMe();
     loadRequests();
     initNotifications();
     initDiscovery();
