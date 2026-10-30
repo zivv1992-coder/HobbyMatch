@@ -160,7 +160,7 @@ test.describe('Edit profile', () => {
     await page.evaluate(() => openEditDrawer());
 
     const drawer = page.locator('#editDrawer');
-    for (const title of ['📸 תמונות', '✍️ עליי', '💚 התחביבים שלי', '🌱 רוצה לנסות', 'עכשיו מחפש/ת שותפים ל', '👤 פרטים']) {
+    for (const title of ['📸 תמונות', '✍️ עליי', '💚 התחביבים שלי', '🌱 רוצה לנסות', 'מחפש/ת שותפים ל', '👤 פרטים']) {
       await expect(drawer).toContainText(title);
     }
     const look = page.locator('#ed_lookingFor');
@@ -230,7 +230,7 @@ test.describe('Edit profile', () => {
     await page.evaluate(u => showProfileModal(u, false, me), { ...MOCK_FEED_USERS[0], wantToTry: ['קרמיקה'], partnerTypes: ['hikes', 'גלישה', ''] });
     const modal = page.locator('#profileModal');
     await expect(modal).toContainText('🌱 רוצה לנסות');
-    await expect(modal).toContainText('🤝 עכשיו מחפש/ת שותפים ל…');
+    await expect(modal).toContainText('🤝 מחפש/ת שותפים ל…');
     await expect(modal).toContainText('🥾 טיולים והליכות');
     await expect(modal).toContainText('🤝 גלישה');
   });

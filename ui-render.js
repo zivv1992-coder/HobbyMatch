@@ -265,8 +265,8 @@ function showProfileModal(user, isLiked, myUser, isMatched = false) {
             `<span class="inline-block bg-amber-50 text-amber-700 text-sm font-bold px-3 py-1 rounded-full">${escapeHtml(h)}</span>`).join('')}</div>
         </div>` : ''}
         ${partnerLabels(user).length ? `
-        <div>
-          <p class="text-xs font-bold text-gray-400 uppercase mb-1.5">🤝 עכשיו מחפש/ת שותפים ל…</p>
+        <div class="border border-purple-100 bg-purple-50/40 rounded-2xl p-3">
+          <p class="text-sm font-black text-purple-900 mb-2">🤝 מחפש/ת שותפים ל…</p>
           <div class="flex flex-wrap gap-2">${partnerLabels(user).map(p =>
             `<span class="inline-block bg-purple-50 text-purple-700 text-sm font-bold px-3 py-1 rounded-full">${p.e} ${escapeHtml(p.label)}</span>`).join('')}</div>
         </div>` : ''}

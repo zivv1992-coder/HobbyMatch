@@ -50,7 +50,7 @@ Document ID = email with `@` → `_at_` and `.` → `_dot_`
   profilePhotoURL, hobbyImages: string[], hobbyImageUrl, latitude, longitude, createdAt }
 ```
 `wantToTry` = "🌱 רוצה לנסות" (Tahbiva discover card "🤔 רוצה לנסות", ⇄ in Tahbiva's my-hobbies, typed in the edit drawer; also matches activities).
-`partnerTypes` = "🤝 עכשיו מחפש/ת שותפים ל…": `TAHBIVA.PARTNERS` ids (shown by their `short` label) + the user's own
+`partnerTypes` = "🤝 מחפש/ת שותפים ל…": `TAHBIVA.PARTNERS` ids (shown by their `short` label) + the user's own
 free text from the edit drawer. Read with `partnerLabels(user)` (ui-render.js) — free text is other users' text → escape.
 `notForMe` = discover cards marked "🙅 לא בשבילי" (never shown). `totAnswers` = "this or that" picks — preference only.
 Phone is **required** (Tahbiva + edit drawer); older profiles may lack it, so WhatsApp buttons only show with a valid number.
