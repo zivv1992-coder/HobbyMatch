@@ -112,11 +112,10 @@
       <div class="flex-1 flex flex-col items-center justify-center text-center gap-4">
         <div class="owl big">🦉</div>
         <h2 class="text-3xl font-black">היי, אני תחביבה 👋</h2>
-        <p class="text-[#7c6aa8] font-semibold -mt-2">השדכנית של התחביבים בקונקשן</p>
         <div class="flex flex-col gap-2 w-full text-right mt-2">
-          <div class="tile p-3 flex items-center gap-3"><span class="text-2xl">🎯</span><span class="font-semibold">נגלה ביחד מה מעניין אותך</span></div>
-          <div class="tile p-3 flex items-center gap-3"><span class="text-2xl">📍</span><span class="font-semibold">אראה לך מי ומה קורה לידך</span></div>
-          <div class="tile p-3 flex items-center gap-3"><span class="text-2xl">🤝</span><span class="font-semibold">אחבר אותך לאנשים ולפעילויות</span></div>
+          <div class="flex items-center gap-3 px-2"><span class="text-2xl">🎯</span><span class="font-semibold">נגלה ביחד מה מעניין אותך</span></div>
+          <div class="flex items-center gap-3 px-2"><span class="text-2xl">📍</span><span class="font-semibold">נראה אילו אנשים ופעילויות אפשר למצוא בסביבה שלך</span></div>
+          <div class="flex items-center gap-3 px-2"><span class="text-2xl">🤝</span><span class="font-semibold">נעזור לך למצוא אנשים לחלוק איתם תחביבים וחוויות</span></div>
         </div>
         <p class="text-sm text-[#a59bc7] font-semibold">בלי טפסים. מבטיחה 🤞</p>
       </div>
@@ -126,13 +125,17 @@
 
     <!-- This or that -->
     <section class="screen" id="tot">
-      <div class="flex items-end gap-2 mb-6"><div class="owl">🦉</div><div class="bubble" id="totSay"></div></div>
-      <div id="totBox" class="flex-1 flex flex-col justify-center"></div>
+      <!-- Owl + question centered together, so the reply sits close to the question -->
+      <div class="my-auto relative" style="top:-10dvh">
+        <div class="flex items-end gap-2 mb-4"><div class="owl">🦉</div><div class="bubble" style="font-size:1.1em;font-weight:700;border-color:#ddd5f5" id="totSay"></div></div>
+        <div id="totBox"></div>
+      </div>
     </section>
 
     <!-- Step 1: broad categories -->
     <section class="screen" id="interests">
-      <div class="flex items-end gap-2 mb-5"><div class="owl">🦉</div><div class="bubble" id="intSay"></div></div>
+      <h2 class="text-2xl font-black">מה מעניין אותך?</h2>
+      <div class="flex items-end gap-2 mt-3 mb-5"><div class="owl">🦉</div><div class="bubble">אפשר לבחור כמה תחומים. אין פה תשובה נכונה או לא נכונה 🎯</div></div>
       <div id="catGrid" class="flex flex-col gap-2.5"></div>
       <div class="mt-auto pt-5"><button class="btn btn-p" id="interestsNext" onclick="interestsNext()">המשך ←</button></div>
     </section>
@@ -151,7 +154,27 @@
       </div>
     </section>
 
-    <!-- Where: location early, so nearby people can show right away -->
+    <!-- Looking for -->
+    <section class="screen" id="looking">
+      <div class="flex items-end gap-2 mb-6"><div class="owl">🦉</div><div class="bubble">ומה את/ה מחפש/ת?</div></div>
+      <div id="lookBox" class="flex flex-col gap-3"></div>
+      <div class="mt-auto pt-5">
+        <button class="btn btn-p" onclick="go('partners')">המשך ←</button>
+        <button class="link block mx-auto" onclick="go('partners')">דלג</button>
+      </div>
+    </section>
+
+    <!-- Hobby partners: who to do things with (separate from the hobby list) -->
+    <section class="screen" id="partners">
+      <h2 class="text-2xl font-black">איזה שותפים לתחביב את/ה מחפש/ת?</h2>
+      <div id="partnerBox" class="flex flex-col gap-3 mt-5"></div>
+      <div class="mt-auto pt-5">
+        <button class="btn btn-p" onclick="partnersNext()">המשך ←</button>
+        <button class="link block mx-auto" onclick="partnersNext()">אדלג בינתיים</button>
+      </div>
+    </section>
+
+    <!-- Where: after the hobbies, so nearby people match on everything picked -->
     <section class="screen" id="where">
       <div class="flex items-end gap-2 mb-6"><div class="owl">🦉</div><div class="bubble">איפה את/ה גר/ה? 📍</div></div>
       <div class="flex flex-col items-center gap-4">
@@ -163,9 +186,10 @@
 
     <!-- Nearby: instant value — real people with shared hobbies + one activity -->
     <section class="screen" id="nearby">
-      <div class="flex items-end gap-2 mb-4"><div class="owl">🦉</div><div class="bubble" id="nearSay"></div></div>
+      <h2 class="text-2xl font-black">אנשים ותחביבים לידך</h2>
+      <div class="flex items-end gap-2 mt-3 mb-4"><div class="owl">🦉</div><div class="bubble" id="nearSay"></div></div>
       <div id="nearBox"></div>
-      <div class="mt-auto pt-5"><button class="btn btn-p" onclick="toDiscover()">המשך ←</button></div>
+      <div class="mt-auto pt-5"><button class="btn btn-p" onclick="startAbout()">המשך ←</button></div>
     </section>
 
     <!-- Discover new hobbies -->
@@ -182,18 +206,8 @@
       <div class="flex items-end gap-2 mb-4"><div class="owl">🦉</div><div class="bubble" id="profileSay"></div></div>
       <div id="profileBox"></div>
       <div class="mt-auto pt-5">
-        <button class="btn btn-p" onclick="go('looking')">המשך ←</button>
+        <button class="btn btn-p" onclick="go('where')">המשך ←</button>
         <button class="link block mx-auto" onclick="discoverMore()">לגלות עוד תחביבים</button>
-      </div>
-    </section>
-
-    <!-- Looking for -->
-    <section class="screen" id="looking">
-      <div class="flex items-end gap-2 mb-6"><div class="owl">🦉</div><div class="bubble">ומה את/ה מחפש/ת?</div></div>
-      <div id="lookBox" class="flex flex-col gap-3"></div>
-      <div class="mt-auto pt-5">
-        <button class="btn btn-p" onclick="startAbout()">המשך ←</button>
-        <button class="link block mx-auto" onclick="startAbout()">דלג</button>
       </div>
     </section>
 
@@ -211,7 +225,6 @@
         <p class="text-[#7c6aa8] font-semibold" id="readyText"></p>
       </div>
       <button class="btn btn-p mb-2" onclick="finish()">שמרו לי את הפרופיל ←</button>
-      <button class="link mx-auto" onclick="go('interests')">אני רוצה לחקור עוד קודם</button>
     </section>
 
   </main>
