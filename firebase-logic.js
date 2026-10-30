@@ -214,6 +214,7 @@ async function updateProfileInFirestore(userObj) {
     romantic:         userObj.romantic,
     lookingFor:       userObj.lookingFor || [],
     wantToTry:        userObj.wantToTry || [],
+    partnerTypes:     userObj.partnerTypes || [],
     hobbyImages:      images,
     hobbyImageUrl:    images[0] || '',
     latitude:         userObj.latitude,

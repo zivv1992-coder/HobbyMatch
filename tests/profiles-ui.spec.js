@@ -123,12 +123,11 @@ test.describe('Profiles page — UI with session', () => {
     await expect(page.locator('#eventsHint')).toContainText('תל אביב');
   });
 
-  test('"מי לפגוש" shows nearby people who share a hobby (shortened names)', async ({ page }) => {
+  test('activities tab shows only activities — no people strip', async ({ page }) => {
     await page.goto('/profiles.html');
-    const strip = page.locator('#meetStrip');
-    await expect(strip).toContainText('דנה כ', { timeout: 15000 });   // ריצה, same city
-    await expect(strip).not.toContainText('דנה כהן');
-    await expect(strip).not.toContainText('יובל');                   // גיטרה — nothing shared
+    await expect(page.locator('#paneEvents')).toContainText('מה קורה סביבי');
+    await expect(page.locator('#paneEvents')).not.toContainText('מי לפגוש');
+    await expect(page.locator('#meetStrip')).toHaveCount(0);
   });
 
   test('new activity asks for a city, defaulting to mine', async ({ page }) => {
@@ -161,7 +160,7 @@ test.describe('Edit profile', () => {
     await page.evaluate(() => openEditDrawer());
 
     const drawer = page.locator('#editDrawer');
-    for (const title of ['📸 תמונות', '✍️ עליי', '💚 התחביבים שלי', '🤔 חושב/ת לנסות', '👤 פרטים']) {
+    for (const title of ['📸 תמונות', '✍️ עליי', '💚 התחביבים שלי', '🌱 רוצה לנסות', 'עכשיו מחפש/ת שותפים ל', '👤 פרטים']) {
       await expect(drawer).toContainText(title);
     }
     const look = page.locator('#ed_lookingFor');
@@ -176,6 +175,64 @@ test.describe('Edit profile', () => {
     expect(session.lookingFor).toEqual(['friends']);
     expect(session.romantic).toBe(false);
     expect(session.wantToTry).toEqual(['קרמיקה']);
+  });
+
+  test('hobby partners and want-to-try are editable', async ({ page }) => {
+    await setupFirebaseMock(page, { users: MOCK_FEED_USERS });
+    await injectSession(page, { ...MOCK_SESSION, partnerTypes: ['dance'] });
+    await page.goto('/profiles.html');
+    await page.evaluate(() => openEditDrawer());
+
+    await expect(page.locator('#editDrawer h2')).toHaveText('הפרופיל שלי');
+    const partners = page.locator('#ed_partnerTypes');
+    const suggest  = page.locator('#ed_partnerSuggest');
+    await expect(partners).toContainText('ריקוד ותנועה');
+    await expect(suggest.locator('button')).toHaveCount(3);          // the presets not chosen yet
+    await suggest.locator('button:has-text("טיולים")').click();    // + add a preset
+    await page.fill('#ed_partnerInput', 'גלישה');                   // + add my own
+    await page.click('#ed_partnerInput + button');
+    await expect(partners).toContainText('גלישה');
+    // Edit: tapping 'גלישה' moves it into the field
+    await partners.locator('button:has-text("גלישה")').click();
+    await expect(page.locator('#ed_partnerInput')).toHaveValue('גלישה');
+    await page.fill('#ed_partnerInput', 'גלישת גלים');
+    await page.click('#ed_partnerInput + button');
+    // Remove: ✕ on ריקוד ותנועה
+    await partners.locator('span:has-text("ריקוד ותנועה") button[aria-label="הסרה"]').click();
+    await expect(partners).not.toContainText('ריקוד');
+    await page.fill('#ed_wantToTryInput', 'קרמיקה');
+    await page.click('#ed_wantToTryInput + button');
+    await page.click('#ed_saveBtn');
+    await expect(page.locator('#editOverlay')).toBeHidden({ timeout: 10000 });
+
+    const session = await page.evaluate(() => JSON.parse(localStorage.getItem('hobbyMatchUser')));
+    expect(session.partnerTypes).toEqual(['hikes', 'גלישת גלים']);
+    expect(session.wantToTry).toEqual(['קרמיקה']);
+  });
+
+  test('my hobbies are listed first; categories open on "+ הוספת תחביב"', async ({ page }) => {
+    await setupFirebaseMock(page, { users: MOCK_FEED_USERS });
+    await injectSession(page, MOCK_SESSION);
+    await page.goto('/profiles.html');
+    await page.evaluate(() => openEditDrawer());
+    const picker = page.locator('#ed_hobbyPicker');
+    await expect(picker).toContainText('ריצה');
+    await expect(picker.locator('.hp-bubble')).toHaveCount(0);
+    await picker.locator('button:has-text("הוספת תחביב")').click();
+    await expect(picker.locator('.hp-bubble')).toHaveCount(7);
+    await expect(page.locator('#ed_identity')).toContainText('test@example.com');
+  });
+
+  test('profile shows 🌱 want to try and 🤝 hobby partners', async ({ page }) => {
+    await setupFirebaseMock(page, { users: MOCK_FEED_USERS });
+    await injectSession(page, MOCK_SESSION);
+    await page.goto('/profiles.html');
+    await page.evaluate(u => showProfileModal(u, false, me), { ...MOCK_FEED_USERS[0], wantToTry: ['קרמיקה'], partnerTypes: ['hikes', 'גלישה', ''] });
+    const modal = page.locator('#profileModal');
+    await expect(modal).toContainText('🌱 רוצה לנסות');
+    await expect(modal).toContainText('🤝 עכשיו מחפש/ת שותפים ל…');
+    await expect(modal).toContainText('🥾 טיולים והליכות');
+    await expect(modal).toContainText('🤝 גלישה');
   });
 });
 

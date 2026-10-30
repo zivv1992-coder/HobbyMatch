@@ -5,7 +5,7 @@ const { setupFirebaseMock, MOCK_FEED_USERS } = require('./helpers');
 const DONE_DRAFT = {
   screen: 'ready', hist: [], tot: [1, 0, 1], status: { 'ריצה': 'love', 'יוגה': 'love', 'שחמט': 'love', 'קרמיקה': 'try', 'אפייה': 'no' },
   cats: ['move', 'games'], looking: ['friends', 'romantic'], partners: ['dance', 'coffee'],
-  bio: 'אוהב/ת לרוץ בבוקר', age: '29', city: 'תל אביב', phone: '', done: true,
+  bio: 'אוהב/ת לרוץ בבוקר', age: '29', city: 'תל אביב', phone: '0501234567', done: true,
 };
 
 // Planted once per test — later page loads must see what the app left behind
@@ -74,12 +74,17 @@ test.describe('Tahbiva onboarding (tahbiva.html)', () => {
     expect(d.city).toBe('תל אביב');
   });
 
-  test('phone is optional', async ({ page }) => {
+  test('phone is required', async ({ page }) => {
     await setupFirebaseMock(page);
     await setDraft(page, { screen: 'about', hist: ['nearby'], aboutStep: 2, status: { 'ריצה': 'love' }, cats: ['move'], city: 'תל אביב', age: '30' });
     await page.goto('/tahbiva.html');
     await expect(page.locator('#aboutSay')).toHaveText('איך אפשר ליצור איתך קשר?');
-    await page.click('#aboutForm button:has-text("אדלג בינתיים")');
+    await expect(page.locator('#aboutForm')).toContainText('המספר יופיע רק למי שיש לך קונקשן איתו');
+    await expect(page.locator('#aboutForm')).not.toContainText('אדלג');
+    await page.click('#aboutForm button.btn-p');
+    await expect(page.locator('#toast')).toHaveText('מה המספר שלך? 🙂');
+    await page.fill('#aboutIn', '050-1234567');
+    await page.click('#aboutForm button.btn-p');
     await expect(page.locator('#ready')).toHaveClass(/active/);
     await page.click('#ready button.btn-p');
     await expect(page).toHaveURL(/register.html/);

@@ -309,36 +309,6 @@ function eventKmLabel(ev) {
   return km == null ? '' : ` · ${km < 1 ? 'ממש לידך' : Math.round(km) + ' ק״מ'}`;
 }
 
-// ── "מי לפגוש": nearby people who share my hobbies (full list in "מי באזור") ──
-let _meetPeople = [];
-function renderAroundMe() {
-  const box = document.getElementById('aroundMe');
-  if (!me || !box) return;
-  const mine = getUserHobbies(me);
-  _meetPeople = allUsers
-    .map(u => ({
-      u,
-      shared: getUserHobbies(u).filter(h => mine.includes(h)),
-      km: me.latitude && u.latitude != null ? distanceKm(me.latitude, me.longitude, u.latitude, u.longitude) : Infinity
-    }))
-    .filter(x => x.shared.length && x.km <= EVENTS_RADIUS_KM)
-    .sort((a, b) => b.shared.length - a.shared.length || a.km - b.km)
-    .slice(0, 3);
-  box.classList.toggle('hidden', !_meetPeople.length);
-  document.getElementById('meetStrip').innerHTML = _meetPeople.map(({ u, shared, km }, i) => {
-    const name = displayName(u.fullName);
-    return `<button onclick="openMeet(${i})" class="shrink-0 w-36 bg-white rounded-2xl border border-gray-100 shadow-sm p-3 text-center hover:border-purple-200 transition">
-      <div class="w-12 h-12 mx-auto rounded-full bg-purple-50 grid place-items-center font-black text-purple-600">${escapeHtml(getInitials(name))}</div>
-      <p class="font-bold text-sm mt-1.5 truncate">${escapeHtml(name)}${u.age ? ', ' + escapeHtml(u.age) : ''}</p>
-      <p class="text-[11px] text-gray-400">📍 ${km < 1 ? 'ממש לידך' : Math.round(km) + ' ק״מ'}</p>
-      <p class="text-[11px] text-purple-600 font-semibold truncate mt-1">${HOBBY_EMOJI[shared[0]] || '💚'} ${escapeHtml(shared[0])}${shared.length > 1 ? ' +' + (shared.length - 1) : ''}</p>
-    </button>`;
-  }).join('');
-}
-function openMeet(i) {
-  const { u } = _meetPeople[i];
-  showProfileModal(u, likedEmails.has(u.email), me);
-}
 
 // ── Load events ───────────────────────────────────────────────────────────────
 async function loadEvents() {

@@ -106,12 +106,13 @@ const TAHBIVA = {
     { id: 'partners', e: '🎯', label: 'שותפים לפעילות' },
     { id: 'romantic', e: '💜', label: 'היכרות רומנטית' },
   ],
-  // "שותפים לתחביב" — saved as users.partnerTypes (ids), separate from hobbies
+  // "שותפים לתחביב" — users.partnerTypes holds these ids plus free-text wishes from the edit drawer.
+  // short = shown after "מחפש/ת שותפים ל…" (profile + edit); label = Tahbiva's screen
   PARTNERS: [
-    { id: 'dance',    e: '💃', label: 'שותפים לריקוד ולתנועה' },
-    { id: 'art',      e: '🎨', label: 'שותף/ה לציור ויצירה' },
-    { id: 'hikes',    e: '🥾', label: 'שותפים לטיולים והליכות' },
-    { id: 'newHobby', e: '🌱', label: 'אנשים שרוצים לנסות איתי תחביב חדש' },
+    { id: 'dance',    e: '💃', label: 'שותפים לריקוד ולתנועה',            short: 'ריקוד ותנועה' },
+    { id: 'art',      e: '🎨', label: 'שותף/ה לציור ויצירה',              short: 'ציור ויצירה' },
+    { id: 'hikes',    e: '🥾', label: 'שותפים לטיולים והליכות',           short: 'טיולים והליכות' },
+    { id: 'newHobby', e: '🌱', label: 'אנשים שרוצים לנסות איתי תחביב חדש', short: 'לנסות תחביב חדש' },
   ],
 };
 

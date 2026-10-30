@@ -19,7 +19,7 @@ const ABOUT = [
   { k: 'bio',   e: '✍️', q: 'ספר/י קצת על עצמך', area: true,
     ph: 'למשל: אוהב/ת לטייל בטבע ולצייר בצבעי מים. בא לי להכיר שותף/ה לציור 🎨' },
   { k: 'age',   e: '🎂', q: 'בן/בת כמה את/ה?', in: 'type="number" inputmode="numeric" min="18" max="99" placeholder="גיל"' },
-  { k: 'phone', e: '📱', q: 'איך אפשר ליצור איתך קשר?', optional: true,
+  { k: 'phone', e: '📱', q: 'איך אפשר ליצור איתך קשר?',
     in: 'type="tel" inputmode="tel" dir="ltr" maxlength="13" placeholder="050-0000000"',
     note: 'המספר יופיע רק למי שיש לך קונקשן איתו, ולא מופיע לכולם.' },
 ];
@@ -459,8 +459,7 @@ function renderAbout() {
         : `<input id="aboutIn" class="field" ${a.in} value="${esc(S[a.k] || '')}">`}
       ${a.note ? `<p class="text-sm font-semibold text-[#8b7fb0] text-center">${a.note}</p>` : ''}
     </div>
-    <div class="mt-auto pt-5"><button class="btn btn-p">המשך ←</button>
-      ${a.optional ? `<button type="button" class="link block mx-auto" onclick="skipAbout()">אדלג בינתיים</button>` : ''}</div>`;
+    <button class="btn btn-p mt-auto">המשך ←</button>`;
   setTimeout(() => $('aboutIn') && $('aboutIn').focus({ preventScroll: true }), 400);
 }
 function nextAbout() {
@@ -473,13 +472,13 @@ function aboutNext(e) {
   const a = ABOUT[S.aboutStep];
   let v = $('aboutIn').value.trim();
   if (a.k === 'age' && !(+v >= 18 && +v <= 99)) return toast('גיל בין 18 ל-99 🙂');
-  if (a.k === 'phone' && v) {
+  if (a.k === 'phone') {
+    if (!v) return toast('מה המספר שלך? 🙂');
     try { v = sanitizePhone(v); } catch (err) { return toast(err.message); }
   }
   S[a.k] = v;
   nextAbout();
 }
-function skipAbout() { S[ABOUT[S.aboutStep].k] = ''; nextAbout(); }
 function renderReady() {
   const n = positives().length;
   $('readyText').textContent = n ? `יש ${n} תחביבים בפרופיל שלך. בוא/י נגלה אנשים שאפשר לחלוק איתם אותם.`
@@ -489,7 +488,7 @@ function renderReady() {
 function finish() {
   if (!positives().length) { toast('סמנ/י לפחות תחביב אחד 🙂'); return go('interests'); }
   if (!S.city) { toast('איפה את/ה גר/ה? 🙂'); return go('where'); }
-  if (!S.age) { toast('חסר עוד פרט קטן 🙂'); return startAbout(); }
+  if (!S.age || !S.phone) { toast('חסר עוד פרט קטן 🙂'); return startAbout(); }
   S.done = true;
   save();
   trackEvent('tahbiva_done');
