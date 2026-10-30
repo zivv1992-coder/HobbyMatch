@@ -624,28 +624,11 @@
         </div>
       </section>
 
-      <!-- ✍️ About me + what I'm looking for -->
+      <!-- ✍️ About me -->
       <section class="ed-card">
         <h3 class="ed-card-title">✍️ עליי</h3>
         <textarea id="ed_desc" rows="2" maxlength="300" class="drawer-input resize-none"
           placeholder="כמה מילים עליך…"></textarea>
-      </section>
-
-      <!-- 🔎 What I'm looking for -->
-      <section class="ed-card">
-        <h3 class="ed-card-title">🔎 מה אני מחפש/ת</h3>
-        <div id="ed_lookingFor" class="flex flex-wrap gap-2"></div>
-      </section>
-
-      <!-- 🤝 Hobby partners: chosen (tap = edit, ✕ = remove) · suggestions · add new -->
-      <section class="ed-card">
-        <h3 class="ed-card-title">🤝 מחפש/ת שותפים ל…</h3>
-        <div id="ed_partnerTypes" class="flex flex-wrap gap-2"></div>
-        <div id="ed_partnerSuggest" class="flex flex-wrap gap-2"></div>
-        <form onsubmit="ed_addPartner(event)" class="flex gap-2">
-          <input id="ed_partnerInput" maxlength="30" class="drawer-input flex-1" placeholder="+ למשל: גלישה, שחמט"/>
-          <button class="px-4 rounded-xl font-bold text-sm bg-purple-700 text-white hover:bg-purple-800 transition">הוסף</button>
-        </form>
       </section>
 
       <!-- 💚 My hobbies -->
@@ -662,6 +645,23 @@
           <input id="ed_wantToTryInput" maxlength="30" class="drawer-input flex-1" placeholder="+ תחביב"/>
           <button class="px-4 rounded-xl font-bold text-sm bg-purple-700 text-white hover:bg-purple-800 transition">הוסף</button>
         </form>
+      </section>
+
+      <!-- 🤝 Hobby partners: chosen (tap = edit, ✕ = remove) · suggestions · add new -->
+      <section class="ed-card">
+        <h3 class="ed-card-title">🤝 מחפש/ת שותפים ל…</h3>
+        <div id="ed_partnerTypes" class="flex flex-wrap gap-2"></div>
+        <div id="ed_partnerSuggest" class="flex flex-wrap gap-2"></div>
+        <form onsubmit="ed_addPartner(event)" class="flex gap-2">
+          <input id="ed_partnerInput" maxlength="30" class="drawer-input flex-1" placeholder="+ למשל: גלישה, שחמט"/>
+          <button class="px-4 rounded-xl font-bold text-sm bg-purple-700 text-white hover:bg-purple-800 transition">הוסף</button>
+        </form>
+      </section>
+
+      <!-- 🔎 What I'm looking for -->
+      <section class="ed-card">
+        <h3 class="ed-card-title">🔎 מה אני מחפש/ת</h3>
+        <div id="ed_lookingFor" class="flex flex-wrap gap-2"></div>
       </section>
 
       <!-- 👤 Details -->
