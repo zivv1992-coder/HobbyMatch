@@ -182,7 +182,8 @@ async function fetchMatches(myEmail) {
   const likedSnap = await db.collection('likes')
     .where('from', '==', myEmail)
     .get();
-  const likedEmails = likedSnap.docs.map(d => d.data().to);
+  // Dedupe: a duplicate like doc would otherwise show the same match twice
+  const likedEmails = [...new Set(likedSnap.docs.map(d => d.data().to))];
   if (likedEmails.length === 0) return [];
 
   // Of those, find who liked me back

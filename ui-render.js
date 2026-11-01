@@ -432,16 +432,17 @@ function renderMatchCard(user, myUser) {
   const userJson   = JSON.stringify(user).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const myUserJson = JSON.stringify(myUser || null).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   return `
-    <div class="bg-white rounded-2xl shadow-md p-4 flex items-center gap-4">
-      <div class="flex items-center gap-4 flex-1 min-w-0 cursor-pointer"
+    <div class="bg-white rounded-2xl shadow-md p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+      <div class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
            onclick="showProfileModal(${userJson}, false, ${myUserJson}, true)">
-        ${imgHtml}
-        <div class="min-w-0">
-          <p class="font-black text-purple-900">${escapeHtml(displayName(user.fullName))}</p>
-          <p class="text-sm text-gray-500">📍 ${escapeHtml(user.city)}${dist !== null ? ` · ${dist} ק"מ` : ''} · 🎯 ${escapeHtml(user.hobby)}</p>
+        <div class="shrink-0">${imgHtml}</div>
+        <div class="min-w-0 flex-1">
+          <p class="font-black text-purple-900 truncate">${escapeHtml(displayName(user.fullName))}</p>
+          <p class="text-sm text-gray-500 truncate">📍 ${escapeHtml(user.city)}${dist !== null ? ` · ${dist} ק"מ` : ''}</p>
+          <p class="text-sm text-gray-500 line-clamp-2">🎯 ${escapeHtml(user.hobby)}</p>
         </div>
       </div>
-      <div class="flex items-center gap-2 shrink-0">
+      <div class="flex items-center gap-2 shrink-0 [&>*]:flex-1 [&>*]:justify-center sm:[&>*]:flex-none">
         <button onclick="openChat('${safeEmail}', '${safeName}')"
           data-chat-email="${user.email}"
           class="relative flex items-center gap-1.5 border border-purple-200 text-purple-700 font-bold text-sm px-3 py-2 rounded-xl hover:bg-purple-50 transition">
