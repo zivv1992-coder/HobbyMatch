@@ -53,12 +53,12 @@ Document ID = email with `@` → `_at_` and `.` → `_dot_`
 `partnerTypes` = "🤝 מחפש/ת שותפים ל…": `TAHBIVA.PARTNERS` ids (shown by their `short` label) + the user's own
 free text from the edit drawer. Read with `partnerLabels(user)` (ui-render.js) — free text is other users' text → escape.
 `notForMe` = discover cards marked "🙅 לא בשבילי" (never shown). `totAnswers` = "this or that" picks — preference only.
-Phone is **required** (Tahbiva + edit drawer); older profiles may lack it, so WhatsApp buttons only show with a valid number.
+Phone is **required** (Tahbiva + edit drawer) but is **never shown** to other users — since 2026-11-01 matches talk only in the in-app chat (no WhatsApp buttons). WhatsApp links remain only for activity organizers.
 `lookingFor` = what the user is looking for (Tahbiva + edit drawer). `romantic` = `lookingFor` includes `'romantic'`,
 kept for the ❤️ badge and the discover filter (older profiles have only `romantic`).
 Photos are **one public gallery** (since 2026-10-26): `hobbyImages` = all photos (me + hobbies), `profilePhotoURL` =
 `hobbyImageUrl` = the first one. Read them with `userPhotos(user)` (ui-render.js), which also folds in an older separate
-`profilePhotoURL`. Only the phone is hidden until a match.
+`profilePhotoURL`. Only the phone is hidden (from everyone, matches included).
 `hobbies` = source of truth (array). `hobby` = same list joined with `', '`, kept for existing consumers
 (cards, filters, events, admin). Read with `getUserHobbies(user)` — falls back to splitting legacy `hobby`.
 
@@ -111,7 +111,7 @@ wraps long lines and breaks strings. Most collections are still `if true` (see d
 
 ## Privacy Policy
 - `privacy.html` — דף פרטיות מלא לפי חוק הגנת הפרטיות הישראלי, נגיש מכל דף
-- בדף ההרשמה (`register.html`) מופיעה הודעה שמספר הטלפון נשמר אך **לא מוצג** למשתמשים אחרים — מופיע רק למי שיש מאץ' משותף
+- בדף ההרשמה (`register.html`) מופיעה הודעה שמספר הטלפון נשמר אך **לא מוצג** למשתמשים אחרים — גם לא לקונקשנים; השיחה מתנהלת בצ'אט באפליקציה
 
 ---
 

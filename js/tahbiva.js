@@ -21,7 +21,7 @@ const ABOUT = [
   { k: 'age',   e: '🎂', q: 'בן/בת כמה את/ה?', in: 'type="number" inputmode="numeric" min="18" max="99" placeholder="גיל"' },
   { k: 'phone', e: '📱', q: 'איך אפשר ליצור איתך קשר?',
     in: 'type="tel" inputmode="tel" dir="ltr" maxlength="13" placeholder="050-0000000"',
-    note: 'המספר יופיע רק למי שיש לך קונקשן איתו, ולא מופיע לכולם.' },
+    note: 'המספר לא מוצג לאף אחד. מדברים בצ׳אט באפליקציה.' },
 ];
 
 // Hobby name → { e, n, w (category id | 'custom'), d (line) }
