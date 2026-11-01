@@ -183,7 +183,9 @@ async function fetchMatches(myEmail) {
     .where('from', '==', myEmail)
     .get();
   // Dedupe: a duplicate like doc would otherwise show the same match twice
-  const likedEmails = [...new Set(likedSnap.docs.map(d => d.data().to))];
+  const likedEmails = [...new Map(likedSnap.docs
+    .map(d => d.data().to).filter(Boolean)
+    .map(e => [e.toLowerCase(), e])).values()];
   if (likedEmails.length === 0) return [];
 
   // Of those, find who liked me back

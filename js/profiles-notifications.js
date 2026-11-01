@@ -112,8 +112,12 @@ async function _refreshMatches() {
 
     const matches = [];
     const likers  = [];
+    const seen    = new Set();  // a duplicate like doc would otherwise list the same person twice
     for (const doc of likedMeSnap.docs) {
       const fromEmail = doc.data().from;
+      const key = (fromEmail || '').toLowerCase();
+      if (!fromEmail || seen.has(key)) continue;
+      seen.add(key);
       const profile = allUsers.find(u => u.email === fromEmail) || await _fetchUser(fromEmail);
       if (!profile) continue;
       (iLikedEmails.has(fromEmail) ? matches : likers).push(profile);
