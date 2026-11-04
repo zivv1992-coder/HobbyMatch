@@ -29,7 +29,7 @@ test.describe('Tahbiva onboarding (tahbiva.html)', () => {
     await expect(page.locator('#totBox')).toContainText('לאן הכי מושך אותך לצאת?');
     for (let r = 0; r < 3; r++) {
       await page.locator('#totBox button.tile').first().click();
-      await page.waitForTimeout(1300);
+      await page.waitForTimeout(1700);
     }
     await expect(page.locator('#interests')).toHaveClass(/active/, { timeout: 5000 });
     let d = await page.evaluate(() => JSON.parse(localStorage.getItem('tahbivaDraft2')));

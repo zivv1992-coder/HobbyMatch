@@ -130,14 +130,15 @@ function pickTot(k, el) {
   totLock = true;
   el.classList.add('on');
   S.tot.push(k);
-  say('totSay', TAHBIVA.TOT[S.tot.length - 1].opts[k].reply);
   save();
   const done = S.tot.length >= TAHBIVA.TOT.length;
+  // One short line at a time, with time to read it
+  say('totSay', done ? 'יש לי כמה כיוונים בשבילך 🌱' : TAHBIVA.TOT[S.tot.length - 1].opts[k].reply);
   setTimeout(() => {
-    if (!done) { totLock = false; return renderTot(); }
-    say('totSay', 'יש לי כמה כיוונים שאולי יעניינו אותך 🌱 בוא/י נראה מה באמת מדבר אליך!');
-    setTimeout(() => { totLock = false; if (S.screen === 'tot') go('interests'); }, 1800);
-  }, 1100);
+    totLock = false;
+    if (!done) return renderTot();
+    if (S.screen === 'tot') go('interests');
+  }, done ? 2400 : 1600);
 }
 // Category ids the answers lean to, strongest first
 function worldWeights() {

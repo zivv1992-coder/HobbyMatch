@@ -72,14 +72,14 @@ const TAHBIVA = {
   // Answers only reorder categories and suggestions — they never add hobbies.
   TOT: [
     { q: 'לאן הכי מושך אותך לצאת?', opts: [
-      { e: '🌿', label: 'לטבע ולמרחבים', cats: ['nature', 'move'], reply: 'יש משהו באוויר הפתוח שעושה טוב לנשמה 🌿' },
-      { e: '🏙️', label: 'לעיר ולמקומות חדשים', cats: ['culture', 'food', 'people'], reply: 'אה, אוהב/ת לגלות פינות חדשות! 😉' }] },
+      { e: '🌿', label: 'לטבע ולמרחבים', cats: ['nature', 'move'], reply: 'יש משהו באוויר הפתוח 🌿' },
+      { e: '🏙️', label: 'לעיר ולמקומות חדשים', cats: ['culture', 'food', 'people'], reply: 'אוהב/ת לגלות פינות חדשות 😉' }] },
     { q: 'מה עושה לך חשק לקום מהספה?', opts: [
-      { e: '🏃', label: 'לזוז ולהיות בתנועה', cats: ['move'], reply: 'יש כאלה שמביעים את עצמם בצבעים ויש כאלה בתנועות. אני בעד שניהם!' },
-      { e: '🎨', label: 'ליצור ולגלות', cats: ['art'], reply: 'יש כאלה שמביעים את עצמם בצבעים ויש כאלה בתנועות. אני בעד שניהם!' }] },
+      { e: '🏃', label: 'לזוז ולהיות בתנועה', cats: ['move'], reply: 'אהבתי! 🏃' },
+      { e: '🎨', label: 'ליצור ולגלות', cats: ['art'], reply: 'אהבתי! 🎨' }] },
     { q: 'איך את/ה אוהב/ת לבלות עם אנשים?', opts: [
-      { e: '👫', label: 'אחד על אחד', cats: ['culture', 'art', 'nature'], reply: 'אחד על אחד או בקבוצה? העיקר שיהיה מעניין!' },
-      { e: '👥', label: 'בקבוצה', cats: ['people', 'games', 'move'], reply: 'אחד על אחד או בקבוצה? העיקר שיהיה מעניין!' }] },
+      { e: '👫', label: 'אחד על אחד', cats: ['culture', 'art', 'nature'] },
+      { e: '👥', label: 'בקבוצה', cats: ['people', 'games', 'move'] }] },
   ],
   // One line per hobby. Only HOBBY_CATEGORIES hobbies that have a line appear as discover cards.
   LINES: {
