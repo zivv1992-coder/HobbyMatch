@@ -63,6 +63,24 @@ test.describe('Bell — a notification clears only when it is clicked', () => {
     await expect(row(page, 'יובל ל')).toBeVisible();
   });
 
+  test('opening unread messages from the bell clears their number right away', async ({ page }) => {
+    const chatId = ['dana_at_example_dot_com', 'test_at_example_dot_com'].sort().join('__');
+    await setupFirebaseMock(page, {
+      users: MOCK_FEED_USERS,
+      likes: [{ from: me, to: dana }, { from: dana, to: me }],
+      chats: { [chatId]: [1, 2, 3, 4].map(n => ({ from: dana, text: 'היי ' + n })) },
+    });
+    await page.addInitScript(([key, list]) => localStorage.setItem(key, list), [`kn_seen_matches_${me}`, JSON.stringify([dana])]);
+    await injectSession(page, MOCK_SESSION);
+    await page.goto('/profiles.html');
+    await expect(badge(page)).toHaveText('4', { timeout: 15000 });
+
+    await page.click('#bellBtn');
+    await panel(page).locator('div.cursor-pointer:has-text("שלח לך הודעה חדשה")').click();
+    await expect(page.locator('#chatModal')).toBeVisible();
+    await expect(badge(page)).toBeHidden();
+  });
+
   test('liking back from the bell does not add to the number', async ({ page }) => {
     await open(page, [{ from: dana, to: me }, { from: yuval, to: me }]);
     await page.click('#bellBtn');

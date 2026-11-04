@@ -171,7 +171,7 @@ const FCM_VAPID_KEY = "BJ9FYrOsn301Wfq9tA6em9wfQO8sQH3Ku13ksh7Blc9s45WLNbPRZo68I
 - Every async op (Firebase, uploads) must have `try-catch` with Hebrew error message
 - `config.js` = config/data only · `auth.js` = auth/session only · `firebase-logic.js` = Firestore/Storage only
 - Static Web App — no server-side code, compatible with GitHub Pages / Netlify / cPanel
-- `sw.js` serves files **cache-first** → bump `CACHE_NAME` on every release that changes HTML/JS, or installed users keep old code
+- `sw.js` serves files **network-first** (cache = offline only) → still bump `CACHE_NAME` on every release that changes HTML/JS, so the offline copy stays current
 - Other users' text in HTML → `escapeHtml()`; inside an `onclick="…('…')"` string → `jsArg()`; in href/src → `safeUrl()` (ui-render.js)
 
 ---

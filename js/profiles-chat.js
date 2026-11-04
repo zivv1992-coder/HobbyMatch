@@ -63,6 +63,7 @@ function openChat(otherEmail, otherName) {
       localStorage.setItem('kn_chatRead_' + chatId, fromOtherCount);
       _unreadCounts[chatId] = 0;
       _updateChatBadge(_chatOtherEmail, 0);
+      _updateBellBadge();
 
       const container = document.getElementById('chatMessages');
       if (snap.empty) {

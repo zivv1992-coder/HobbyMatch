@@ -51,7 +51,7 @@ const MOCK_FEED_USERS = [
 // Call this before page.goto().
 
 // authEmail: the signed-in Firebase Auth user. Left out → follows the saved session; null → not signed in.
-async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [], requests = [], events = [], authEmail = '__session__' } = {}) {
+async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [], requests = [], events = [], chats = {}, authEmail = '__session__' } = {}) {
   // Block Firebase SDK CDN — empty JS prevents overwriting our mock
   await page.route(/gstatic\.com\/firebasejs/, route =>
     route.fulfill({ contentType: 'text/javascript', body: '// firebase mocked' })
@@ -62,7 +62,7 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
   );
 
   // Inject window.firebase + window.emailjs before any page script runs
-  await page.addInitScript(({ users, likedEmails, likes, requests, events, authEmail }) => {
+  await page.addInitScript(({ users, likedEmails, likes, requests, events, chats, authEmail }) => {
     // EmailJS stub
     window.emailjs = {
       init: () => {},
@@ -77,7 +77,7 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
     });
 
     // Build collection mock — aware of which collection is being queried
-    const makeCollection = (collectionName, filterFn = null) => {
+    const makeCollection = (collectionName, filterFn = null, parentId = '') => {
       const getAll = () => {
         let data;
         if (collectionName === 'users') data = users;
@@ -94,7 +94,11 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
           return true;
         }),
         orderBy: () => self,
-        onSnapshot: (cb) => { cb({ docs: [], empty: true, size: 0 }); return () => {}; },
+        onSnapshot: (cb) => {
+          const msgs = collectionName === 'messages' ? (chats[parentId] || []) : [];
+          cb({ docs: msgs.map(m => ({ data: () => m })), empty: !msgs.length, size: msgs.length });
+          return () => {};
+        },
         limit: () => self,
         get: () => {
           const docs = getAll();
@@ -118,7 +122,7 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
             set: () => Promise.resolve(),
             update: () => Promise.resolve(),
             delete: () => Promise.resolve(),
-            collection: (sub) => makeCollection(sub),
+            collection: (sub) => makeCollection(sub, null, id),
           };
         },
         add: () => Promise.resolve({ id: 'new-mock-id' }),
@@ -169,7 +173,7 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
         }),
       }),
     };
-  }, { users, likedEmails, likes, requests, events, authEmail });
+  }, { users, likedEmails, likes, requests, events, chats, authEmail });
 }
 
 // ─── Set localStorage session before page load ────────────────────────────────
