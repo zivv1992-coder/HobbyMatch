@@ -1,7 +1,17 @@
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// Removes invisible characters (e.g. RTL marks picked up by copy-paste) and spaces
+function cleanEmail(email) {
+  return email.replace(/[^\x20-\x7E]/g, '').trim();
+}
+
+// Compare emails with this: the same address can be stored with hidden characters or other casing
+function emailKey(email) {
+  return cleanEmail(email || '').toLowerCase();
+}
+
 function sanitizeEmail(email) {
-  return email.replace(/[^\x20-\x7E]/g, '').trim().replace(/@/g, '_at_').replace(/\./g, '_dot_');
+  return cleanEmail(email).replace(/@/g, '_at_').replace(/\./g, '_dot_');
 }
 
 // Returns clean 10-digit string or throws a Hebrew error
@@ -185,7 +195,7 @@ async function fetchMatches(myEmail) {
   // Dedupe: a duplicate like doc would otherwise show the same match twice
   const likedEmails = [...new Map(likedSnap.docs
     .map(d => d.data().to).filter(Boolean)
-    .map(e => [e.toLowerCase(), e])).values()];
+    .map(e => [emailKey(e), e])).values()];
   if (likedEmails.length === 0) return [];
 
   // Of those, find who liked me back

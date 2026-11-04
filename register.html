@@ -462,7 +462,7 @@
   // ── Step 1: Send OTP ──────────────────────────────────────────────────────
   async function handleSendOTP() {
     hideError('step1Error');
-    const email = document.getElementById('emailInput').value.trim();
+    const email = cleanEmail(document.getElementById('emailInput').value);
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       showError('step1Error', 'אנא הזן כתובת מייל תקינה');
       return;

@@ -107,7 +107,7 @@ async function _fetchUser(email) {
 async function _refreshMatches() {
   try {
     const myLikesSnap  = await db.collection('likes').where('from', '==', me.email).get();
-    const iLikedEmails = new Set(myLikesSnap.docs.map(d => d.data().to));
+    const iLikedEmails = new Set(myLikesSnap.docs.map(d => emailKey(d.data().to)));
     const likedMeSnap  = await db.collection('likes').where('to',   '==', me.email).get();
 
     const matches = [];
@@ -115,12 +115,12 @@ async function _refreshMatches() {
     const seen    = new Set();  // a duplicate like doc would otherwise list the same person twice
     for (const doc of likedMeSnap.docs) {
       const fromEmail = doc.data().from;
-      const key = (fromEmail || '').toLowerCase();
+      const key = emailKey(fromEmail);
       if (!fromEmail || seen.has(key)) continue;
       seen.add(key);
-      const profile = allUsers.find(u => u.email === fromEmail) || await _fetchUser(fromEmail);
+      const profile = allUsers.find(u => u.email === cleanEmail(fromEmail)) || await _fetchUser(fromEmail);
       if (!profile) continue;
-      (iLikedEmails.has(fromEmail) ? matches : likers).push(profile);
+      (iLikedEmails.has(key) ? matches : likers).push(profile);
     }
     _currentMatches      = matches;
     _pendingLikers       = likers;
