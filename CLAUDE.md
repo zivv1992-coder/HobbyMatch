@@ -104,11 +104,12 @@ Chat ID = sorted **sanitized** emails joined with `__` (`_getChatId` in profiles
 
 ---
 
-## Firestore Security Rules
-Source of truth: **`firestore.rules`** (repo root) = what is published in the Firebase console
-(Firestore → Rules). Edit the file, then copy it into the console and Publish — copying from a chat/terminal
-wraps long lines and breaks strings. Most collections are still `if true` (see docs/BACKLOG.md #1–2);
-`message_requests` allows create(pending) + status-only update, no delete. Published 2026-10-26.
+## Security Rules
+Source of truth: **`firestore.rules`** and **`storage.rules`** (repo root) = what is published in the Firebase console.
+Edit the file, run `npm run test:rules`, then copy the file into the console and Publish — copying from a chat/terminal can
+wrap or drop lines. Every permission needs a verified email; document ids are sanitized emails. In rules, build paths from
+separate segments: `$(a)/$(b)`, never one string with a slash. Limitation: an email containing `__` cannot use chat.
+Closed 2026-11-04. Still public: public profile fields and emails (the document id is the email).
 
 ---
 
@@ -181,6 +182,7 @@ const FCM_VAPID_KEY = "BJ9FYrOsn301Wfq9tA6em9wfQO8sQH3Ku13ksh7Blc9s45WLNbPRZo68I
 
 ## Tests (Playwright, `tests/`)
 - Firebase is mocked in `tests/helpers.js` (users, likes, message_requests).
+- **`npm run test:rules`** — rules on the Firebase emulator (`rules-tests/`). Needs Java 21 on PATH (`C:Program FilesEclipse Adoptium`).
 - **`npm run test:chrome`** — runs on the installed Chrome (`playwright.chrome.config.js`). `npm test` needs `npx playwright install` first.
 - `serve.json` (`cleanUrls: false`) keeps query strings like `?mode=login` locally, as on Vercel.
 - Known failures: the guest redirect and the full name on the card (before 2026-10-26), and "phone is required" in tahbiva.spec.js (old text).

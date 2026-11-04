@@ -2,58 +2,148 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isAdmin() {
+    // A real sign-in with a verified email (Google or email link)
+    function signedIn() {
       return request.auth != null
+        && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return signedIn()
         && request.auth.token.email == 'zivv1992@gmail.com';
     }
 
-    // Document ids are emails with @ → _at_ and . → _dot_ (sanitizeEmail in firebase-logic.js)
-    function isOwner(userId) {
-      return request.auth != null
-        && request.auth.token.email_verified == true
-        && userId == request.auth.token.email.replace('\\.', '_dot_').replace('@', '_at_');
+    function myEmail() {
+      return request.auth.token.email;
     }
 
-    // Phone and full name: the user and the admin only
+    // Same as sanitizeEmail in firebase-logic.js
+    function san(email) {
+      return email.replace('\\.', '_dot_').replace('@', '_at_');
+    }
+
+    function isOwner(userId) {
+      return signedIn() && userId == san(myEmail());
+    }
+
+    function involvesMe(data) {
+      return data.from == myEmail() || data.to == myEmail();
+    }
+
+    function docPath(collection, id) {
+      return /databases/$(database)/documents/$(collection)/$(id);
+    }
+
+    // ── Profiles ────────────────────────────────────────────
     match /users/{userId}/private/{docId} {
       allow read, write: if isOwner(userId) || isAdmin();
     }
 
     match /users/{userId} {
       allow read: if true;
-      allow write: if true;
+      allow create, update: if isAdmin()
+        || (isOwner(userId) && request.resource.data.email == myEmail());
+      allow delete: if isAdmin();
+    }
+
+    // ── Likes ───────────────────────────────────────────────
+    function isValidLike(likeId) {
+      let d = request.resource.data;
+      return likeId == san(d.from) + '_' + san(d.to);
+    }
+
+    // Accepting a message request also writes the sender's like
+    function acceptsRequest(likeId) {
+      return request.resource.data.to == myEmail()
+        && get(docPath('message_requests', likeId)).data.status
+           in ['pending', 'accepted'];
     }
 
     match /likes/{likeId} {
-      allow read, write: if true;
+      allow get: if signedIn()
+        && (resource == null || involvesMe(resource.data));
+      allow list: if isAdmin() || (signedIn() && involvesMe(resource.data));
+      allow create, update: if isAdmin() || (signedIn() && isValidLike(likeId)
+        && (request.resource.data.from == myEmail() || acceptsRequest(likeId)));
+      allow delete: if isAdmin() || (signedIn()
+        && (resource == null || involvesMe(resource.data)));
+    }
+
+    // ── Chats ───────────────────────────────────────────────
+    function inChat(chatId) {
+      return signedIn() && san(myEmail()) in chatId.split('__');
+    }
+
+    function otherIn(chatId) {
+      let parts = chatId.split('__');
+      return parts[0] == san(myEmail()) ? parts[1] : parts[0];
+    }
+
+    function isMatched(chatId) {
+      let me = san(myEmail());
+      let other = otherIn(chatId);
+      return exists(docPath('likes', me + '_' + other))
+        && exists(docPath('likes', other + '_' + me));
+    }
+
+    // The first message after accepting: the sender's own words
+    function isRequestText(chatId) {
+      let d = request.resource.data;
+      let reqId = otherIn(chatId) + '_' + san(myEmail());
+      return san(d.from) == otherIn(chatId)
+        && get(docPath('message_requests', reqId)).data.text == d.text;
     }
 
     match /chats/{chatId}/messages/{messageId} {
-      allow read, write: if true;
+      allow read: if isAdmin() || inChat(chatId);
+      allow create: if inChat(chatId) && (
+        (request.resource.data.from == myEmail() && isMatched(chatId))
+        || isRequestText(chatId));
     }
 
-    match /events/{eventId} {
-      allow read, write: if true;
-    }
-
+    // ── Message requests ────────────────────────────────────
     match /message_requests/{docId} {
-      allow read: if true;
-      allow create: if request.resource.data.status == 'pending'
+      allow get: if signedIn()
+        && (resource == null || involvesMe(resource.data));
+      allow list: if isAdmin() || (signedIn() && involvesMe(resource.data));
+      allow create: if signedIn()
+        && request.resource.data.from == myEmail()
+        && docId == san(myEmail()) + '_' + san(request.resource.data.to)
+        && request.resource.data.status == 'pending'
         && request.resource.data.text is string
         && request.resource.data.text.size() <= 300;
-      allow update: if request.resource.data.diff(resource.data)
+      allow update: if signedIn()
+        && resource.data.to == myEmail()
+        && request.resource.data.diff(resource.data)
           .affectedKeys().hasOnly(['status'])
         && request.resource.data.status in ['accepted', 'declined'];
       allow delete: if false;
     }
 
+    // ── Activities ──────────────────────────────────────────
+    match /events/{eventId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.createdBy == myEmail();
+      allow update: if isAdmin() || (signedIn() && (
+        resource.data.createdBy == myEmail()
+        || request.resource.data.diff(resource.data)
+          .affectedKeys().hasOnly(['interested'])));
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.createdBy == myEmail());
+    }
+
+    // ── Feedback and reports ────────────────────────────────
     match /feedback/{docId} {
-      allow read, write: if true;
+      allow create: if signedIn()
+        && request.resource.data.userEmail == myEmail();
+      allow read, update, delete: if isAdmin();
     }
 
     match /reports/{docId} {
-      allow read: if isAdmin();
-      allow write: if true;
+      allow create: if signedIn()
+        && request.resource.data.reporterEmail == myEmail();
+      allow read, update, delete: if isAdmin();
     }
 
     match /event_reviews/{docId} {

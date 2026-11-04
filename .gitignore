@@ -24,3 +24,8 @@ Thumbs.db
 # Claude Code memory & graph output
 .claude/
 graphify-out/
+
+# Admin backups contain personal data
+connection-backup-*.json
+firestore-debug.log
+firebase-debug.log

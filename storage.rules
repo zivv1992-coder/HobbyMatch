@@ -1,0 +1,35 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == 'zivv1992@gmail.com';
+    }
+
+    function owns(userEmail) {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == userEmail
+          .replace('_at_', '@').replace('_dot_', '.');
+    }
+
+    function isImage() {
+      return request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    match /hobby-images/{userEmail}/{fileName} {
+      allow get: if true;
+      allow create, update: if owns(userEmail) && isImage();
+      allow delete: if owns(userEmail) || isAdmin();
+    }
+
+    match /profile_photos/{userEmail} {
+      allow get: if true;
+      allow create, update: if owns(userEmail) && isImage();
+      allow delete: if owns(userEmail) || isAdmin();
+    }
+  }
+}

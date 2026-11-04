@@ -588,7 +588,7 @@
       let hobbyImageUrl = '';
       let profilePhotoUrl = '';
       if (imageFile) {
-        hobbyImageUrl = await uploadHobbyImage(imageFile, verifiedEmail);
+        hobbyImageUrl = await uploadHobbyImageIndexed(imageFile, verifiedEmail, 0);
       }
       if (profilePhotoFile) {
         profilePhotoUrl = await uploadProfilePhoto(profilePhotoFile, verifiedEmail);

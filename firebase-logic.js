@@ -64,16 +64,6 @@ async function compressImage(file, maxSize = 1200, quality = 0.8) {
   }
 }
 
-async function uploadHobbyImage(file, email) {
-  if (!file || !file.type.startsWith('image/')) {
-    throw new Error('הקובץ חייב להיות תמונה');
-  }
-  const ref = storage.ref(`hobby-images/${sanitizeEmail(email)}`);
-  const snapshot = await ref.put(await compressImage(file));
-  const downloadUrl = await snapshot.ref.getDownloadURL();
-  return downloadUrl;
-}
-
 async function uploadProfilePhoto(file, email) {
   if (!file || !file.type.startsWith('image/')) {
     throw new Error('הקובץ חייב להיות תמונה');
