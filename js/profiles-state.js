@@ -62,10 +62,9 @@ let _notifPanelOpen  = false;
 let _matchUnsub      = null;
 
 // Anonymous "mystery like" — someone liked you but no mutual match yet
-const _seenLikesKey      = me ? `kn_seen_likes_${me.email}` : '';
-let _pendingLikesCount   = 0;  // current one-sided incoming likes count
+const _seenLikersKey     = me ? `kn_seen_likers_${me.email}` : '';
 let _pendingLikers       = [];  // who liked me and I haven't liked back (shown by name in the bell)
-let _seenLikesCount      = parseInt(localStorage.getItem(_seenLikesKey) || '0', 10);
+let _seenLikerEmails     = new Set(JSON.parse(localStorage.getItem(_seenLikersKey) || '[]'));  // likes already clicked in the bell
 
 // ── Discovery section ─────────────────────────────────────────────────────────
 let _discHobbiesPool = [];

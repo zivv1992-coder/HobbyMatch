@@ -124,13 +124,8 @@ async function _refreshMatches() {
     }
     _currentMatches      = matches;
     _pendingLikers       = likers;
-    _pendingLikesCount   = likers.length;
     initMatchChatListeners(matches);
-    if (_notifPanelOpen) {
-      matches.forEach(p => _seenMatchEmails.add(p.email));
-      localStorage.setItem(_seenKey, JSON.stringify([..._seenMatchEmails]));
-      _renderNotifPanel();
-    }
+    if (_notifPanelOpen) _renderNotifPanel();
     _updateBellBadge();
   } catch (e) { console.warn('refreshMatches error:', e); }
 }
@@ -138,7 +133,7 @@ async function _refreshMatches() {
 function _updateBellBadge() {
   const unseenMatches   = _currentMatches.filter(p => !_seenMatchEmails.has(p.email)).length;
   const totalUnreadChat = Object.values(_unreadCounts).reduce((sum, n) => sum + n, 0);
-  const unseenLikes     = Math.max(0, _pendingLikesCount - _seenLikesCount);
+  const unseenLikes     = _pendingLikers.filter(p => !_seenLikerEmails.has(p.email)).length;
   const total = unseenMatches + totalUnreadChat + unseenLikes + incomingRequests.length;
   const badge = document.getElementById('bellBadge');
   if (total > 0) {
@@ -147,6 +142,15 @@ function _updateBellBadge() {
   } else {
     badge.classList.add('hidden');
   }
+}
+
+// A notification clears only when it is clicked — opening the bell clears nothing
+function _markNotifSeen(email) {
+  _seenMatchEmails.add(email);
+  _seenLikerEmails.add(email);
+  localStorage.setItem(_seenKey, JSON.stringify([..._seenMatchEmails]));
+  localStorage.setItem(_seenLikersKey, JSON.stringify([..._seenLikerEmails]));
+  _updateBellBadge();
 }
 
 function _getUnreadChats() {
@@ -170,11 +174,6 @@ function _openNotifPanel() {
     panel.style.transform = 'translateY(0) scale(1)';
   });
   _renderNotifPanel();
-  _currentMatches.forEach(p => _seenMatchEmails.add(p.email));
-  localStorage.setItem(_seenKey, JSON.stringify([..._seenMatchEmails]));
-  _seenLikesCount = _pendingLikesCount;
-  localStorage.setItem(_seenLikesKey, String(_seenLikesCount));
-  _updateBellBadge();
 }
 
 function closeNotifPanel() {
@@ -240,7 +239,7 @@ function _renderNotifPanel() {
         : `<div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 text-lg">🤝</div>`;
       return `
         <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-50 hover:bg-purple-50 cursor-pointer transition"
-          onclick="closeNotifPanel(); switchTab('matches')">
+          onclick="_markNotifSeen('${jsArg(p.email)}'); closeNotifPanel(); switchTab('matches')">
           ${imgHtml}
           <div class="flex-1 min-w-0">
             <p class="font-bold text-purple-900 text-sm truncate">${escapeHtml(displayName(p.fullName || p.name))}, ${escapeHtml(p.age || '')}</p>
@@ -292,6 +291,7 @@ function openRequestProfile(i) {
 function openLikerProfile(i) {
   const p = _pendingLikers[i];
   if (!p) return;
+  _markNotifSeen(p.email);
   closeNotifPanel();
   showProfileModal(p, false, me);
 }
@@ -304,9 +304,7 @@ async function likeBackFromBell(i, btnEl) {
     await saveLike(me.email, p.email);    // they already liked me → this is a match
     likedEmails.add(p.email);
     _pendingLikers.splice(i, 1);
-    _pendingLikesCount = _pendingLikers.length;
-    _seenLikesCount    = Math.min(_seenLikesCount, _pendingLikesCount);
-    localStorage.setItem(_seenLikesKey, String(_seenLikesCount));
+    _markNotifSeen(p.email);
     closeNotifPanel();
     showMatchPopup(me, p);
     _refreshMatches();
