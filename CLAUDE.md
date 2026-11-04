@@ -4,7 +4,7 @@
 - **Frontend:** HTML5, Tailwind CSS, Vanilla JavaScript
 - **Database:** Firebase Firestore
 - **Storage:** Firebase Storage (hobby images)
-- **Auth/Email:** EmailJS (OTP verification + match notifications)
+- **Auth:** Firebase Auth — Google first, email link as a backup (`auth.js`)
 - **Hosting:** GitHub Pages
 - **Firebase SDK:** v10 Compat mode via CDN — NO Admin SDK, NO private keys
 
@@ -15,10 +15,10 @@
 hobby-match/
 ├── index.html              ← Landing page ("הרשמה" → tahbiva.html)
 ├── tahbiva.html            ← Sign-up starts here: Tahbiva 🦉 onboarding (before auth) → draft in localStorage
-├── register.html           ← Login + sign-up auth (Google / OTP) → step4 saves the Tahbiva draft
+├── register.html           ← Login + sign-up auth (Google / email link) → step4 saves the Tahbiva draft
 ├── profiles.html           ← Main app shell — tabs: פעילויות (home) · מי באזור · קונקשנז'; chat
-├── config.js               ← Firebase/EmailJS config, IS_DEV_MODE, CITIES, HOBBY_CATEGORIES, HOBBY_EMOJI, TAHBIVA
-├── auth.js                 ← OTP logic + session management
+├── config.js               ← Firebase config, CITIES, HOBBY_CATEGORIES, HOBBY_EMOJI, TAHBIVA
+├── auth.js                 ← Sign-in helpers + session management
 ├── firebase-logic.js       ← CRUD: profiles, likes, image uploads
 ├── ui-render.js            ← Profile card rendering + My Matches tab
 └── js/
@@ -130,51 +130,45 @@ wraps long lines and breaks strings. Most collections are still `if true` (see d
    (quick picks = cities with most users) → nearby → bio / age / phone (one per screen) → ready.
    **"This or that" never adds hobbies** — it only reorders categories and suggestions ("Tahbiva suggests, the user chooses").
    "לידך" shows real users within 50 km by shared hobbies, shared want-to-try and shared partners (`displayName` only, no photo).
-3. "שמרו לי את הפרופיל" → `register.html?mode=register&from=tahbiva` → Google or email OTP (below).
+3. "שמרו לי את הפרופיל" → `register.html?mode=register&from=tahbiva` → Google or email link (below).
 4. New user + finished draft → **step4**: name, one photo gallery (first = profile photo, rest = hobbyImages,
    "אעלה תמונות אחר כך"), privacy consent → `saveProfileToFirestore` → draft cleared → `profiles.html?new=1`.
 5. `register.html` without a draft and not `mode=login` → redirected to `tahbiva.html`. The old long form (step3)
    remains only as a fallback (e.g. a new email entered in login mode).
 
-## Auth Flow (OTP via EmailJS)
-1. User enters email → `auth.js` generates 6-digit OTP, stores in `sessionStorage` (10-min expiry)
-2. EmailJS sends OTP to user's email (`IS_DEV_MODE = false` in production)
-3. User enters OTP → verified client-side → session saved to `localStorage` as `hobbyMatchUser`
-4. Every page checks session on load → redirect to `register.html` if missing
-5. `index.html` / `register.html` redirect to `profiles.html` if session exists
+## Auth Flow (Firebase Auth)
+1. Google popup, or `sendLoginLink` (auth.js) emails a sign-in link. The address and the page's query string wait in
+   localStorage, because Firebase adds its own `mode` to the link. Opened elsewhere → register.html asks for the email.
+2. `continueAfterSignIn` (register.html): existing user → session + app; new user → step4 / step3.
+3. `hobbyMatchUser` in localStorage is a cached profile, not proof: `profiles-boot.js` requires a Firebase user with the
+   same email, otherwise it clears the session and sends to login.
+4. Security stages: `docs/superpowers/specs/2026-11-04-security-design.md`.
 
 ---
 
 ## Match System
 - Like ID: `senderEmail_receiverEmail` (sanitized)
-- On like: check if reverse like exists → MATCH → EmailJS notification to both users
+- On like: check if reverse like exists → MATCH → push to both users (`functions/index.js`)
 
 ---
 
-## EmailJS Config (in `config.js`)
 ```javascript
-const EMAILJS_CONFIG = {
-  serviceId:     'service_9p6dx8n',
-  otpTemplateId: 'template_ajwgbh9',
-  publicKey:     'WJ8SooBxHjs4CX0Vo'
-};
-const IS_DEV_MODE = false;   // true = show OTP in alert (dev), false = send via EmailJS
+// config.js
 const FCM_VAPID_KEY = "BJ9FYrOsn301Wfq9tA6em9wfQO8sQH3Ku13ksh7Blc9s45WLNbPRZo68Ip3bKTECpzGqQ0UoTjDlvdgEGLixk2I"; // Push notifications
 ```
-Template variables: `{{otp_code}}`, `{{email}}`
 
 ---
 
 ## Guardrails
 
 - Firebase v10 Compat (Namespaced) syntax only — no modular imports
-- All HTML files load Firebase + EmailJS via CDN in `<head>` before custom JS
+- All HTML files load Firebase via CDN in `<head>` before custom JS
 - Images → upload to Storage first, save Download URL to Firestore (no Base64)
 - `<html lang="he" dir="rtl">` on every page, all UI text in Hebrew
 - Other users' names are always shown via `displayName(fullName)` ("דן כהן" → "דן כ", in `js/profiles-utils.js`;
   copy in `functions/index.js` for push texts). Full name only for the user themself and in admin.html
 - Open work items: `docs/BACKLOG.md`
-- Every async op (Firebase, EmailJS, uploads) must have `try-catch` with Hebrew error message
+- Every async op (Firebase, uploads) must have `try-catch` with Hebrew error message
 - `config.js` = config/data only · `auth.js` = auth/session only · `firebase-logic.js` = Firestore/Storage only
 - Static Web App — no server-side code, compatible with GitHub Pages / Netlify / cPanel
 - `sw.js` serves files **cache-first** → bump `CACHE_NAME` on every release that changes HTML/JS, or installed users keep old code
@@ -186,7 +180,7 @@ Template variables: `{{otp_code}}`, `{{email}}`
 - Firebase is mocked in `tests/helpers.js` (users, likes, message_requests).
 - **`npm run test:chrome`** — runs on the installed Chrome (`playwright.chrome.config.js`). `npm test` needs `npx playwright install` first.
 - `serve.json` (`cleanUrls: false`) keeps query strings like `?mode=login` locally, as on Vercel.
-- 3 tests were already failing before 2026-10-26: the OTP dev-mode alert, the guest redirect, and the full name on the card.
+- Known failures: the guest redirect and the full name on the card (before 2026-10-26), and "phone is required" in tahbiva.spec.js (old text).
 
 ---
 

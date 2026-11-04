@@ -139,7 +139,12 @@ async function submitFeedback() {
 }
 
 // ── Logout ────────────────────────────────────────────────────────────────────
-function handleLogout() {
+async function handleLogout() {
+  try {
+    await firebase.auth().signOut();
+  } catch (err) {
+    console.error('Logout error:', err);
+  }
   clearSession();
   window.location.href = 'index.html';
 }

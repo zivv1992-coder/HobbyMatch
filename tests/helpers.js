@@ -50,7 +50,8 @@ const MOCK_FEED_USERS = [
 // Blocks real Firebase/EmailJS CDN scripts and injects lightweight mocks.
 // Call this before page.goto().
 
-async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [], requests = [], events = [] } = {}) {
+// authEmail: the signed-in Firebase Auth user. Left out → follows the saved session; null → not signed in.
+async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [], requests = [], events = [], authEmail = '__session__' } = {}) {
   // Block Firebase SDK CDN — empty JS prevents overwriting our mock
   await page.route(/gstatic\.com\/firebasejs/, route =>
     route.fulfill({ contentType: 'text/javascript', body: '// firebase mocked' })
@@ -61,7 +62,7 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
   );
 
   // Inject window.firebase + window.emailjs before any page script runs
-  await page.addInitScript(({ users, likedEmails, likes, requests, events }) => {
+  await page.addInitScript(({ users, likedEmails, likes, requests, events, authEmail }) => {
     // EmailJS stub
     window.emailjs = {
       init: () => {},
@@ -134,8 +135,29 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
       FieldValue: { serverTimestamp: () => new Date() },
     });
 
+    // Firebase Auth stub
+    const sessionEmail = () => {
+      try { return JSON.parse(localStorage.getItem('hobbyMatchUser'))?.email || null; } catch { return null; }
+    };
+    let signedIn;
+    const currentEmail = () => {
+      if (signedIn !== undefined) return signedIn;
+      return authEmail === '__session__' ? sessionEmail() : authEmail;
+    };
+    const authObj = {
+      get currentUser() { const e = currentEmail(); return e ? { email: e } : null; },
+      onAuthStateChanged(cb) { setTimeout(() => cb(authObj.currentUser), 0); return () => {}; },
+      signOut() { signedIn = null; window.__signedOut = true; return Promise.resolve(); },
+      isSignInWithEmailLink: href => href.includes('oobCode='),
+      sendSignInLinkToEmail(email, settings) { window.__linkSent = { email, url: settings.url }; return Promise.resolve(); },
+      signInWithEmailLink(email) { signedIn = email; return Promise.resolve({ user: { email } }); },
+      signInWithPopup() { signedIn = 'google@example.com'; return Promise.resolve({ user: { email: signedIn, displayName: 'גוגל משתמש' } }); },
+    };
+    const authFn = Object.assign(() => authObj, { GoogleAuthProvider: function () {} });
+
     window.firebase = {
       initializeApp: () => {},
+      auth: authFn,
       firestore: firestoreFn,
       storage: () => ({
         ref: () => ({
@@ -147,7 +169,7 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
         }),
       }),
     };
-  }, { users, likedEmails, likes, requests, events });
+  }, { users, likedEmails, likes, requests, events, authEmail });
 }
 
 // ─── Set localStorage session before page load ────────────────────────────────

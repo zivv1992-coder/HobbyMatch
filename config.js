@@ -19,17 +19,6 @@ const FCM_VAPID_KEY = "BJ9FYrOsn301Wfq9tA6em9wfQO8sQH3Ku13ksh7Blc9s45WLNbPRZo68I
 // Replace with the email address of the admin user
 const ADMIN_EMAIL = 'zivv1992@gmail.com';
 
-// ─── Dev Mode ───────────────────────────────────────────────────────────────
-// Set to false before deploying to production
-const IS_DEV_MODE = false;
-
-// ─── EmailJS Config ─────────────────────────────────────────────────────────
-const EMAILJS_CONFIG = {
-  serviceId:     'service_9p6dx8n',
-  otpTemplateId: 'template_ajwgbh9',
-  publicKey:     'WJ8SooBxHjs4CX0Vo'
-};
-
 // ─── Profile Hobby Categories (Tahbiva + bubble picker in register + edit profile) ──
 // Hobbies are stored as plain Hebrew strings; old hobbies outside this list stay valid (custom).
 const HOBBY_CATEGORIES = [

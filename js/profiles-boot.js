@@ -13,18 +13,26 @@ if (me) {
 
 // ── Boot sequence ─────────────────────────────────────────────────────────────
 if (me) {
-  loadEvents();   // "פעילויות" is the home tab
-  loadFeed().then(() => {
-    loadRequests();
-    initNotifications();
-    initDiscovery();
-    const hasPhotos = (me.hobbyImages && me.hobbyImages.length > 0) || !!me.hobbyImageUrl;
-    if (!hasPhotos) {
-      document.getElementById('noHobbyPhotoBanner').classList.remove('hidden');
+  authReady().then(user => {
+    // A saved session counts only with a real sign-in for the same email (older sessions log in once)
+    if (!user || emailKey(user.email) !== emailKey(me.email)) {
+      clearSession();
+      location.replace('register.html?mode=login&returnTo=' + encodeURIComponent(location.href));
+      return;
     }
+    loadEvents();   // "פעילויות" is the home tab
+    loadFeed().then(() => {
+      loadRequests();
+      initNotifications();
+      initDiscovery();
+      const hasPhotos = (me.hobbyImages && me.hobbyImages.length > 0) || !!me.hobbyImageUrl;
+      if (!hasPhotos) {
+        document.getElementById('noHobbyPhotoBanner').classList.remove('hidden');
+      }
+    });
+    db.collection('users').doc(sanitizeEmail(me.email)).update({ lastSeen: new Date() })
+      .catch(() => {});
   });
-  db.collection('users').doc(sanitizeEmail(me.email)).update({ lastSeen: new Date() })
-    .catch(() => {});
 } else {
   // Guest: activities are personal (by my hobbies + location) — guests start on "מי באזור"
   trackEvent('guest_browse');

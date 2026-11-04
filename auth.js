@@ -1,45 +1,23 @@
-// ─── OTP ────────────────────────────────────────────────────────────────────
+// ─── Sign-in (Firebase Auth) ────────────────────────────────────────────────
+const LINK_EMAIL_KEY  = 'hobbyMatchLinkEmail';   // the address the link was sent to
+const LINK_SEARCH_KEY = 'hobbyMatchLinkSearch';  // the page's query string, restored after the link
 
-function generateOTP() {
-  return String(Math.floor(100000 + Math.random() * 900000));
+// Resolves with the signed-in Firebase user (or null) once Firebase has checked
+function authReady() {
+  return new Promise(resolve => {
+    const off = firebase.auth().onAuthStateChanged(user => { off(); resolve(user); });
+  });
 }
 
-function saveOTP(otp) {
-  const payload = { code: otp, expiry: Date.now() + 10 * 60 * 1000 };
-  sessionStorage.setItem('hobbyMatchOTP', JSON.stringify(payload));
-}
-
-function verifyOTP(input) {
-  const raw = sessionStorage.getItem('hobbyMatchOTP');
-  if (!raw) return false;
-  const { code, expiry } = JSON.parse(raw);
-  if (Date.now() > expiry) {
-    sessionStorage.removeItem('hobbyMatchOTP');
-    return false;
-  }
-  if (input.trim() === code) {
-    sessionStorage.removeItem('hobbyMatchOTP');
-    return true;
-  }
-  return false;
-}
-
-async function sendOTP(email) {
-  const otp = generateOTP();
-  saveOTP(otp);
-
-  if (IS_DEV_MODE) {
-    console.log(`[DEV MODE] OTP for ${email}: ${otp}`);
-    alert(`[מצב פיתוח] קוד האימות שלך: ${otp}`);
-    return;
-  }
-
-  // Production: send via EmailJS
-  await emailjs.send(
-    EMAILJS_CONFIG.serviceId,
-    EMAILJS_CONFIG.otpTemplateId,
-    { otp_code: otp, email: email }
-  );
+// Firebase adds its own "mode" to the link, so the page's query string is kept here, not in the url
+async function sendLoginLink(email) {
+  firebase.auth().languageCode = 'he';
+  await firebase.auth().sendSignInLinkToEmail(email, {
+    url: new URL('register.html', location.href).href,
+    handleCodeInApp: true
+  });
+  localStorage.setItem(LINK_EMAIL_KEY, email);
+  localStorage.setItem(LINK_SEARCH_KEY, location.search);
 }
 
 // ─── Session ─────────────────────────────────────────────────────────────────

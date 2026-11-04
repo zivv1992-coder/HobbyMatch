@@ -22,8 +22,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script>emailjs.init('WJ8SooBxHjs4CX0Vo');</script>
   <script src="config.js"></script>
   <script src="auth.js"></script>
   <script src="firebase-logic.js"></script>
@@ -120,45 +118,30 @@
 
     <button
       id="sendOtpBtn"
-      onclick="handleSendOTP()"
+      onclick="handleSendLink()"
       class="w-full bg-gradient-to-l from-purple-900 to-blue-600 text-white font-bold text-base py-3 rounded-xl hover:opacity-90 transition"
     >
-      שלח קוד אימות
+      שלח לי קישור כניסה
     </button>
   </div>
 
-  <!-- ── Step 2: OTP Verify ────────────────────────────────────── -->
+  <!-- ── Step 2: Check your email ─────────────────────────────── -->
   <div class="step" id="step2">
     <div class="text-center mb-6">
-      <div class="text-5xl mb-3">🔐</div>
-      <h2 class="text-2xl font-black text-purple-900">אימות מייל</h2>
-      <p class="text-purple-600 mt-2" id="otpSentTo">הקוד נשלח לכתובת המייל שלך</p>
+      <div class="text-5xl mb-3">📬</div>
+      <h2 class="text-2xl font-black text-purple-900">בדקו את המייל</h2>
+      <p class="text-purple-600 mt-2" id="linkSentTo">שלחנו לך קישור כניסה</p>
+      <p class="text-gray-400 text-sm mt-2">לא מוצאים? כדאי להציץ גם בספאם</p>
     </div>
-
-    <label class="block text-sm font-semibold text-gray-700 mb-1">קוד אימות (6 ספרות)</label>
-    <input
-      id="otpInput"
-      type="text"
-      inputmode="numeric"
-      maxlength="6"
-      placeholder="123456"
-      class="w-full border border-gray-300 rounded-xl px-4 py-3 text-base text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-purple-400 mb-4"
-    />
 
     <div id="step2Error" class="text-red-500 text-sm mb-3 hidden"></div>
 
     <button
-      onclick="handleVerifyOTP()"
-      class="w-full bg-gradient-to-l from-purple-900 to-blue-600 text-white font-bold text-base py-3 rounded-xl hover:opacity-90 transition mb-3"
-    >
-      אמת קוד
-    </button>
-
-    <button
-      onclick="handleResendOTP()"
+      id="resendLinkBtn"
+      onclick="handleResendLink()"
       class="w-full text-purple-700 text-sm font-semibold hover:underline"
     >
-      לא קיבלתי קוד — שלח שוב
+      לא קיבלתי — שלח שוב
     </button>
   </div>
 
@@ -327,7 +310,10 @@
 
   let verifiedEmail    = '';
   let isRomantic       = false;
-  let isReturningUser  = false;
+
+  // Opened from the sign-in link in the email
+  const _isEmailLink  = firebase.auth().isSignInWithEmailLink(location.href);
+  let _linkNeedsEmail = false;
 
   // Sign-up starts with Tahbiva (tahbiva.html). Her finished draft is saved here after sign-in.
   function loadTahbivaDraft() {
@@ -337,7 +323,7 @@
     } catch { return null; }
   }
   const tahbivaDraft = loadTahbivaDraft();
-  if (!tahbivaDraft && _mode !== 'login' && _mode !== 'google' && !getSession()) {
+  if (!tahbivaDraft && !_isEmailLink && _mode !== 'login' && _mode !== 'google' && !getSession()) {
     const rt = new URLSearchParams(location.search).get('returnTo');
     location.replace('tahbiva.html' + (rt ? '?returnTo=' + encodeURIComponent(rt) : ''));
   }
@@ -363,6 +349,19 @@
       trackEvent('signup_start');
       trackEvent('profile_form');
       goToSignupFinish();
+    }
+  }
+
+  if (_isEmailLink) {
+    const linkEmail = localStorage.getItem(LINK_EMAIL_KEY);
+    if (linkEmail) {
+      completeEmailLink(linkEmail);
+    } else {
+      // Another device or browser: Firebase needs the address again
+      _linkNeedsEmail = true;
+      document.getElementById('step1Title').textContent = 'כמעט שם';
+      document.getElementById('step1Sub').textContent   = 'כדי לסיים, כתוב/י שוב את המייל שלך';
+      document.getElementById('sendOtpBtn').textContent = 'המשך';
     }
   }
 
@@ -398,7 +397,24 @@
     btn.disabled = loading;
     btn.innerHTML = loading
       ? 'שולח...<span class="spinner"></span>'
-      : 'שלח קוד אימות';
+      : (_linkNeedsEmail ? 'המשך' : 'שלח לי קישור כניסה');
+  }
+
+  // After Google or the email link: existing user → the app; new user → finish the profile
+  async function continueAfterSignIn(email, name) {
+    const existing = await getUserByEmail(email);
+    if (existing) {
+      saveSession(existing);
+      await trackEvent('login');
+      const _rt = new URLSearchParams(window.location.search).get('returnTo');
+      window.location.href = _rt ? decodeURIComponent(_rt) : 'profiles.html';
+      return;
+    }
+    verifiedEmail = email;
+    if (name) document.getElementById('f_name').value = name;
+    trackEvent('signup_start');
+    trackEvent('profile_form');
+    goToSignupFinish();
   }
 
   // ── Google Sign-In ────────────────────────────────────────────────────────
@@ -412,30 +428,7 @@
       const provider = new firebase.auth.GoogleAuthProvider();
       const result   = await firebase.auth().signInWithPopup(provider);
       const gUser    = result.user;
-      const email    = gUser.email;
-      const name     = gUser.displayName || '';
-      const photo    = gUser.photoURL    || '';
-
-      // Check if user already exists
-      const existing = await getUserByEmail(email);
-      if (existing) {
-        saveSession(existing);
-        await trackEvent('login');
-        const _rt = new URLSearchParams(window.location.search).get('returnTo');
-        window.location.href = _rt ? decodeURIComponent(_rt) : 'profiles.html';
-      } else {
-        // New user — skip OTP, pre-fill only name from Google (no photo)
-        verifiedEmail = email;
-        if (name) {
-          document.getElementById('f_name').value = name;
-        }
-        // Hide progress bar step 2 (not needed for Google flow)
-        document.getElementById('line1').classList.add('bg-purple-700');
-        document.getElementById('line2').classList.add('bg-purple-700');
-        trackEvent('signup_start');
-        trackEvent('profile_form');
-        goToSignupFinish();
-      }
+      await continueAfterSignIn(gUser.email, gUser.displayName || '');
     } catch (err) {
       console.error('Google sign-in error:', err.code, err.message, err);
       if (err.code !== 'auth/popup-closed-by-user') {
@@ -459,79 +452,59 @@
     }
   }
 
-  // ── Step 1: Send OTP ──────────────────────────────────────────────────────
-  async function handleSendOTP() {
+  // ── Step 1: Send the sign-in link ─────────────────────────────────────────
+  async function handleSendLink() {
     hideError('step1Error');
     const email = cleanEmail(document.getElementById('emailInput').value);
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       showError('step1Error', 'אנא הזן כתובת מייל תקינה');
       return;
     }
+    if (_linkNeedsEmail) return completeEmailLink(email);   // the link was opened on another device
+
     setLoading('sendOtpBtn', true);
     try {
-      // Check if user already exists in Firestore
       const existing = await getUserByEmail(email);
-      isReturningUser = !!existing;
-
-      await sendOTP(email);
+      await sendLoginLink(email);
       verifiedEmail = email;
-      trackEvent(isReturningUser ? 'login_start' : 'signup_start');
-      document.getElementById('otpSentTo').textContent = `הקוד נשלח ל-${email}`;
+      trackEvent(existing ? 'login_start' : 'signup_start');
+      document.getElementById('linkSentTo').textContent = `שלחנו קישור כניסה ל-${email}`;
       goToStep(2);
     } catch (err) {
-      showError('step1Error', 'שגיאה בשליחת הקוד. נסה שוב מאוחר יותר.');
+      showError('step1Error', 'שגיאה בשליחת הקישור. נסה שוב מאוחר יותר.');
       console.error(err);
     } finally {
-      const btn = document.getElementById('sendOtpBtn');
-      btn.disabled = false;
-      btn.textContent = 'שלח קוד אימות';
+      setLoading('sendOtpBtn', false);
     }
   }
 
-  // ── Step 2: Verify OTP ────────────────────────────────────────────────────
-  async function handleVerifyOTP() {
+  async function handleResendLink() {
     hideError('step2Error');
-    const input = document.getElementById('otpInput').value.trim();
-    if (!input || input.length !== 6) {
-      showError('step2Error', 'אנא הזן קוד בן 6 ספרות');
-      return;
-    }
-    if (!verifyOTP(input)) {
-      showError('step2Error', 'קוד שגוי או פג תוקף, נסה שוב');
-      document.getElementById('otpInput').value = '';
-      return;
-    }
-
-    if (isReturningUser) {
-      // Existing user — load profile from Firestore and go straight to feed
-      try {
-        const userData = await getUserByEmail(verifiedEmail);
-        saveSession(userData);
-        await trackEvent('login');
-        const _rt = new URLSearchParams(window.location.search).get('returnTo');
-        window.location.href = _rt ? decodeURIComponent(_rt) : 'profiles.html';
-      } catch (err) {
-        showError('step2Error', 'שגיאה בטעינת הפרופיל. נסה שוב.');
-        console.error(err);
-      }
-    } else {
-      // New user — proceed to profile creation form
-      trackEvent('profile_form');
-      goToSignupFinish();
-    }
-  }
-
-  async function handleResendOTP() {
-    hideError('step2Error');
+    const btn = document.getElementById('resendLinkBtn');
     try {
-      await sendOTP(verifiedEmail);
-      document.getElementById('otpInput').value = '';
-      showError('step2Error', '');
-      const btn = document.querySelector('#step2 button:last-of-type');
-      btn.textContent = 'קוד חדש נשלח ✓';
-      setTimeout(() => { btn.textContent = 'לא קיבלתי קוד — שלח שוב'; }, 3000);
+      await sendLoginLink(verifiedEmail);
+      btn.textContent = 'קישור חדש נשלח ✓';
+      setTimeout(() => { btn.textContent = 'לא קיבלתי — שלח שוב'; }, 3000);
     } catch (err) {
-      showError('step2Error', 'שגיאה בשליחת הקוד מחדש');
+      showError('step2Error', 'שגיאה בשליחת הקישור מחדש');
+      console.error(err);
+    }
+  }
+
+  // ── Back from the email link ──────────────────────────────────────────────
+  async function completeEmailLink(email) {
+    hideError('step1Error');
+    try {
+      const result = await firebase.auth().signInWithEmailLink(email, location.href);
+      _linkNeedsEmail = false;
+      const search = localStorage.getItem(LINK_SEARCH_KEY) || '';
+      localStorage.removeItem(LINK_EMAIL_KEY);
+      localStorage.removeItem(LINK_SEARCH_KEY);
+      history.replaceState(null, '', 'register.html' + search);   // removes the one-time code from the address
+      await continueAfterSignIn(result.user.email);
+    } catch (err) {
+      console.error('Email link error:', err.code, err.message);
+      showError('step1Error', 'הקישור לא תקין או שפג תוקפו. אפשר לבקש קישור חדש.');
     }
   }
 
