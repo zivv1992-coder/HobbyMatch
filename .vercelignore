@@ -1,0 +1,14 @@
+# Project files that are not part of the website: never publish them
+.cursor
+.vscode
+CLAUDE.md
+docs
+firebase.rules-test.json
+firestore.rules
+functions
+playwright.chrome.config.js
+playwright.config.js
+rules-tests
+serve.json
+storage.rules
+tests
