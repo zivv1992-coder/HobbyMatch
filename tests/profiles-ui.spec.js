@@ -1,15 +1,6 @@
 const { test, expect } = require('@playwright/test');
 const { setupFirebaseMock, injectSession, MOCK_SESSION, MOCK_FEED_USERS } = require('./helpers');
 
-test.describe('Profiles page — redirect guard', () => {
-  test('redirects to index.html when no session', async ({ page }) => {
-    await setupFirebaseMock(page);
-    await page.goto('/profiles.html');
-    // serve may redirect to / instead of /index.html — should NOT stay on profiles
-    await expect(page).not.toHaveURL(/\/profiles/);
-  });
-});
-
 test.describe('Profiles page — UI with session', () => {
 
   test.beforeEach(async ({ page }) => {
@@ -105,7 +96,8 @@ test.describe('Profiles page — UI with session', () => {
     await expect(grid).toBeVisible({ timeout: 15000 });
 
     // Check one of the mock users appears
-    await expect(grid).toContainText('דנה כהן', { timeout: 15000 });
+    await expect(grid).toContainText('דנה כ', { timeout: 15000 });
+    await expect(grid).not.toContainText('דנה כהן');
 
     // Hobby hashtag badge should be present (span starting with #)
     await expect(

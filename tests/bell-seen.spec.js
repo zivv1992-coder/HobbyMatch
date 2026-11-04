@@ -14,6 +14,8 @@ async function closeBell(page) {
 
 async function open(page, likes) {
   await setupFirebaseMock(page, { users: MOCK_FEED_USERS, likes });
+  // The product tour opens 1.5s after the first visit and covers the bell
+  await page.addInitScript(e => localStorage.setItem('hobbyMatchTourDone_' + e, '1'), me);
   await injectSession(page, MOCK_SESSION);
   await page.goto('/profiles.html');
   await expect(badge(page)).toHaveText('2', { timeout: 15000 });

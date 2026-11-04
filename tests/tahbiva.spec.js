@@ -79,7 +79,7 @@ test.describe('Tahbiva onboarding (tahbiva.html)', () => {
     await setDraft(page, { screen: 'about', hist: ['nearby'], aboutStep: 2, status: { 'ריצה': 'love' }, cats: ['move'], city: 'תל אביב', age: '30' });
     await page.goto('/tahbiva.html');
     await expect(page.locator('#aboutSay')).toHaveText('איך אפשר ליצור איתך קשר?');
-    await expect(page.locator('#aboutForm')).toContainText('המספר יופיע רק למי שיש לך קונקשן איתו');
+    await expect(page.locator('#aboutForm')).toContainText('המספר לא מוצג לאף אחד');
     await expect(page.locator('#aboutForm')).not.toContainText('אדלג');
     await page.click('#aboutForm button.btn-p');
     await expect(page.locator('#toast')).toHaveText('מה המספר שלך? 🙂');

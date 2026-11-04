@@ -185,7 +185,6 @@ const FCM_VAPID_KEY = "BJ9FYrOsn301Wfq9tA6em9wfQO8sQH3Ku13ksh7Blc9s45WLNbPRZo68I
 - **`npm run test:rules`** — rules on the Firebase emulator (`rules-tests/`). Needs Java 21 on PATH (`C:Program FilesEclipse Adoptium`).
 - **`npm run test:chrome`** — runs on the installed Chrome (`playwright.chrome.config.js`). `npm test` needs `npx playwright install` first.
 - `serve.json` (`cleanUrls: false`) keeps query strings like `?mode=login` locally, as on Vercel.
-- Known failures: the guest redirect and the full name on the card (before 2026-10-26), and "phone is required" in tahbiva.spec.js (old text).
 
 ---
 
