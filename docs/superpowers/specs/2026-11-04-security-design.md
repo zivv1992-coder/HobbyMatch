@@ -16,10 +16,17 @@ chats. Do this before paid promotion.
 - Limitation: an email link opens in the browser, not in the installed app. Google is the path for the app.
 
 ## Stage 2 — hide personal data (changes live data; stop for approval first)
-- `users/{id}/private/contact` = `{ phone, fullName }`, readable by the owner and admin only.
-- Public `users/{id}` keeps a short `displayName` instead of `fullName`.
-- Copy the existing 15 users, then remove the fields from the public documents.
-- Stop embedding the whole user object in `onclick` (`ui-render.js`); pass the email and read from `allUsers`.
+Order matters: stage 1 live → publish the `private` rule → stage 2 code live → run the copy → remove public fields.
+- `users/{id}/private/contact` = `{ fullName, phone }`, read/write by the verified owner and admin only.
+- Public `users/{id}`: `fullName` holds the **shortened** name ("דן כ") and `phone` is gone. `displayName()` is
+  idempotent, so the roughly 25 places that show names and `functions/index.js` need no change or deploy.
+- `saveProfileToFirestore` / `updateProfileInFirestore` write both documents in one batch. A new `getMyProfile` merges
+  them for the user's own session. `admin.html` merges them for the dashboard.
+- Copy: a one-time admin.html button, run by the signed-in admin, so no private key or Admin SDK is needed. Report
+  counts, keep a local backup first, and do not touch the old "גיל ש" document's id.
+- `events`: `creatorName` and `interested[].name` hold the shortened name; the copy also cleans existing events.
+- Once phone and full name are gone from public documents, the whole-user JSON in `onclick` exposes nothing private,
+  so `ui-render.js` needs no change.
 
 ## Stage 3 — close the rules (test on the Firebase emulator first)
 - Every "signed-in" check also requires `request.auth.token.email_verified == true`, `isAdmin()` included: with

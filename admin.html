@@ -288,7 +288,6 @@
       document.getElementById('adminLoginScreen').classList.add('hidden');
       if (!_dashboardLoaded) { _dashboardLoaded = true; initDashboard(); }
     } else {
-      firebase.auth().signOut();
       document.getElementById('adminLoginScreen').classList.remove('hidden');
     }
   });

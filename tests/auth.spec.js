@@ -50,6 +50,15 @@ test.describe('Real sign-in (Firebase Auth)', () => {
     expect(await page.evaluate(() => sessionStorage.getItem('out'))).toBe('true');
   });
 
+  test('a regular user who opens admin.html is not signed out of the app', async ({ page }) => {
+    await setupFirebaseMock(page, { users: MOCK_FEED_USERS });
+    await injectSession(page, ME);
+    await page.goto('/admin.html');
+    await expect(page.locator('#adminLoginScreen')).toBeVisible({ timeout: 15000 });
+    await page.waitForTimeout(300);
+    expect(await page.evaluate(() => !!window.__signedOut)).toBe(false);
+  });
+
   test('email: sends a sign-in link and says to check the mail, no code field', async ({ page }) => {
     await setupFirebaseMock(page);
     await page.goto('/register.html?mode=login');
