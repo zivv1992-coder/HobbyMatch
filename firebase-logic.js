@@ -14,6 +14,13 @@ function sanitizeEmail(email) {
   return cleanEmail(email).replace(/@/g, '_at_').replace(/\./g, '_dot_');
 }
 
+// "דן כהן" → "דן כ". The short name is what other users can read.
+function formatAttendeeDisplay(fullName) {
+  const parts = (fullName || '').trim().split(/\s+/);
+  if (parts.length < 2) return parts[0] || '';
+  return `${parts[0]} ${parts[parts.length - 1].charAt(0)}`;
+}
+
 // Returns clean 10-digit string or throws a Hebrew error
 function sanitizePhone(raw) {
   const digits = String(raw).replace(/\D/g, '');
@@ -78,12 +85,18 @@ async function uploadProfilePhoto(file, email) {
 
 // ─── Firestore ────────────────────────────────────────────────────────────────
 
+// Phone and full name live here: only the user and the admin can read this document
+function privateContactRef(email) {
+  return db.collection('users').doc(sanitizeEmail(email)).collection('private').doc('contact');
+}
+
 async function saveProfileToFirestore(userObj) {
   const docId = sanitizeEmail(userObj.email);
-  await db.collection('users').doc(docId).set({
-    fullName:         userObj.fullName,
+  const batch = db.batch();
+  batch.set(privateContactRef(userObj.email), { fullName: userObj.fullName, phone: userObj.phone });
+  batch.set(db.collection('users').doc(docId), {
+    fullName:         formatAttendeeDisplay(userObj.fullName),
     email:            userObj.email,
-    phone:            userObj.phone,
     age:              userObj.age,
     city:             userObj.city,
     hobby:            userObj.hobby,
@@ -102,6 +115,7 @@ async function saveProfileToFirestore(userObj) {
     longitude:        userObj.longitude,
     createdAt:        firebase.firestore.FieldValue.serverTimestamp()
   });
+  await batch.commit();
 }
 
 // ─── Likes & Matching ────────────────────────────────────────────────────────
@@ -109,6 +123,16 @@ async function saveProfileToFirestore(userObj) {
 async function getUserByEmail(email) {
   const doc = await db.collection('users').doc(sanitizeEmail(email)).get();
   return doc.exists ? doc.data() : null;
+}
+
+// The signed-in user's own profile, with phone and full name
+async function getMyProfile(email) {
+  const [publicDoc, contact] = await Promise.all([
+    db.collection('users').doc(sanitizeEmail(email)).get(),
+    privateContactRef(email).get()
+  ]);
+  if (!publicDoc.exists) return null;
+  return { ...publicDoc.data(), ...(contact.exists ? contact.data() : {}) };
 }
 
 async function fetchAllUsers() {
@@ -217,8 +241,8 @@ async function updateProfileInFirestore(userObj) {
     ? userObj.hobbyImages
     : (userObj.hobbyImageUrl ? [userObj.hobbyImageUrl] : []);
   const updateObj = {
-    fullName:         userObj.fullName,
-    phone:            userObj.phone,
+    fullName:         formatAttendeeDisplay(userObj.fullName),
+    phone:            firebase.firestore.FieldValue.delete(),
     age:              userObj.age,
     city:             userObj.city,
     hobby:            userObj.hobby,
@@ -236,7 +260,10 @@ async function updateProfileInFirestore(userObj) {
   if (userObj.profilePhotoURL !== undefined) {
     updateObj.profilePhotoURL = userObj.profilePhotoURL;
   }
-  await db.collection('users').doc(docId).update(updateObj);
+  const batch = db.batch();
+  batch.set(privateContactRef(userObj.email), { fullName: userObj.fullName, phone: userObj.phone }, { merge: true });
+  batch.update(db.collection('users').doc(docId), updateObj);
+  await batch.commit();
 }
 
 async function uploadHobbyImageIndexed(file, email, index) {

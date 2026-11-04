@@ -3,7 +3,7 @@
 // Handles: asset caching, offline fallback, push notifications
 // ══════════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'connection-v20';
+const CACHE_NAME = 'connection-v21';
 const OFFLINE_URL = '/offline.html';
 
 const PRECACHE_ASSETS = [

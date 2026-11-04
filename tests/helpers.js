@@ -51,7 +51,7 @@ const MOCK_FEED_USERS = [
 // Call this before page.goto().
 
 // authEmail: the signed-in Firebase Auth user. Left out → follows the saved session; null → not signed in.
-async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [], requests = [], events = [], chats = {}, authEmail = '__session__' } = {}) {
+async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [], requests = [], events = [], contacts = {}, chats = {}, authEmail = '__session__' } = {}) {
   // Block Firebase SDK CDN — empty JS prevents overwriting our mock
   await page.route(/gstatic\.com\/firebasejs/, route =>
     route.fulfill({ contentType: 'text/javascript', body: '// firebase mocked' })
@@ -62,7 +62,10 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
   );
 
   // Inject window.firebase + window.emailjs before any page script runs
-  await page.addInitScript(({ users, likedEmails, likes, requests, events, chats, authEmail }) => {
+  await page.addInitScript(({ users, likedEmails, likes, requests, events, contacts, chats, authEmail }) => {
+    window.__writes = [];   // what the app wrote: { op, path, data }
+    const record = (op, path, data) => { window.__writes.push({ op, path, data }); return Promise.resolve(); };
+    const san = e => (e || '').replace(/@/g, '_at_').replace(/\./g, '_dot_');
     // EmailJS stub
     window.emailjs = {
       init: () => {},
@@ -77,7 +80,8 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
     });
 
     // Build collection mock — aware of which collection is being queried
-    const makeCollection = (collectionName, filterFn = null, parentId = '') => {
+    const makeCollection = (collectionName, filterFn = null, parentPath = '') => {
+      const path = parentPath ? `${parentPath}/${collectionName}` : collectionName;
       const getAll = () => {
         let data;
         if (collectionName === 'users') data = users;
@@ -92,10 +96,10 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
         where: (field, op, val) => makeCollection(collectionName, d => {
           if (op === '==') return d[field] === val;
           return true;
-        }),
+        }, parentPath),
         orderBy: () => self,
         onSnapshot: (cb) => {
-          const msgs = collectionName === 'messages' ? (chats[parentId] || []) : [];
+          const msgs = collectionName === 'messages' ? (chats[parentPath.split('/').pop()] || []) : [];
           cb({ docs: msgs.map(m => ({ data: () => m })), empty: !msgs.length, size: msgs.length });
           return () => {};
         },
@@ -106,6 +110,7 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
             docs: docs.map(d => ({
               ...wrapDoc(d),
               data: () => d,
+              ref: self.doc(d.id || san(d.email)),
             })),
             empty: docs.length === 0,
             size: docs.length,
@@ -117,12 +122,15 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
             const sanEmail = (d.email || '').replace(/@/g, '_at_').replace(/\./g, '_dot_');
             return sanEmail === id || d.id === id || d.email === id;
           });
+          const data = collectionName === 'private' ? contacts[parentPath.split('/').pop()] : found;
+          const docPath = `${path}/${id}`;
           return {
-            get: () => Promise.resolve(wrapDoc(found || null)),
-            set: () => Promise.resolve(),
-            update: () => Promise.resolve(),
-            delete: () => Promise.resolve(),
-            collection: (sub) => makeCollection(sub, null, id),
+            path: docPath,
+            get: () => Promise.resolve(wrapDoc(data || null)),
+            set: (d) => record('set', docPath, d),
+            update: (d) => record('update', docPath, d),
+            delete: () => record('delete', docPath),
+            collection: (sub) => makeCollection(sub, null, docPath),
           };
         },
         add: () => Promise.resolve({ id: 'new-mock-id' }),
@@ -132,11 +140,20 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
 
     const mockDb = {
       collection: (name) => makeCollection(name),
+      batch: () => {
+        const ops = [];
+        return {
+          set: (ref, d) => ops.push(['set', ref.path, d]),
+          update: (ref, d) => ops.push(['update', ref.path, d]),
+          delete: (ref) => ops.push(['delete', ref.path]),
+          commit: () => { ops.forEach(o => record(...o)); return Promise.resolve(); },
+        };
+      },
     };
 
     // firebase.firestore must be a function AND have static FieldValue
     const firestoreFn = Object.assign(() => mockDb, {
-      FieldValue: { serverTimestamp: () => new Date() },
+      FieldValue: { serverTimestamp: () => new Date(), delete: () => '__delete__' },
     });
 
     // Firebase Auth stub
@@ -173,7 +190,7 @@ async function setupFirebaseMock(page, { users = [], likedEmails = [], likes = [
         }),
       }),
     };
-  }, { users, likedEmails, likes, requests, events, chats, authEmail });
+  }, { users, likedEmails, likes, requests, events, contacts, chats, authEmail });
 }
 
 // ─── Set localStorage session before page load ────────────────────────────────

@@ -402,7 +402,7 @@
 
   // After Google or the email link: existing user → the app; new user → finish the profile
   async function continueAfterSignIn(email, name) {
-    const existing = await getUserByEmail(email);
+    const existing = await getMyProfile(email);
     if (existing) {
       saveSession(existing);
       await trackEvent('login');

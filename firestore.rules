@@ -7,6 +7,18 @@ service cloud.firestore {
         && request.auth.token.email == 'zivv1992@gmail.com';
     }
 
+    // Document ids are emails with @ → _at_ and . → _dot_ (sanitizeEmail in firebase-logic.js)
+    function isOwner(userId) {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && userId == request.auth.token.email.replace('\\.', '_dot_').replace('@', '_at_');
+    }
+
+    // Phone and full name: the user and the admin only
+    match /users/{userId}/private/{docId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
     match /users/{userId} {
       allow read: if true;
       allow write: if true;

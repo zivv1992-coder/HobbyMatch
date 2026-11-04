@@ -247,7 +247,7 @@ async function handleModalInterest(eventId, btn) {
 
     if (!list.some(i => i.email === me.email)) {
       const display = formatAttendeeDisplay(me.fullName || me.email);
-      list.push({ email: me.email, name: me.fullName || '', display });
+      list.push({ email: me.email, name: displayName(me.fullName), display });
       await ref.update({ interested: list });
       const ev = allEventsData.find(e => e.id === eventId);
       if (ev) ev.interested = list;
@@ -587,7 +587,7 @@ async function handleInterest(eventId, btn) {
       interested = interested.filter(i => i.email !== me.email);
     } else {
       const display = formatAttendeeDisplay(me.fullName || me.email);
-      interested.push({ email: me.email, name: me.fullName || '', display });
+      interested.push({ email: me.email, name: displayName(me.fullName), display });
     }
 
     await ref.update({ interested });
@@ -724,21 +724,21 @@ async function handleCreateEvent() {
     const docRef           = await db.collection('events').add({
       title, description: desc, dateTime, location, ...place, associatedHobbies,
       hobby: associatedHobbies[0],
-      createdBy: me.email, creatorName: me.fullName || me.email, creatorPhone: me.phone || '',
+      createdBy: me.email, creatorName: displayName(me.fullName) || me.email, creatorPhone: organizerPhone || '',
       organizerName: organizerName || displayName(me.fullName) || me.email,
-      organizerPhone: organizerPhone || me.phone || '',
+      organizerPhone: organizerPhone || '',
       actionLinks, detectedHobbyTag,
-      interested: [{ email: me.email, name: me.fullName || '', display: formatAttendeeDisplay(me.fullName || me.email) }],
+      interested: [{ email: me.email, name: displayName(me.fullName), display: formatAttendeeDisplay(me.fullName || me.email) }],
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    const creatorEntry = { email: me.email, name: me.fullName || '', display: formatAttendeeDisplay(me.fullName || me.email) };
+    const creatorEntry = { email: me.email, name: displayName(me.fullName), display: formatAttendeeDisplay(me.fullName || me.email) };
     allEventsData.push({
       id: docRef.id, title, description: desc, dateTime, location, ...place, associatedHobbies,
       hobby: associatedHobbies[0], createdBy: me.email,
-      creatorName: me.fullName || me.email, creatorPhone: me.phone || '',
+      creatorName: displayName(me.fullName) || me.email, creatorPhone: organizerPhone || '',
       organizerName: organizerName || displayName(me.fullName) || me.email,
-      organizerPhone: organizerPhone || me.phone || '',
+      organizerPhone: organizerPhone || '',
       actionLinks, detectedHobbyTag, interested: [creatorEntry],
     });
     window._pendingEventLinks = [];

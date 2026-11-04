@@ -45,10 +45,13 @@ hobby-match/
 ### `users/{email_sanitized}`
 Document ID = email with `@` → `_at_` and `.` → `_dot_`
 ```
-{ fullName, email, phone, age, city, hobby, hobbies: string[], wantToTry: string[], hobbyDescription,
+{ fullName (short: "דן כ"), email, age, city, hobby, hobbies: string[], wantToTry: string[], hobbyDescription,
   lookingFor: ('friends'|'partners'|'romantic')[], romantic, partnerTypes: string[], notForMe: string[], totAnswers: number[],
   profilePhotoURL, hobbyImages: string[], hobbyImageUrl, latitude, longitude, createdAt }
 ```
+Phone and the real full name live in `users/{id}/private/contact` = `{ fullName, phone }` (owner + admin only, written with
+the public document in one batch). Read your own with `getMyProfile`. The older phone/full name in public documents is
+moved by the one-time admin.html button "העברת טלפונים ושמות לאזור הפרטי".
 `wantToTry` = "🌱 רוצה לנסות" (Tahbiva discover card "🤔 רוצה לנסות", ⇄ in Tahbiva's my-hobbies, typed in the edit drawer; also matches activities).
 `partnerTypes` = "🤝 מחפש/ת שותפים ל…": `TAHBIVA.PARTNERS` ids (shown by their `short` label) + the user's own
 free text from the edit drawer. Read with `partnerLabels(user)` (ui-render.js) — free text is other users' text → escape.

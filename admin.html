@@ -214,6 +214,12 @@
             oninput="applyFilters()"
             class="border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 w-64 transition"/>
 
+          <!-- One-time move of phones and full names -->
+          <button id="moveContactsBtn" onclick="moveContactsPrivate(this)"
+            class="flex items-center gap-1.5 bg-gradient-to-l from-purple-700 to-blue-600 text-white text-sm font-bold px-4 py-2 rounded-xl">
+            🔒 העברת טלפונים ושמות לאזור הפרטי
+          </button>
+
           <!-- Delete broken profiles -->
           <button onclick="deleteBrokenProfiles(this)"
             class="flex items-center gap-1.5 bg-gradient-to-l from-red-600 to-rose-500 text-white text-sm font-bold px-4 py-2 rounded-xl hover:opacity-90 transition">
@@ -316,6 +322,75 @@
   let allReportsData  = [];
   let usersWithMatch  = new Set();   // emails that have ≥1 match
 
+  // ── Phone and full name (private document, admin only) ────────────────────
+  async function loadPrivateContacts(users) {
+    await Promise.all(users.map(async u => {
+      try {
+        const contact = await db.collection('users').doc(u._docId).collection('private').doc('contact').get();
+        if (contact.exists) Object.assign(u, contact.data());
+      } catch (err) {
+        console.warn('Private contact load error:', err);
+      }
+    }));
+  }
+
+  function saveBackupFile(data) {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `connection-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  // One-time, safe to run again: moves existing phones and full names out of the public documents
+  async function moveContactsPrivate(btn) {
+    if (!confirm('להעביר טלפונים ושמות מלאים לאזור הפרטי?\n\nקובץ גיבוי יירד למחשב שלך לפני ההעברה.')) return;
+    btn.disabled = true;
+    try {
+      const [usersSnap, eventsSnap] = await Promise.all([db.collection('users').get(), db.collection('events').get()]);
+      saveBackupFile({
+        users:  usersSnap.docs.map(d => ({ path: d.ref.path, ...d.data() })),
+        events: eventsSnap.docs.map(d => ({ path: d.ref.path, ...d.data() }))
+      });
+
+      let users = 0;
+      for (const doc of usersSnap.docs) {
+        const d = doc.data();
+        const short = formatAttendeeDisplay(d.fullName);
+        if (!d.fullName || (d.phone === undefined && d.fullName === short)) continue;
+        const contact = { fullName: d.fullName };
+        if (d.phone !== undefined) contact.phone = d.phone;
+        const batch = db.batch();
+        batch.set(doc.ref.collection('private').doc('contact'), contact, { merge: true });
+        batch.update(doc.ref, { fullName: short, phone: firebase.firestore.FieldValue.delete() });
+        await batch.commit();
+        users++;
+      }
+
+      let events = 0;
+      for (const doc of eventsSnap.docs) {
+        const e = doc.data();
+        const changes = {};
+        const creator = formatAttendeeDisplay(e.creatorName);
+        if (e.creatorName && creator !== e.creatorName) changes.creatorName = creator;
+        if (e.organizerName === e.creatorName && changes.creatorName) changes.organizerName = creator;
+        if (e.creatorPhone && e.creatorPhone !== (e.organizerPhone || '')) changes.creatorPhone = e.organizerPhone || '';
+        const interested = (e.interested || []).map(i => ({ ...i, name: formatAttendeeDisplay(i.name) }));
+        if (interested.some((i, n) => i.name !== e.interested[n].name)) changes.interested = interested;
+        if (!Object.keys(changes).length) continue;
+        await doc.ref.update(changes);
+        events++;
+      }
+      showAdminToast(`✓ הועברו ${users} משתמשים ועודכנו ${events} פעילויות`);
+    } catch (err) {
+      showAdminToast('שגיאה בהעברה. אפשר להריץ שוב.', 'bg-red-600');
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
   // ── Init ─────────────────────────────────────────────────────────────────────
   async function initDashboard() {
     try {
@@ -328,6 +403,7 @@
       ]);
 
       allUsersData    = usersSnap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+      await loadPrivateContacts(allUsersData);
       allLikesData    = likesSnap.docs.map(d => ({ _docId: d.id, ...d.data() }));
       allEventsData   = eventsSnap.docs.map(d => ({ _docId: d.id, ...d.data() }));
       allFeedbackData = feedbackSnap.docs.map(d => ({ _docId: d.id, ...d.data() }));
@@ -729,6 +805,7 @@
     btn.disabled = true; btn.textContent = '...';
     try {
       const sid = sanitizeEmail(email);
+      await privateContactRef(email).delete();
       await db.collection('users').doc(sid).delete();
 
       const [sentSnap, receivedSnap] = await Promise.all([
